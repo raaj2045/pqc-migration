@@ -1,0 +1,11 @@
+syntax = "proto3";
+package cosmos.lockandmint.v1;
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/lockandmint/types";
+
+// UserAccount represents a user's account with balance and locked balance
+message UserAccount {
+  string address        = 1;
+  string balance        = 2;
+  string locked_balance = 3;
+}

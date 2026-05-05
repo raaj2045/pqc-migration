@@ -1,0 +1,16 @@
+syntax = "proto3";
+package cosmos.lockandmint.module.v1;
+
+import "cosmos/app/v1alpha1/module.proto";
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/lockandmint/module";
+
+// Module is the config object of the lockandmint module
+message Module {
+  option (cosmos.app.v1alpha1.module) = {
+    go_import: "github.com/cosmos/cosmos-sdk/x/lockandmint"
+  };
+  
+  // authority defines the custom module authority. If not set, defaults to the governance module.
+  string authority = 1;
+}

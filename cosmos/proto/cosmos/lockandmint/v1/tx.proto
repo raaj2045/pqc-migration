@@ -1,0 +1,47 @@
+syntax = "proto3";
+package cosmos.lockandmint.v1;
+
+import "cosmos/msg/v1/msg.proto";
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/lockandmint/types";
+
+// Msg defines the lockandmint Msg service
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  rpc Lock(MsgLock) returns (MsgLockResponse);
+  rpc Mint(MsgMint) returns (MsgMintResponse);
+  rpc SetBalance(MsgSetBalance) returns (MsgSetBalanceResponse);
+}
+
+// MsgLock locks a specified amount from user's balance
+message MsgLock {
+  option (cosmos.msg.v1.signer) = "user_address";
+
+  string user_address = 1;
+  string amount       = 2;
+}
+
+message MsgLockResponse {}
+
+// MsgMint mints tokens to a receiver's balance
+message MsgMint {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1; // Admin/governance address
+  string receiver  = 2;
+  string amount    = 3;
+}
+
+message MsgMintResponse {}
+
+// MsgSetBalance sets a user's balance (admin function)
+message MsgSetBalance {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority    = 1; // Admin/governance address
+  string user_address = 2;
+  string amount       = 3;
+}
+
+message MsgSetBalanceResponse {}

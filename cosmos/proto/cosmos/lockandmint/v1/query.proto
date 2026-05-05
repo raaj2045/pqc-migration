@@ -1,0 +1,42 @@
+syntax = "proto3";
+package cosmos.lockandmint.v1;
+
+import "cosmos/lockandmint/v1/state.proto";
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/lockandmint/types";
+
+// Query defines the lockandmint Query service
+service Query {
+  // GetAccountDetails returns complete account information
+  rpc GetAccountDetails(QueryAccountDetailsRequest) returns (QueryAccountDetailsResponse);
+
+  // GetBalance returns only the balance of an account
+  rpc GetBalance(QueryBalanceRequest) returns (QueryBalanceResponse);
+
+  // GetLockedBalance returns only the locked balance of an account
+  rpc GetLockedBalance(QueryLockedBalanceRequest) returns (QueryLockedBalanceResponse);
+}
+
+message QueryAccountDetailsRequest {
+  string address = 1;
+}
+
+message QueryAccountDetailsResponse {
+  UserAccount account = 1;
+}
+
+message QueryBalanceRequest {
+  string address = 1;
+}
+
+message QueryBalanceResponse {
+  string balance = 1;
+}
+
+message QueryLockedBalanceRequest {
+  string address = 1;
+}
+
+message QueryLockedBalanceResponse {
+  string locked_balance = 1;
+}

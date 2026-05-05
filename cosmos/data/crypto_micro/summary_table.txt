@@ -1,0 +1,68 @@
+================================================================================
+CRYPTO BENCHMARK SUMMARY
+secp256k1 vs ML-DSA-44
+================================================================================
+
+KEY GENERATION
+----------------------------------------
+  secp256k1   :       0.56 μs  (    96 B/op,   2 allocs/op)
+  mldsa44     :      52.39 μs  ( 58041 B/op,   5 allocs/op)
+
+SIGNING (by message size)
+----------------------------------------
+  100B:
+    secp256k1   :      36.67 μs
+    mldsa44     :     123.46 μs
+  1KB:
+    secp256k1   :      35.54 μs
+    mldsa44     :     127.35 μs
+  10KB:
+    secp256k1   :      39.31 μs
+    mldsa44     :     125.88 μs
+  100KB:
+    secp256k1   :      84.42 μs
+    mldsa44     :     358.91 μs
+
+VERIFICATION (by message size)
+----------------------------------------
+  100B:
+    secp256k1   :     132.62 μs
+    mldsa44     :      38.03 μs
+  1KB:
+    secp256k1   :     131.61 μs
+    mldsa44     :      39.50 μs
+  10KB:
+    secp256k1   :     140.00 μs
+    mldsa44     :      65.75 μs
+  100KB:
+    secp256k1   :     186.78 μs
+    mldsa44     :     338.92 μs
+
+BATCH VERIFICATION
+----------------------------------------
+  Batch size 10:
+    secp256k1   :       1.45 ms total (145.34 μs/sig)
+    mldsa44     :       0.38 ms total (38.50 μs/sig)
+  Batch size 100:
+    secp256k1   :      14.54 ms total (145.36 μs/sig)
+    mldsa44     :       4.18 ms total (41.79 μs/sig)
+  Batch size 1000:
+    secp256k1   :     145.23 ms total (145.23 μs/sig)
+    mldsa44     :      40.92 ms total (40.92 μs/sig)
+
+CONCURRENT SIGNING THROUGHPUT (sigs/sec)
+----------------------------------------
+  1 goroutine(s):
+    secp256k1   :        24604 sigs/sec
+    mldsa44     :         4306 sigs/sec
+  4 goroutine(s):
+    secp256k1   :        86453 sigs/sec
+    mldsa44     :        11818 sigs/sec
+  8 goroutine(s):
+    secp256k1   :       118036 sigs/sec
+    mldsa44     :        12687 sigs/sec
+  16 goroutine(s):
+    secp256k1   :       114377 sigs/sec
+    mldsa44     :        22061 sigs/sec
+
+================================================================================

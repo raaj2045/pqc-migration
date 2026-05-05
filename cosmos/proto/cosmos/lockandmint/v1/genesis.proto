@@ -1,0 +1,12 @@
+syntax = "proto3";
+package cosmos.lockandmint.v1;
+
+import "cosmos/lockandmint/v1/state.proto";
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/lockandmint/types";
+
+// GenesisState defines the lockandmint module's genesis state
+message GenesisState {
+  // List of all user accounts
+  repeated UserAccount accounts = 1;
+}
