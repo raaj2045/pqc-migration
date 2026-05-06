@@ -1,0 +1,3 @@
+Fig. 7: Cumulative on-chain account-state size as a function of cumulative transactions written for secp256k1 versus ML-DSA-44, on a log-log scale spanning 100 thousand to 10 million transactions.
+Deterministic computation by tools/storage_sim/main.go from per-transaction wire sizes (312 bytes for secp256k1, 3,947 bytes for ML-DSA-44) and a closed-form unique-account growth model (unique(n) = 1.256 * n^0.8); no randomness or measurement error.
+At 10 million transactions ML-DSA-44 produces 4,032 mebibytes of account state versus 380 mebibytes for secp256k1, a 10.62x ratio driven entirely by the larger public key (1,312 bytes versus 33 bytes) cached per active account.
