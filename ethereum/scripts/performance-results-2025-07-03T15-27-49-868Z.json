@@ -1,0 +1,251 @@
+{
+  "timestamp": "2025-07-03T15:27:49.868Z",
+  "systemInfo": {
+    "platform": "linux",
+    "arch": "x64",
+    "nodeVersion": "v20.19.0",
+    "totalMemory": 16298196992,
+    "cpuCount": 12
+  },
+  "results": [
+    {
+      "operation": "Key Generation",
+      "algorithm": "ECDSA",
+      "metrics": {
+        "cpuUsage": 5.353,
+        "memoryUsage": 0.16718292236328125,
+        "latency": 551,
+        "duration": 551,
+        "timestamp": 1751556230404
+      },
+      "iterations": 1,
+      "success": true
+    },
+    {
+      "operation": "Key Generation",
+      "algorithm": "ECDSA",
+      "metrics": {
+        "cpuUsage": 27.276,
+        "memoryUsage": 1.3643875122070312,
+        "latency": 9061,
+        "duration": 9061,
+        "timestamp": 1751556240466
+      },
+      "iterations": 10,
+      "success": true
+    },
+    {
+      "operation": "Key Generation",
+      "algorithm": "ECDSA",
+      "metrics": {
+        "cpuUsage": 200.884,
+        "memoryUsage": 5.222862243652344,
+        "latency": 26822,
+        "duration": 26822,
+        "timestamp": 1751556268290
+      },
+      "iterations": 50,
+      "success": true
+    },
+    {
+      "operation": "Key Generation",
+      "algorithm": "ECDSA",
+      "metrics": {
+        "cpuUsage": 251.922,
+        "memoryUsage": 1.7634658813476562,
+        "latency": 56247,
+        "duration": 56247,
+        "timestamp": 1751556329126
+      },
+      "iterations": 100,
+      "success": true
+    },
+    {
+      "operation": "Key Generation",
+      "algorithm": "ML-DSA",
+      "metrics": {
+        "cpuUsage": 2.483,
+        "memoryUsage": 0.1006317138671875,
+        "latency": 562,
+        "duration": 562,
+        "timestamp": 1751556330690
+      },
+      "iterations": 1,
+      "success": true
+    },
+    {
+      "operation": "Key Generation",
+      "algorithm": "ML-DSA",
+      "metrics": {
+        "cpuUsage": 27.622,
+        "memoryUsage": 0.28104400634765625,
+        "latency": 5402,
+        "duration": 5402,
+        "timestamp": 1751556337094
+      },
+      "iterations": 10,
+      "success": true
+    },
+    {
+      "operation": "Key Generation",
+      "algorithm": "ML-DSA",
+      "metrics": {
+        "cpuUsage": 138.914,
+        "memoryUsage": 1.0053176879882812,
+        "latency": 29787,
+        "duration": 29787,
+        "timestamp": 1751556367883
+      },
+      "iterations": 50,
+      "success": true
+    },
+    {
+      "operation": "Key Generation",
+      "algorithm": "ML-DSA",
+      "metrics": {
+        "cpuUsage": 266.844,
+        "memoryUsage": 2.4668807983398438,
+        "latency": 59668,
+        "duration": 59668,
+        "timestamp": 1751556428553
+      },
+      "iterations": 100,
+      "success": true
+    },
+    {
+      "operation": "Transfer",
+      "algorithm": "ECDSA",
+      "metrics": {
+        "cpuUsage": 3.971,
+        "memoryUsage": 0.4492950439453125,
+        "latency": 4,
+        "duration": 4,
+        "timestamp": 1751556429560
+      },
+      "iterations": 1,
+      "success": true
+    },
+    {
+      "operation": "Transfer",
+      "algorithm": "ECDSA",
+      "metrics": {
+        "cpuUsage": 20.911,
+        "memoryUsage": 0.5563583374023438,
+        "latency": 14,
+        "duration": 14,
+        "timestamp": 1751556431599
+      },
+      "iterations": 10,
+      "success": true
+    },
+    {
+      "operation": "Transfer",
+      "algorithm": "ECDSA",
+      "metrics": {
+        "cpuUsage": 71.425,
+        "memoryUsage": 0.06243896484375,
+        "latency": 55,
+        "duration": 55,
+        "timestamp": 1751556433657
+      },
+      "iterations": 50,
+      "success": true
+    },
+    {
+      "operation": "Transfer",
+      "algorithm": "ECDSA",
+      "metrics": {
+        "cpuUsage": 151.94,
+        "memoryUsage": 5.9942779541015625,
+        "latency": 101,
+        "duration": 101,
+        "timestamp": 1751556435759
+      },
+      "iterations": 100,
+      "success": true
+    },
+    {
+      "operation": "Transfer",
+      "algorithm": "ECDSA",
+      "metrics": {
+        "cpuUsage": 664.661,
+        "memoryUsage": 1.2922286987304688,
+        "latency": 489,
+        "duration": 489,
+        "timestamp": 1751556438251
+      },
+      "iterations": 500,
+      "success": true
+    },
+    {
+      "operation": "Transfer",
+      "algorithm": "ML-DSA",
+      "metrics": {
+        "cpuUsage": 2.02,
+        "memoryUsage": 1.3684539794921875,
+        "latency": 1,
+        "duration": 1,
+        "timestamp": 1751556440255
+      },
+      "iterations": 1,
+      "success": true
+    },
+    {
+      "operation": "Transfer",
+      "algorithm": "ML-DSA",
+      "metrics": {
+        "cpuUsage": 12.758,
+        "memoryUsage": 0.15990447998046875,
+        "latency": 10,
+        "duration": 10,
+        "timestamp": 1751556442268
+      },
+      "iterations": 10,
+      "success": true
+    },
+    {
+      "operation": "Transfer",
+      "algorithm": "ML-DSA",
+      "metrics": {
+        "cpuUsage": 60.44,
+        "memoryUsage": 0.186859130859375,
+        "latency": 49,
+        "duration": 49,
+        "timestamp": 1751556444319
+      },
+      "iterations": 50,
+      "success": true
+    },
+    {
+      "operation": "Transfer",
+      "algorithm": "ML-DSA",
+      "metrics": {
+        "cpuUsage": 119.78,
+        "memoryUsage": 0.36324310302734375,
+        "latency": 95,
+        "duration": 95,
+        "timestamp": 1751556446417
+      },
+      "iterations": 100,
+      "success": true
+    },
+    {
+      "operation": "Transfer",
+      "algorithm": "ML-DSA",
+      "metrics": {
+        "cpuUsage": 599.458,
+        "memoryUsage": 0.9718475341796875,
+        "latency": 465,
+        "duration": 465,
+        "timestamp": 1751556452467
+      },
+      "iterations": 500,
+      "success": true
+    }
+  ],
+  "summary": {
+    "totalTests": 18,
+    "successfulTests": 18,
+    "failedTests": 0
+  }
+}
