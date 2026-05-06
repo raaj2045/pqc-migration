@@ -1,0 +1,359 @@
+{
+  "started_at": 1777193155.5654244,
+  "elapsed_s": 8669.821257829666,
+  "completed": [
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 63.12,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 149982,
+        "committed": 677,
+        "p99_ms": 10695,
+        "http_errors": 149305
+      },
+      "plan_index": 1,
+      "n": 4,
+      "rate": 500,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 47.93,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 149947,
+        "committed": 873,
+        "p99_ms": 11375,
+        "http_errors": 149074
+      },
+      "plan_index": 2,
+      "n": 4,
+      "rate": 500,
+      "scheme": "mldsa44"
+    },
+    {
+      "status": "ok",
+      "reason": "",
+      "peak_cpu": 15.31,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 2999,
+        "committed": 2999,
+        "p99_ms": 5702,
+        "http_errors": 0
+      },
+      "plan_index": 3,
+      "n": 7,
+      "rate": 10,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "ok",
+      "reason": "",
+      "peak_cpu": 16.78,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 2999,
+        "committed": 2999,
+        "p99_ms": 5704,
+        "http_errors": 0
+      },
+      "plan_index": 4,
+      "n": 7,
+      "rate": 10,
+      "scheme": "mldsa44"
+    },
+    {
+      "status": "ok",
+      "reason": "",
+      "peak_cpu": 31.88,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 14999,
+        "committed": 14999,
+        "p99_ms": 5741,
+        "http_errors": 0
+      },
+      "plan_index": 5,
+      "n": 7,
+      "rate": 50,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "ok",
+      "reason": "",
+      "peak_cpu": 54.81,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 14998,
+        "committed": 14998,
+        "p99_ms": 5978,
+        "http_errors": 0
+      },
+      "plan_index": 6,
+      "n": 7,
+      "rate": 50,
+      "scheme": "mldsa44"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 51.57,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 29996,
+        "committed": 19506,
+        "p99_ms": 9931,
+        "http_errors": 10490
+      },
+      "plan_index": 7,
+      "n": 7,
+      "rate": 100,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 62.02,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 29999,
+        "committed": 12262,
+        "p99_ms": 9148,
+        "http_errors": 17737
+      },
+      "plan_index": 8,
+      "n": 7,
+      "rate": 100,
+      "scheme": "mldsa44"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 50.1,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 59999,
+        "committed": 1311,
+        "p99_ms": 11975,
+        "http_errors": 58688
+      },
+      "plan_index": 9,
+      "n": 7,
+      "rate": 200,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 55.15,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 59994,
+        "committed": 8742,
+        "p99_ms": 6792,
+        "http_errors": 51252
+      },
+      "plan_index": 10,
+      "n": 7,
+      "rate": 200,
+      "scheme": "mldsa44"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 56.14,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 149940,
+        "committed": 383,
+        "p99_ms": 5855,
+        "http_errors": 149557
+      },
+      "plan_index": 11,
+      "n": 7,
+      "rate": 500,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 59.36,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 149959,
+        "committed": 546,
+        "p99_ms": 6183,
+        "http_errors": 149413
+      },
+      "plan_index": 12,
+      "n": 7,
+      "rate": 500,
+      "scheme": "mldsa44"
+    },
+    {
+      "status": "ok",
+      "reason": "",
+      "peak_cpu": 21.0,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 2999,
+        "committed": 2999,
+        "p99_ms": 5800,
+        "http_errors": 0
+      },
+      "plan_index": 13,
+      "n": 16,
+      "rate": 10,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "ok",
+      "reason": "",
+      "peak_cpu": 33.55,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 2999,
+        "committed": 2999,
+        "p99_ms": 5805,
+        "http_errors": 0
+      },
+      "plan_index": 14,
+      "n": 16,
+      "rate": 10,
+      "scheme": "mldsa44"
+    },
+    {
+      "status": "ok",
+      "reason": "",
+      "peak_cpu": 54.97,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 14999,
+        "committed": 14999,
+        "p99_ms": 6023,
+        "http_errors": 0
+      },
+      "plan_index": 15,
+      "n": 16,
+      "rate": 50,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 58.9,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 14999,
+        "committed": 12946,
+        "p99_ms": 6663,
+        "http_errors": 2053
+      },
+      "plan_index": 16,
+      "n": 16,
+      "rate": 50,
+      "scheme": "mldsa44"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 38.35,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 29998,
+        "committed": 8463,
+        "p99_ms": 7171,
+        "http_errors": 21535
+      },
+      "plan_index": 17,
+      "n": 16,
+      "rate": 100,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 49.31,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 29995,
+        "committed": 1129,
+        "p99_ms": 7807,
+        "http_errors": 28866
+      },
+      "plan_index": 18,
+      "n": 16,
+      "rate": 100,
+      "scheme": "mldsa44"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 42.69,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 59996,
+        "committed": 162,
+        "p99_ms": 5958,
+        "http_errors": 59834
+      },
+      "plan_index": 19,
+      "n": 16,
+      "rate": 200,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 61.4,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 59994,
+        "committed": 238,
+        "p99_ms": 6087,
+        "http_errors": 59756
+      },
+      "plan_index": 20,
+      "n": 16,
+      "rate": 200,
+      "scheme": "mldsa44"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 43.31,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 149810,
+        "committed": 315,
+        "p99_ms": 1989,
+        "http_errors": 149495
+      },
+      "plan_index": 21,
+      "n": 16,
+      "rate": 500,
+      "scheme": "secp256k1"
+    },
+    {
+      "status": "saturated",
+      "reason": "",
+      "peak_cpu": 61.13,
+      "has_result_file": true,
+      "summary": {
+        "submitted": 149848,
+        "committed": 73,
+        "p99_ms": 1497,
+        "http_errors": 149775
+      },
+      "plan_index": 22,
+      "n": 16,
+      "rate": 500,
+      "scheme": "mldsa44"
+    }
+  ],
+  "remaining": 0
+}

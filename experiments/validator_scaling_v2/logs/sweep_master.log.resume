@@ -1,0 +1,91 @@
+[14:15:55] resuming at index 8 ((4, 500, 'secp256k1'))
+[14:15:55] sweep plan: 22 runs
+[14:15:55] [1/22] N=4 rate=500 scheme=secp256k1  elapsed=0.0min
+[14:15:55]   init_testnet.sh --validators 4
+[14:16:23]   loadgen --rate 500 --duration 300 (scheme=secp256k1)
+[14:22:01]   status=saturated  peak_cpu=63.1%  {'submitted': 149982, 'committed': 677, 'p99_ms': 10695, 'http_errors': 149305}
+[14:22:02] [2/22] N=4 rate=500 scheme=mldsa44  elapsed=6.1min
+[14:22:02]   init_testnet.sh --validators 4
+[14:22:25]   loadgen --rate 500 --duration 300 (scheme=mldsa44)
+[14:28:09]   status=saturated  peak_cpu=47.9%  {'submitted': 149947, 'committed': 873, 'p99_ms': 11375, 'http_errors': 149074}
+[14:28:10] [3/22] N=7 rate=10 scheme=secp256k1  elapsed=12.2min
+[14:28:10]   init_testnet.sh --validators 7
+[14:28:37]   loadgen --rate 10 --duration 300 (scheme=secp256k1)
+[14:34:19]   status=ok  peak_cpu=15.3%  {'submitted': 2999, 'committed': 2999, 'p99_ms': 5702, 'http_errors': 0}
+[14:34:19] [4/22] N=7 rate=10 scheme=mldsa44  elapsed=18.4min
+[14:34:19]   init_testnet.sh --validators 7
+[14:36:47]   loadgen --rate 10 --duration 300 (scheme=mldsa44)
+[14:42:31]   status=ok  peak_cpu=16.8%  {'submitted': 2999, 'committed': 2999, 'p99_ms': 5704, 'http_errors': 0}
+[14:42:31] [5/22] N=7 rate=50 scheme=secp256k1  elapsed=26.6min
+[14:42:31]   init_testnet.sh --validators 7
+[14:42:59]   loadgen --rate 50 --duration 300 (scheme=secp256k1)
+[14:48:40]   status=ok  peak_cpu=31.9%  {'submitted': 14999, 'committed': 14999, 'p99_ms': 5741, 'http_errors': 0}
+[14:48:40] [6/22] N=7 rate=50 scheme=mldsa44  elapsed=32.7min
+[14:48:40]   init_testnet.sh --validators 7
+[14:49:08]   loadgen --rate 50 --duration 300 (scheme=mldsa44)
+[14:54:52]   status=ok  peak_cpu=54.8%  {'submitted': 14998, 'committed': 14998, 'p99_ms': 5978, 'http_errors': 0}
+[14:54:52] [7/22] N=7 rate=100 scheme=secp256k1  elapsed=39.0min
+[14:54:52]   init_testnet.sh --validators 7
+[14:55:20]   loadgen --rate 100 --duration 300 (scheme=secp256k1)
+[15:01:02]   status=saturated  peak_cpu=51.6%  {'submitted': 29996, 'committed': 19506, 'p99_ms': 9931, 'http_errors': 10490}
+[15:01:02] [8/22] N=7 rate=100 scheme=mldsa44  elapsed=45.1min
+[15:01:02]   init_testnet.sh --validators 7
+[15:01:31]   loadgen --rate 100 --duration 300 (scheme=mldsa44)
+[15:07:19]   status=saturated  peak_cpu=62.0%  {'submitted': 29999, 'committed': 12262, 'p99_ms': 9148, 'http_errors': 17737}
+[15:07:19] [9/22] N=7 rate=200 scheme=secp256k1  elapsed=51.4min
+[15:07:19]   init_testnet.sh --validators 7
+[15:07:47]   loadgen --rate 200 --duration 300 (scheme=secp256k1)
+[15:13:30]   status=saturated  peak_cpu=50.1%  {'submitted': 59999, 'committed': 1311, 'p99_ms': 11975, 'http_errors': 58688}
+[15:13:30] [10/22] N=7 rate=200 scheme=mldsa44  elapsed=57.6min
+[15:13:30]   init_testnet.sh --validators 7
+[15:13:59]   loadgen --rate 200 --duration 300 (scheme=mldsa44)
+[15:19:47]   status=saturated  peak_cpu=55.1%  {'submitted': 59994, 'committed': 8742, 'p99_ms': 6792, 'http_errors': 51252}
+[15:19:47] [11/22] N=7 rate=500 scheme=secp256k1  elapsed=63.9min
+[15:19:47]   init_testnet.sh --validators 7
+[15:20:16]   loadgen --rate 500 --duration 300 (scheme=secp256k1)
+[15:25:58]   status=saturated  peak_cpu=56.1%  {'submitted': 149940, 'committed': 383, 'p99_ms': 5855, 'http_errors': 149557}
+[15:25:59] [12/22] N=7 rate=500 scheme=mldsa44  elapsed=70.1min
+[15:25:59]   init_testnet.sh --validators 7
+[15:26:28]   loadgen --rate 500 --duration 300 (scheme=mldsa44)
+[15:32:16]   status=saturated  peak_cpu=59.4%  {'submitted': 149959, 'committed': 546, 'p99_ms': 6183, 'http_errors': 149413}
+[15:32:17] [13/22] N=16 rate=10 scheme=secp256k1  elapsed=76.4min
+[15:32:17]   init_testnet.sh --validators 16
+[15:32:57]   loadgen --rate 10 --duration 300 (scheme=secp256k1)
+[15:38:49]   status=ok  peak_cpu=21.0%  {'submitted': 2999, 'committed': 2999, 'p99_ms': 5800, 'http_errors': 0}
+[15:38:49] [14/22] N=16 rate=10 scheme=mldsa44  elapsed=82.9min
+[15:38:49]   init_testnet.sh --validators 16
+[15:41:29]   loadgen --rate 10 --duration 300 (scheme=mldsa44)
+[15:47:27]   status=ok  peak_cpu=33.5%  {'submitted': 2999, 'committed': 2999, 'p99_ms': 5805, 'http_errors': 0}
+[15:47:27] [15/22] N=16 rate=50 scheme=secp256k1  elapsed=91.5min
+[15:47:27]   init_testnet.sh --validators 16
+[15:48:08]   loadgen --rate 50 --duration 300 (scheme=secp256k1)
+[15:54:00]   status=ok  peak_cpu=55.0%  {'submitted': 14999, 'committed': 14999, 'p99_ms': 6023, 'http_errors': 0}
+[15:54:00] [16/22] N=16 rate=50 scheme=mldsa44  elapsed=98.1min
+[15:54:01]   init_testnet.sh --validators 16
+[15:54:40]   loadgen --rate 50 --duration 300 (scheme=mldsa44)
+[16:00:38]   status=saturated  peak_cpu=58.9%  {'submitted': 14999, 'committed': 12946, 'p99_ms': 6663, 'http_errors': 2053}
+[16:00:38] [17/22] N=16 rate=100 scheme=secp256k1  elapsed=104.7min
+[16:00:38]   init_testnet.sh --validators 16
+[16:01:21]   loadgen --rate 100 --duration 300 (scheme=secp256k1)
+[16:07:14]   status=saturated  peak_cpu=38.4%  {'submitted': 29998, 'committed': 8463, 'p99_ms': 7171, 'http_errors': 21535}
+[16:07:14] [18/22] N=16 rate=100 scheme=mldsa44  elapsed=111.3min
+[16:07:15]   init_testnet.sh --validators 16
+[16:07:53]   loadgen --rate 100 --duration 300 (scheme=mldsa44)
+[16:13:51]   status=saturated  peak_cpu=49.3%  {'submitted': 29995, 'committed': 1129, 'p99_ms': 7807, 'http_errors': 28866}
+[16:13:51] [19/22] N=16 rate=200 scheme=secp256k1  elapsed=117.9min
+[16:13:51]   init_testnet.sh --validators 16
+[16:14:32]   loadgen --rate 200 --duration 300 (scheme=secp256k1)
+[16:20:26]   status=saturated  peak_cpu=42.7%  {'submitted': 59996, 'committed': 162, 'p99_ms': 5958, 'http_errors': 59834}
+[16:20:27] [20/22] N=16 rate=200 scheme=mldsa44  elapsed=124.5min
+[16:20:27]   init_testnet.sh --validators 16
+[16:21:07]   loadgen --rate 200 --duration 300 (scheme=mldsa44)
+[16:27:06]   status=saturated  peak_cpu=61.4%  {'submitted': 59994, 'committed': 238, 'p99_ms': 6087, 'http_errors': 59756}
+[16:27:06] [21/22] N=16 rate=500 scheme=secp256k1  elapsed=131.2min
+[16:27:06]   init_testnet.sh --validators 16
+[16:27:47]   loadgen --rate 500 --duration 300 (scheme=secp256k1)
+[16:33:42]   status=saturated  peak_cpu=43.3%  {'submitted': 149810, 'committed': 315, 'p99_ms': 1989, 'http_errors': 149495}
+[16:33:43] [22/22] N=16 rate=500 scheme=mldsa44  elapsed=137.8min
+[16:33:43]   init_testnet.sh --validators 16
+[16:34:25]   loadgen --rate 500 --duration 300 (scheme=mldsa44)
+[16:40:24]   status=saturated  peak_cpu=61.1%  {'submitted': 149848, 'committed': 73, 'p99_ms': 1497, 'http_errors': 149775}
+[16:40:25] sweep done: 7 ok, 15 saturated, 0 skipped, 0 crashed, 0 timeout — elapsed 144.5min
