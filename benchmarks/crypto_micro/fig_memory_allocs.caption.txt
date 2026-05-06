@@ -1,0 +1,3 @@
+Fig. 6: Memory footprint per cryptographic operation, side-by-side bar charts of bytes allocated (left) and number of heap allocations (right) for key generation, signing of a 1-kilobyte message, and verification of a 1-kilobyte message, both axes logarithmic.
+Single Go testing.B run per (scheme, operation) on AMD Ryzen 5 7600X under Go 1.23.5; the reported values are testing.B's bytes-per-op and allocs-per-op counters and run-to-run variance is not measured.
+Key generation for ML-DSA-44 allocates 58,041 bytes against 96 bytes for secp256k1 (a 605x ratio), and signing/verification show comparable per-op memory inflation that explains a substantial fraction of the throughput gap when the Go heap is the dominant cost.

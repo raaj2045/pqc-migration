@@ -1,0 +1,4 @@
+# Raw benchmark output from go test
+raw_benchmark.txt
+*.out
+*.bench
