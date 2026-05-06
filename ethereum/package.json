@@ -1,0 +1,37 @@
+{
+  "name": "ethereum-lockandmint",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "relayer": "node scripts/relayer.js",
+    "quantum-migration": "npx hardhat run scripts/quantum-migration-test.js --network localhost",
+    "security-test": "node scripts/security-test.js",
+    "performance-test": "npx hardhat run scripts/migration-performance-test.js --network localhost",
+    "e2e-verify": "node scripts/e2e-quantum-verification.js"
+  },
+  "keywords": [
+    "cosmos",
+    "ethereum",
+    "post-quantum",
+    "ml-dsa-44",
+    "bridge",
+    "lock-and-mint"
+  ],
+  "author": "",
+  "license": "Apache-2.0",
+  "description": "Ethereum-side Lock-and-Mint bridge contract + relayer for an ML-DSA-44-enabled Cosmos chain.",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.24.1"
+  },
+  "dependencies": {
+    "@cosmjs/amino": "^0.32.4",
+    "@cosmjs/proto-signing": "^0.32.4",
+    "@cosmjs/stargate": "^0.32.4",
+    "@openzeppelin/contracts": "^5.3.0",
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^16.5.0",
+    "prom-client": "^15.1.3"
+  }
+}
