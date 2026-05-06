@@ -1,0 +1,71 @@
+# Build artifacts
+cosmos/build/
+**/build/
+**/dist/
+**/vendor/
+**/.next/
+
+# Go
+*.test
+*.out
+coverage.out
+coverage.txt
+*profile.out
+
+# Node.js
+**/node_modules/
+**/coverage/
+**/.npm/
+package-lock.json.bak
+
+# Python
+**/__pycache__/
+*.pyc
+*.pyo
+**/venv/
+**/.venv/
+**/.pytest_cache/
+
+# Hardhat / Solidity
+ethereum/artifacts/
+ethereum/cache/
+ethereum/typechain/
+ethereum/typechain-types/
+ethereum/coverage/
+ethereum/coverage.json
+ethereum/ignition/deployments/chain-31337/
+
+# Cosmos / docker testnet
+**/testnet-data/
+**/.simapp/
+cosmos/private/
+
+# Paper-specific large/regenerable artifacts
+experiments/validator_scaling_v2/presigned/
+experiments/validator_scaling_v2/tools/loadgen_bin
+experiments/validator_scaling_v2/tools/presigner_bin
+
+# Environment
+.env
+**/.env
+.env.local
+.env.*.local
+
+# Editor / IDE
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+**/run_log_*.txt
+protocgen.log
+
+# Misc
+.dir-locals.el
+*.aux

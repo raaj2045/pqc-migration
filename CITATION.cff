@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated paper."
+title: "Framework for Migrating Legacy Blockchain Accounts to Post-Quantum Systems"
+authors:
+  - family-names: "Mishra"
+    given-names: "Raaj Anand"
+    affiliation: "Independent Researcher, Hyderabad, Telangana, India"
+  - family-names: "Braeken"
+    given-names: "An"
+    affiliation: "Industrial Department of Engineering and Technology (INDI), Brussel, Belgium"
+  - family-names: "Liyanage"
+    given-names: "Madhusanka"
+    affiliation: "School of Computer Science, University College Dublin, Dublin, Ireland"
+  - family-names: "Kalla"
+    given-names: "Anshuman"
+    affiliation: "Independent Researcher, Surat, Gujarat, India"
+year: 2026
+license: Apache-2.0
+keywords:
+  - post-quantum cryptography
+  - ML-DSA-44
+  - FIPS 204
+  - Cosmos SDK
+  - blockchain migration
+  - cross-chain bridge
+# venue: TBD upon publication
+# doi: TBD upon publication

@@ -1,0 +1,76 @@
+# Minimum-viable CI for the paper artefacts. Builds simd, runs the
+# crypto micro-benchmarks once, and compiles the Ethereum side. Total
+# wall time is well under 10 minutes.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cosmos-and-benchmarks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.5"
+          cache: true
+
+      - name: build simd
+        env:
+          LEDGER_ENABLED: "false"
+        run: |
+          cd cosmos
+          make build
+
+      - name: smoke-test simd
+        run: ./cosmos/build/simd version
+
+      - name: build cosmos
+        run: |
+          cd cosmos
+          go build ./...
+
+      - name: crypto micro-benchmark
+        run: |
+          cd benchmarks/crypto_micro
+          go test -bench=. -benchtime=1x -run=^$ -timeout 5m
+
+      - name: build paper tools
+        run: |
+          cd tools/presigner && go build ./... && cd ../..
+          cd tools/loadgen   && go build ./... && cd ../..
+          cd tools/storage_sim   && go build ./... && cd ../..
+          cd tools/block_packing && go build ./... && cd ../..
+
+  ethereum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ethereum/package-lock.json
+
+      - name: install dependencies
+        run: |
+          cd ethereum
+          npm ci
+
+      - name: compile contracts
+        run: |
+          cd ethereum
+          npx hardhat compile
+
+      - name: run tests
+        run: |
+          cd ethereum
+          npm test
