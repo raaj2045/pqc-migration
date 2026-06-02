@@ -11,7 +11,6 @@ The repository contains a Cosmos SDK fork that adds **ML-DSA-44**
 algorithm, an Ethereum-side Lock-and-Mint bridge, and the benchmark
 and experiment code used to produce every figure in the paper.
 
-[![CI](https://github.com/USER/REPO/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
 
 ## What this repo contains
 

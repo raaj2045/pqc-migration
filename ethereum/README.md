@@ -44,40 +44,32 @@ CI (`.github/workflows/ci.yml`) does the same on every push.
 
 ## Minimal end-to-end demo (lock on Ethereum → mint on Cosmos)
 
-Requires **three terminals** and a built `simd` binary at
-`../cosmos/build/simd`.
+The full, verified bring-up sequence — Cosmos testnet, anvil/Hardhat
+Ethereum node, contract deploy, and relayer — is documented in
+[`../REPRODUCE.md`](../REPRODUCE.md) under "Path B". The Cosmos testnet
+is **not** started with a bare `make testnet-up`: `init_testnet.sh`
+requires pre-signed sender address files, so it is driven through the
+presigner → `emit-addresses` → `init_testnet.sh` flow described there.
+Once the testnet, deployed contract, and relayer are up, firing a
+`lock()` (e.g. via `tools/loadgen/loadgen.js`) produces a relayer
+`event_observed` → `mint_ok` within a few seconds; relayer metrics are
+at `http://127.0.0.1:9464/metrics`.
 
-```bash
-# Terminal 1 — Cosmos testnet (ML-DSA-44, 4 validators)
-cd ../cosmos
-make testnet-up N=4 KEY_TYPE=mldsa44
-make testnet-health N=4
+### Relayer ↔ bridge-authority relationship
 
-# Terminal 2 — Ethereum (Hardhat local node) + contract deployment
-cd ../ethereum
-npx hardhat node        # leave running
+The relayer signs its Cosmos `MsgMint` with the key named by
+`COSMOS_FROM_KEY` (node0 in the demo). On the Cosmos side, the
+`x/lockandmint` module only accepts a mint whose authority equals the
+module's gov-settable `bridge_authority` parameter. `init_testnet.sh`
+sets `bridge_authority` to node0's address precisely so the relayer's
+signing key matches; on any other chain the relayer key and
+`bridge_authority` must be kept in sync (rotate the latter via
+`simd tx lockandmint update-params` through a gov proposal).
 
-# Terminal 2b (another window) — deploy
-npx hardhat ignition deploy ignition/modules/LockAndMint.js \
-  --network localhost --no-prompt
-
-# Terminal 3 — relayer, pointed at node0 of the testnet
-cd ../ethereum
-cp .env.example .env     # edit if you need custom paths
-COSMOS_HOME=../cosmos/docker/testnet/testnet-data/node0/simd \
-COSMOS_NODE=tcp://127.0.0.1:26657 \
-COSMOS_CHAIN_ID=testnet \
-COSMOS_FROM_KEY=node0 \
-COSMOS_CLI_PATH=../cosmos/build/simd \
-node scripts/relayer.js
-
-# Terminal 2b — drive a lock() transaction
-# The loadgen is the easiest way to fire a single lock:
-node tools/loadgen/loadgen.js --rate 1 --duration 2 --accounts 1
-```
-
-You should see the relayer log `event_observed` → `mint_ok` within a few
-seconds. Relayer metrics are exposed at `http://127.0.0.1:9464/metrics`.
+Each mint also carries an `event_id` — the relayer uses the lock
+event's `txHash:logIndex` (its queue correlation id). The chain records
+processed `event_id`s and rejects duplicates, so a replayed or
+re-observed lock event cannot mint twice.
 
 ## Reproducing the paper figures
 

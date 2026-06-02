@@ -25,9 +25,9 @@ outputs with per-tx and per-block accounting.
 ## Re-running
 
 ```bash
-# crypto_micro
-cd crypto_micro && go test -bench=. -benchtime=1x -run=^$ \
-  | python3 parse_results.py - > results.json && python3 plot.py
+# crypto_micro (parse_results.py reads raw_benchmark.txt and writes results.json; it takes no args)
+cd crypto_micro && go test -bench=. -benchtime=1x -run=^$ > raw_benchmark.txt \
+  && python3 parse_results.py && python3 plot.py
 
 # storage_sim
 cd ../../tools/storage_sim && go run . --out ../../benchmarks/storage_sim/
