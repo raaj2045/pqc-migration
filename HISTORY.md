@@ -54,7 +54,3 @@ remotes:
 Their histories were squashed and folded into a single fresh git
 history under this monorepo. The pre-existing remotes are no longer
 the authoritative source; this monorepo is.
-
-If you need a file-level provenance for any specific change, the audit
-history under [`docs/audit_history/`](docs/audit_history/) records the
-state of the experimental work at several discrete checkpoints.

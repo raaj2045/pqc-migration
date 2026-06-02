@@ -172,8 +172,7 @@ verify the figure rendering.
 > **Note on Path B:** the `run_sweep.py` orchestrator brings the
 > Docker testnet up and tears it down per cell. Cell timing,
 > classification, and methodology details are documented in
-> `experiments/validator_scaling_v2/summary.md` and
-> `docs/audit_history/v2_validator_scaling/`.
+> `experiments/validator_scaling_v2/summary.md`.
 
 ---
 

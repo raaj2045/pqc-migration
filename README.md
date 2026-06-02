@@ -21,7 +21,6 @@ and experiment code used to produce every figure in the paper.
 | `benchmarks/`              | Three local benchmarks (crypto micro, storage growth, block packing) — committed PDFs + caption.txt files |
 | `experiments/`             | Multi-validator integration experiments. `validator_scaling_v2/` is the paper's headline experiment with 30 committed result JSONs |
 | `tools/`                   | Paper-specific Go helper tools — pre-signer, RPC loadgen, storage simulator, block-packer |
-| `docs/audit_history/`      | Frozen audit and diagnosis notes from the experimental work             |
 | `REPRODUCE.md`             | Per-figure reproduction recipes — start here if you want to verify the paper |
 
 ## Quick start
@@ -94,15 +93,11 @@ pqc-migration/
 │   ├── validator_scaling_v2/              ← 30-cell sweep (3 N × 5 rates × 2 schemes)
 │   └── cold_sync/                         ← scaffolded, not run (see its README)
 │
-├── tools/
-│   ├── presigner/                         ← Go: builds pre-signed tx pool
-│   ├── loadgen/                           ← Go: pure-stdlib RPC loadgen
-│   ├── storage_sim/                       ← Go: state-growth simulator
-│   └── block_packing/                     ← Go: block-packing analyser
-│
-└── docs/
-    ├── audit_history/                     ← STATUS_AUDIT, figure audits, diagnosis notes
-    └── reviews/                           ← reserved
+└── tools/
+    ├── presigner/                         ← Go: builds pre-signed tx pool
+    ├── loadgen/                           ← Go: pure-stdlib RPC loadgen
+    ├── storage_sim/                       ← Go: state-growth simulator
+    └── block_packing/                     ← Go: block-packing analyser
 ```
 
 ## Hardware used

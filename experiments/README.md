@@ -23,8 +23,8 @@ the committed dataset.
 applies to user-account transaction signing only. Validator consensus
 keys remain ed25519 in every cell. The scheme axis varies the
 signature algorithm of the loadgen senders, **not** the consensus
-algorithm. See `docs/audit_history/v2_validator_scaling/` for the
-full discussion (also captured in `summary.md`).
+algorithm. See `validator_scaling_v2/summary.md` for the full
+discussion.
 
 Reproduction: see [`../REPRODUCE.md`](../REPRODUCE.md) §1 (Path A for
 the figures from existing data, Path B for the full ~5-hour sweep).
@@ -47,8 +47,7 @@ The README in that directory leads with this status note.
 - **Aggregator + plotter**: `validator_scaling_v2/aggregate.py`
 - **Sweep orchestrator**: `validator_scaling_v2/run_sweep.py`
 - **Per-cell integrity verifier**: `validator_scaling_v2/verify.py`
-  (5 per-file invariants; output is in
-  `docs/audit_history/v2_validator_scaling/VERIFY.md`)
+  (checks 5 per-file invariants across the committed result JSONs)
 - **Pre-signed pools**: not committed (1.1 GB). Regenerate via
   `tools/presigner/`. See REPRODUCE.md §1, Path B.
 
