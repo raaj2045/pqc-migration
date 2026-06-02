@@ -372,6 +372,19 @@ jq --arg ba "${NODE0_ADDR}" "
 " "${NODE0}/config/genesis.json" > "${NODE0}/config/genesis.json.tmp"
 mv "${NODE0}/config/genesis.json.tmp" "${NODE0}/config/genesis.json"
 
+# 7c. testnet only - shorten gov flows for verification: drop voting periods to
+#     30s and min_deposit to 10stake so a MsgUpdateParams gov proposal can be
+#     proposed, voted, and pass within a verification run. Production chains keep
+#     the upstream defaults (days-long voting, large deposits).
+jq "
+  .app_state.gov.params.voting_period = \"30s\"
+  | .app_state.gov.params.expedited_voting_period = \"15s\"
+  | .app_state.gov.params.max_deposit_period = \"30s\"
+  | .app_state.gov.params.min_deposit = [{denom: \"stake\", amount: \"10\"}]
+  | .app_state.gov.params.expedited_min_deposit = [{denom: \"stake\", amount: \"20\"}]
+" "${NODE0}/config/genesis.json" > "${NODE0}/config/genesis.json.tmp"
+mv "${NODE0}/config/genesis.json.tmp" "${NODE0}/config/genesis.json"
+
 # 8. Validate assembled genesis.
 simd genesis validate --home "${NODE0}" >/dev/null
 
