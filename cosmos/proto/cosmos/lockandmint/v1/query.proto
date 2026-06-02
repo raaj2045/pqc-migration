@@ -2,6 +2,7 @@ syntax = "proto3";
 package cosmos.lockandmint.v1;
 
 import "cosmos/lockandmint/v1/state.proto";
+import "cosmos/lockandmint/v1/params.proto";
 
 option go_package = "github.com/cosmos/cosmos-sdk/x/lockandmint/types";
 
@@ -15,6 +16,9 @@ service Query {
 
   // GetLockedBalance returns only the locked balance of an account
   rpc GetLockedBalance(QueryLockedBalanceRequest) returns (QueryLockedBalanceResponse);
+
+  // Params returns the module parameters
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse);
 }
 
 message QueryAccountDetailsRequest {
@@ -39,4 +43,10 @@ message QueryLockedBalanceRequest {
 
 message QueryLockedBalanceResponse {
   string locked_balance = 1;
+}
+
+message QueryParamsRequest {}
+
+message QueryParamsResponse {
+  Params params = 1;
 }

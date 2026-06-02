@@ -73,3 +73,19 @@ func (qs queryServer) GetLockedBalance(goCtx context.Context, req *types.QueryLo
 		LockedBalance: account.LockedBalance,
 	}, nil
 }
+
+// Params returns the module parameters
+func (qs queryServer) Params(goCtx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
+	params, err := qs.GetParams(goCtx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryParamsResponse{
+		Params: &params,
+	}, nil
+}
