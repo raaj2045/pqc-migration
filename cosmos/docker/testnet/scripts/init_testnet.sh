@@ -362,6 +362,16 @@ done
 # 7. Collect all gentxs into node0 genesis.
 simd genesis collect-gentxs --home "${NODE0}" 2>&1 | tail -20
 
+# 7b. Set the lockandmint bridge authority to the node0 address. node0 is the key
+#     the relayer signs MsgMint with, so it must be the gov-settable bridge
+#     authority for mints to pass the authority check. Gov can rotate this later
+#     via MsgUpdateParams without a chain upgrade.
+NODE0_ADDR=$(simd keys show node0 -a --keyring-backend test --home "${NODE0}")
+jq --arg ba "${NODE0_ADDR}" "
+  .app_state.lockandmint.params = {bridge_authority: \$ba}
+" "${NODE0}/config/genesis.json" > "${NODE0}/config/genesis.json.tmp"
+mv "${NODE0}/config/genesis.json.tmp" "${NODE0}/config/genesis.json"
+
 # 8. Validate assembled genesis.
 simd genesis validate --home "${NODE0}" >/dev/null
 

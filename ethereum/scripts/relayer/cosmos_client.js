@@ -15,9 +15,9 @@ const { fromHex } = require("@cosmjs/encoding");
 
 const MSG_MINT_TYPE_URL = "/cosmos.lockandmint.v1.MsgMint";
 
-// Hand-rolled protobuf codec for MsgMint { authority, receiver, amount }.
-// Field tags: authority=1, receiver=2, amount=3 — all wire-type 2 (length-
-// delimited string). cosmjs's Registry calls .encode(msg).finish() so we
+// Hand-rolled protobuf codec for MsgMint { authority, receiver, amount, event_id }.
+// Field tags: authority=1, receiver=2, amount=3, event_id=4 — all wire-type 2
+// (length-delimited string). cosmjs's Registry calls .encode(msg).finish() so we
 // use the BufferWriter from protobufjs that comes with cosmjs-types.
 const { Writer, Reader } = require("protobufjs/minimal");
 
@@ -34,18 +34,22 @@ const MsgMint = {
     if (message.amount !== undefined && message.amount !== "") {
       writer.uint32(26).string(message.amount);
     }
+    if (message.eventId !== undefined && message.eventId !== "") {
+      writer.uint32(34).string(message.eventId);
+    }
     return writer;
   },
   decode(input, length) {
     const reader = input instanceof Reader ? input : new Reader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = { authority: "", receiver: "", amount: "" };
+    const message = { authority: "", receiver: "", amount: "", eventId: "" };
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: message.authority = reader.string(); break;
         case 2: message.receiver = reader.string(); break;
         case 3: message.amount = reader.string(); break;
+        case 4: message.eventId = reader.string(); break;
         default: reader.skipType(tag & 7);
       }
     }
@@ -56,6 +60,7 @@ const MsgMint = {
       authority: object.authority ?? "",
       receiver: object.receiver ?? "",
       amount: object.amount ?? "",
+      eventId: object.eventId ?? "",
     };
   },
 };
@@ -92,10 +97,10 @@ class CosmosGrpcClient {
   // and accountNumber to bypass the chain-state lookup — required because
   // cosmos-sdk reads sequence from committed state, which is the whole
   // reason we cache it locally.
-  async submitMint({ authority, receiver, amount, sequence, accountNumber, fee, memo }) {
+  async submitMint({ authority, receiver, amount, eventId, sequence, accountNumber, fee, memo }) {
     const msgs = [{
       typeUrl: MSG_MINT_TYPE_URL,
-      value: { authority, receiver, amount: String(amount) },
+      value: { authority, receiver, amount: String(amount), eventId },
     }];
     const signerData = {
       accountNumber,

@@ -68,3 +68,42 @@ func (k Keeper) GetUserAccountOrCreate(ctx context.Context, address string) type
 	}
 	return account
 }
+
+// SetParams stores the module parameters
+func (k Keeper) SetParams(ctx context.Context, params types.Params) {
+	store := k.storeService.OpenKVStore(ctx)
+	bz := k.cdc.MustMarshal(&params)
+	store.Set(types.ParamsKey(), bz)
+}
+
+// GetParams retrieves the module parameters. Returns zero-value Params if unset.
+func (k Keeper) GetParams(ctx context.Context) (types.Params, error) {
+	store := k.storeService.OpenKVStore(ctx)
+	bz, err := store.Get(types.ParamsKey())
+	if err != nil {
+		return types.Params{}, err
+	}
+	if bz == nil {
+		return types.Params{}, nil
+	}
+
+	var params types.Params
+	k.cdc.MustUnmarshal(bz, &params)
+	return params, nil
+}
+
+// HasProcessedEvent reports whether a source lock-event id has already been minted
+func (k Keeper) HasProcessedEvent(ctx context.Context, eventID string) bool {
+	store := k.storeService.OpenKVStore(ctx)
+	bz, err := store.Get(types.ProcessedEventKey(eventID))
+	if err != nil || bz == nil {
+		return false
+	}
+	return true
+}
+
+// SetProcessedEvent marks a source lock-event id as minted (replay protection)
+func (k Keeper) SetProcessedEvent(ctx context.Context, eventID string) {
+	store := k.storeService.OpenKVStore(ctx)
+	store.Set(types.ProcessedEventKey(eventID), []byte{1})
+}

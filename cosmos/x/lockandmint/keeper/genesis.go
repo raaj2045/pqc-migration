@@ -12,6 +12,13 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) {
 	for _, account := range genState.Accounts {
 		k.SetUserAccount(ctx, *account)
 	}
+
+	// Store module params (default to zero-value if unset)
+	params := types.Params{}
+	if genState.Params != nil {
+		params = *genState.Params
+	}
+	k.SetParams(ctx, params)
 }
 
 // ExportGenesis returns the module's exported genesis
@@ -31,6 +38,13 @@ func (k Keeper) ExportGenesis(ctx context.Context) *types.GenesisState {
 		k.cdc.MustUnmarshal(iterator.Value(), &account)
 		genesis.Accounts = append(genesis.Accounts, &account)
 	}
+
+	// Export module params
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		panic(err)
+	}
+	genesis.Params = &params
 
 	return genesis
 }

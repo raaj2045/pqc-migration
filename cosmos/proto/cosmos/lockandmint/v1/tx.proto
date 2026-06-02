@@ -2,6 +2,7 @@ syntax = "proto3";
 package cosmos.lockandmint.v1;
 
 import "cosmos/msg/v1/msg.proto";
+import "cosmos/lockandmint/v1/params.proto";
 
 option go_package = "github.com/cosmos/cosmos-sdk/x/lockandmint/types";
 
@@ -12,6 +13,7 @@ service Msg {
   rpc Lock(MsgLock) returns (MsgLockResponse);
   rpc Mint(MsgMint) returns (MsgMintResponse);
   rpc SetBalance(MsgSetBalance) returns (MsgSetBalanceResponse);
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
 }
 
 // MsgLock locks a specified amount from user's balance
@@ -31,6 +33,7 @@ message MsgMint {
   string authority = 1; // Admin/governance address
   string receiver  = 2;
   string amount    = 3;
+  string event_id  = 4; // Unique source lock-event id for replay protection
 }
 
 message MsgMintResponse {}
@@ -45,3 +48,14 @@ message MsgSetBalance {
 }
 
 message MsgSetBalanceResponse {}
+
+// MsgUpdateParams sets the lockandmint module parameters. Gov-gated: the
+// signer must equal the module's gov authority.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1; // Module gov authority
+  Params params    = 2;
+}
+
+message MsgUpdateParamsResponse {}

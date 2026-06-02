@@ -76,16 +76,31 @@ func (ms msgServer) Lock(goCtx context.Context, msg *types.MsgLock) (*types.MsgL
 func (ms msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMintResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	// Check authority
-	// if ms.GetAuthority() != msg.Authority {
-	// 	return nil, types.ErrUnauthorized
-	// }
+	// Check bridge authority (the gov-settable relayer key, distinct from the
+	// module's gov authority).
+	params, err := ms.GetParams(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if params.BridgeAuthority != msg.Authority {
+		return nil, types.ErrUnauthorized
+	}
 
 	// Parse amount
 	amount, ok := math.NewIntFromString(msg.Amount)
 	if !ok || amount.IsNegative() {
 		return nil, types.ErrInvalidAmount
 	}
+
+	// Replay protection: every mint must carry a unique source lock-event id,
+	// and each id may be minted at most once.
+	if msg.EventId == "" {
+		return nil, types.ErrMissingEventID
+	}
+	if ms.HasProcessedEvent(ctx, msg.EventId) {
+		return nil, types.ErrEventAlreadyProcessed
+	}
+	ms.SetProcessedEvent(ctx, msg.EventId)
 
 	// Get receiver account
 	account := ms.GetUserAccountOrCreate(ctx, msg.Receiver)
@@ -149,4 +164,24 @@ func (ms msgServer) SetBalance(goCtx context.Context, msg *types.MsgSetBalance) 
 	)
 
 	return &types.MsgSetBalanceResponse{}, nil
+}
+
+// UpdateParams handles MsgUpdateParams - gov-gated update of module parameters
+// (e.g. rotating the bridge authority). The signer must be the module's gov
+// authority, which is distinct from the bridge authority it sets.
+func (ms msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	// Only the module's gov authority may update params
+	if ms.GetAuthority() != msg.Authority {
+		return nil, types.ErrUnauthorized
+	}
+
+	params := types.Params{}
+	if msg.Params != nil {
+		params = *msg.Params
+	}
+	ms.SetParams(ctx, params)
+
+	return &types.MsgUpdateParamsResponse{}, nil
 }

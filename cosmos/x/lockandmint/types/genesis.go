@@ -4,6 +4,7 @@ package types
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
 		Accounts: []*UserAccount{},
+		Params:   &Params{BridgeAuthority: ""},
 	}
 }
 

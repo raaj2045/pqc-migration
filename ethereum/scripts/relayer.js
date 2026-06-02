@@ -375,6 +375,7 @@ class CrossChainRelayer {
       timestamp: row.lock_timestamp,
       blockNumber: row.eth_block_number,
       transactionHash: row.eth_tx_hash,
+      eventId: row.correlation_id,
     };
     const outcome = await this.mintOnCosmos(lockEvent);
     if (outcome && outcome.ok === false) {
@@ -439,6 +440,7 @@ class CrossChainRelayer {
           authority: this.signerAddress,
           receiver: lockEvent.cosmosReceiver,
           amount: lockEvent.amount,
+          eventId: lockEvent.eventId,
           sequence: seq,
           accountNumber: acct,
           fee,

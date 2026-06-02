@@ -2,6 +2,7 @@ syntax = "proto3";
 package cosmos.lockandmint.v1;
 
 import "cosmos/lockandmint/v1/state.proto";
+import "cosmos/lockandmint/v1/params.proto";
 
 option go_package = "github.com/cosmos/cosmos-sdk/x/lockandmint/types";
 
@@ -9,4 +10,6 @@ option go_package = "github.com/cosmos/cosmos-sdk/x/lockandmint/types";
 message GenesisState {
   // List of all user accounts
   repeated UserAccount accounts = 1;
+  // Module parameters
+  Params params = 2;
 }
