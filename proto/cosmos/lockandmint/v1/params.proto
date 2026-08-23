@@ -1,0 +1,14 @@
+syntax = "proto3";
+package cosmos.lockandmint.v1;
+
+option go_package = "github.com/raaj2045/pqchain-v2/x/lockandmint/types";
+
+// Params defines the lockandmint module parameters.
+message Params {
+  // bridge_authority is the address permitted to submit MsgMint (the relayer
+  // key). Governance can rotate it via MsgUpdateParams without a chain upgrade.
+  //
+  // NOTE: this field is ported as-is (gov-settable params pattern preserved),
+  // but nothing currently reads it as a gate on Mint. See MsgMint in tx.proto.
+  string bridge_authority = 1;
+}

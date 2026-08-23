@@ -1,0 +1,15 @@
+# Local configuration — copy devnet.env.example and edit.
+devnet.env
+
+# Dependencies and build artifacts.
+node_modules
+__pycache__/
+*.pyc
+
+# Hand-off files written between steps live in $DEVNET_DIR, but tolerate them
+# here in case DEVNET_DIR is pointed at this directory.
+redeem-send.json
+redeem-recv.json
+redeem-ack.json
+msg-*.json
+*.log

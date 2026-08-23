@@ -69,3 +69,8 @@ protocgen.log
 # Misc
 .dir-locals.el
 *.aux
+
+# Compiled tool binaries (built by `go build` in tools/*).
+/tools/block_packing/block_packing
+/tools/loadgen/loadgen
+/tools/storage_sim/storage_sim

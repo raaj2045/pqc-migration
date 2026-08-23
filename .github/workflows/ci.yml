@@ -1,6 +1,13 @@
-# Minimum-viable CI for the paper artefacts. Builds simd, runs the
-# crypto micro-benchmarks once, and compiles the Ethereum side. Total
-# wall time is well under 10 minutes.
+# Minimum-viable CI for the paper artefacts. Builds the chain, runs its
+# tests, and builds the standalone paper tools. Total wall time is well
+# under 10 minutes.
+#
+# NOTE: benchmarks/crypto_micro and tools/presigner are not built here.
+# Both import github.com/cosmos/cosmos-sdk/crypto/keys/mldsa via a
+# `replace` onto the deleted cosmos/ fork. Stock SDK v0.55 ships
+# crypto/keys/mldsa65 instead, so they need source changes (a different
+# package and a different ML-DSA parameter set) rather than a dropped
+# replace directive. Tracked with the paper rewrite.
 name: ci
 
 on:
@@ -10,9 +17,36 @@ on:
     branches: [main]
 
 jobs:
-  cosmos-and-benchmarks:
+  chain:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.5"
+          cache: true
+
+      # The 08-wasm BLS verifier links against herumi/bls-eth-go-binary,
+      # which needs libstdc++ at link time. See docs/building.md.
+      - name: install libstdc++
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++
+
+      - name: build chain
+        run: go build ./...
+
+      - name: test chain
+        run: go test ./...
+
+      - name: smoke-test pqchaind
+        run: |
+          go build -o /tmp/pqchaind ./cmd/pqchaind
+          /tmp/pqchaind version
+
+  tools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -21,56 +55,8 @@ jobs:
           go-version: "1.23.5"
           cache: true
 
-      - name: build simd
-        env:
-          LEDGER_ENABLED: "false"
-        run: |
-          cd cosmos
-          make build
-
-      - name: smoke-test simd
-        run: ./cosmos/build/simd version
-
-      - name: build cosmos
-        run: |
-          cd cosmos
-          go build ./...
-
-      - name: crypto micro-benchmark
-        run: |
-          cd benchmarks/crypto_micro
-          go test -bench=. -benchtime=1x -run=^$ -timeout 5m
-
       - name: build paper tools
         run: |
-          cd tools/presigner && go build ./... && cd ../..
-          cd tools/loadgen   && go build ./... && cd ../..
+          cd tools/loadgen       && go build ./... && cd ../..
           cd tools/storage_sim   && go build ./... && cd ../..
           cd tools/block_packing && go build ./... && cd ../..
-
-  ethereum:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: ethereum/package-lock.json
-
-      - name: install dependencies
-        run: |
-          cd ethereum
-          npm ci
-
-      - name: compile contracts
-        run: |
-          cd ethereum
-          npx hardhat compile
-
-      - name: run tests
-        run: |
-          cd ethereum
-          npm test
