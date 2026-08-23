@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite the associated paper."
 title: "Framework for Migrating Legacy Blockchain Accounts to Post-Quantum Systems"
-repository-code: "https://anonymous.4open.science/r/pqc-migration"
+repository-code: "https://github.com/raaj2045/pqc-migration"
 authors:
   - family-names: "Mishra"
     given-names: "Raaj Anand"
@@ -19,7 +19,7 @@ year: 2026
 license: Apache-2.0
 keywords:
   - post-quantum cryptography
-  - ML-DSA-44
+  - ML-DSA-65
   - FIPS 204
   - Cosmos SDK
   - blockchain migration
