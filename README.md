@@ -7,10 +7,11 @@ signatures, plus the artefacts for the associated paper.
 
 The chain is built on **stock Cosmos SDK v0.55 / CometBFT v0.40**, which
 ships native ML-DSA-65 account keys — no SDK fork required. It carries
-the `lockandmint` bridge module and IBC v2 (Eureka), bridged to Ethereum
-through the `cw-ics08-wasm-eth` light client running inside 08-wasm, so
-cross-chain transfers are verified against real Ethereum consensus
-rather than a trusted relayer authority.
+IBC v2 (Eureka), bridged to Ethereum through the `cw-ics08-wasm-eth`
+light client running inside 08-wasm, so cross-chain transfers are
+verified against real Ethereum consensus rather than a trusted relayer
+authority. All asset transfer goes through ICS-20 over those verified
+light clients; there is no custom bridge module.
 
 ```bash
 go build ./...
@@ -26,9 +27,8 @@ go test ./...
 |---|---|
 | `app/` | Application wiring, including the `emptyValueDB` store fix |
 | `cmd/pqchaind/` | Node binary |
-| `proto/`, `x/lockandmint/` | The bridge module and its protobuf definitions |
 | `devnet/` | Devnet tooling: relayer, redemption cycle, light-client helpers |
-| `docs/` | Operational notes |
+| `docs/` | Operational notes, and the formal-verification case study |
 | `benchmarks/`, `experiments/` | Raw data and plot scripts for the paper figures |
 | `tools/` | Simulators and load-generation tooling |
 
@@ -45,11 +45,19 @@ go test ./...
   directory must be deterministic.
 - [devnet/README.md](devnet/README.md) — the transfer and redemption
   cycle against a local Ethereum devnet.
+- [docs/formal-verification-case-study/](docs/formal-verification-case-study/)
+  — TLA+/TLC analysis of the retired `x/lockandmint` bridge module, kept as
+  a worked example of what formal verification catches.
 
 `devnet/` is JavaScript and Python only. It is not a Go package and is
 invisible to `go build ./...`.
 
 ## Status
+
+`x/lockandmint`, the original custom bridge module, has been retired; all
+asset transfer now goes through ICS-20 over verified light clients. Its
+formal-verification results are kept as a
+[case study](docs/formal-verification-case-study/).
 
 `benchmarks/crypto_micro` and `tools/presigner` measure **ML-DSA-44**
 from the superseded fork, not the ML-DSA-65 implementation this

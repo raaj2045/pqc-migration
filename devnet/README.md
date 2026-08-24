@@ -73,7 +73,8 @@ node step-redeem-recv.js --replay
 Resubmitting an identical proof is an **idempotent no-op, not an error**: the
 transaction returns `code 0` and consumes gas, but the packet receipt prevents
 any state change — no token callback, no second acknowledgement, balances
-unmoved. This differs from `lockandmint`'s `event_id` check, which hard-errors.
+unmoved. Replay safety here comes from the packet receipt, not from an
+application-level identifier check.
 
 ## Timing
 

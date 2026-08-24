@@ -23,7 +23,8 @@ import (
 //
 // ML-DSA-44: parameter set defined in NIST FIPS 204. Sizes match
 // github.com/cloudflare/circl/sign/mldsa/mldsa44 (PublicKeySize=1312,
-// SignatureSize=2420) which is the library used by x/lockandmint in this repo.
+// SignatureSize=2420). Retained at the ML-DSA-44 parameter set the published
+// figures were measured against; see docs/formal-verification-case-study/.
 const (
 	Secp256k1PubKeyBytes = 33
 	Secp256k1SigBytes    = 64
@@ -55,8 +56,8 @@ const AccountStateOverhead = 100
 
 // MsgBodySizes lists serialized bytes for common Cosmos SDK messages at
 // typical field values. Values are conservative averages measured against the
-// generated proto types in the SDK (x/bank, x/staking, x/gov, x/wasm or
-// x/lockandmint for "migration").
+// generated proto types in the SDK (x/bank, x/staking, x/gov, x/wasm, and a
+// custom bridge module for "migration").
 //
 //   transfer  (MsgSend):              ~80  B (2 bech32 addresses + 1 Coin)
 //   migration (MsgMigrate/RedeemWETH): ~200 B (includes payload bytes)

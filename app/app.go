@@ -74,23 +74,19 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/tx/signing"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
+	ibcwasm "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11"
+	"github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/blsverifier"
+	ibcwasmkeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
+	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	ibctransfer "github.com/cosmos/ibc-go/v11/modules/apps/transfer"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v11/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	ibctransferv2 "github.com/cosmos/ibc-go/v11/modules/apps/transfer/v2"
 	ibc "github.com/cosmos/ibc-go/v11/modules/core"
+	porttypes "github.com/cosmos/ibc-go/v11/modules/core/05-port/types"
 	ibcapi "github.com/cosmos/ibc-go/v11/modules/core/api"
 	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v11/modules/core/keeper"
-	porttypes "github.com/cosmos/ibc-go/v11/modules/core/05-port/types"
-	ibcwasm "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11"
-	"github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/blsverifier"
-	ibcwasmkeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
-	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
-
-	lockandmintkeeper "github.com/raaj2045/pqchain-v2/x/lockandmint/keeper"
-	lockandmintmodule "github.com/raaj2045/pqchain-v2/x/lockandmint/module"
-	lockandminttypes "github.com/raaj2045/pqchain-v2/x/lockandmint/types"
 )
 
 const appName = "PQChain"
@@ -125,18 +121,14 @@ var (
 // capabilities aren't needed for testing.
 //
 // Module set is deliberately minimal: auth, bank, staking, gov,
-// distribution, slashing, lockandmint, IBC core (classic + v2/Eureka
-// routers) + ICS-20 transfer + 08-wasm light-client module, plus the
+// distribution, slashing, IBC core (classic + v2/Eureka routers),
+// ICS-20 transfer and the 08-wasm light-client module, plus the
 // infra modules every v0.55 chain needs (consensus, for BaseApp's param
 // store; genutil, for gentx/InitGenesis). No mint, no upgrade, no
 // evidence, no authz, no feegrant, no epochs — those are later phases.
 // Only the 08-wasm client route is registered (no 07-tendermint,
 // solomachine, or attestations light clients) — this chain only needs
 // to verify Ethereum, not other Cosmos chains, via classic light clients.
-//
-// lockandmint's Mint handler is NOT gated by bridge_authority in this
-// port (see x/lockandmint/keeper/msg_server.go) — a proof-verification
-// gate is planned for a later phase.
 //
 // IBC's core keeper requires a non-empty clienttypes.UpgradeKeeper (it
 // panics on an empty one — see ibckeeper.NewKeeper). Since we don't wire
@@ -161,7 +153,6 @@ type App struct {
 	DistrKeeper           distrkeeper.Keeper
 	GovKeeper             govkeeper.Keeper
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
-	LockAndMintKeeper     lockandmintkeeper.Keeper
 	IBCKeeper             *ibckeeper.Keeper // must be a pointer so SetRouter/SetRouterV2 mutate the same instance
 	TransferKeeper        *ibctransferkeeper.Keeper
 	WasmClientKeeper      ibcwasmkeeper.Keeper
@@ -268,7 +259,6 @@ func NewApp(
 		slashingtypes.StoreKey,
 		govtypes.StoreKey,
 		consensusparamtypes.StoreKey,
-		lockandminttypes.StoreKey,
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
 		ibcwasmtypes.StoreKey,
@@ -408,17 +398,6 @@ func NewApp(
 		),
 	)
 
-	// LockAndMintKeeper's authority is the gov module account — same pattern
-	// as every other keeper's admin functions (MsgUpdateParams). This gates
-	// MsgUpdateParams only; MsgMint is intentionally left ungated in this
-	// port (see x/lockandmint/keeper/msg_server.go).
-	app.LockAndMintKeeper = lockandmintkeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[lockandminttypes.StoreKey]),
-		logger,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-	)
-
 	// IBC transfer keeper (ICS-20), and the classic + v2/Eureka routers.
 	app.TransferKeeper = ibctransferkeeper.NewKeeper(
 		appCodec,
@@ -500,7 +479,6 @@ func NewApp(
 		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper),
 		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
 		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
-		lockandmintmodule.NewAppModule(appCodec, app.LockAndMintKeeper),
 		ibc.NewAppModule(app.IBCKeeper),
 		ibctransfer.NewAppModule(app.TransferKeeper),
 		ibcwasm.NewAppModule(app.WasmClientKeeper),
@@ -560,7 +538,6 @@ func NewApp(
 		ibctransfertypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		ibcwasmtypes.ModuleName,
-		lockandminttypes.ModuleName,
 	}
 
 	exportModuleOrder := []string{
@@ -575,7 +552,6 @@ func NewApp(
 		genutiltypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		ibcwasmtypes.ModuleName,
-		lockandminttypes.ModuleName,
 	}
 
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)

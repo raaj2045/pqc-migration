@@ -1,0 +1,3 @@
+# TLC output is evidence for the case study, not build noise.
+# Overrides the root .gitignore rule "*.out".
+!results/*.out

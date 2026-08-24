@@ -1,0 +1,77 @@
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+Running breadth-first search Model-Checking with fp 23 and seed -2687376629555463477 with 12 workers on 12 cores with 3454MB heap and 64MB offheap memory [pid: 15196] (Linux 5.15.167.4-microsoft-standard-WSL2 amd64, Eclipse Adoptium 21.0.12.1 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/raaj2045/pqc-migration/formal/LockAndMintEventId.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Parsing file /tmp/TLC.tla
+Parsing file /tmp/Naturals.tla
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module LockAndMintEventId
+Starting... (2026-08-24 08:20:34)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-08-24 08:20:35.
+Error: Invariant NoCreditWithoutEventId is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ balance = (a1 :> 0 @@ a2 :> 0)
+/\ processed = {}
+/\ history = <<>>
+/\ locked = (a1 :> 0 @@ a2 :> 0)
+
+State 2: <Mint line 91, col 5 to line 98, col 23 of module LockAndMintEventId>
+/\ balance = (a1 :> 0 @@ a2 :> 0)
+/\ processed = {e1}
+/\ history = << [ kind |-> "mint",
+     account |-> a1,
+     amount |-> 0,
+     event |-> e1,
+     verified |-> FALSE ] >>
+/\ locked = (a1 :> 0 @@ a2 :> 0)
+
+State 3: <Mint line 91, col 5 to line 98, col 23 of module LockAndMintEventId>
+/\ balance = (a1 :> 0 @@ a2 :> 0)
+/\ processed = {e1, e2}
+/\ history = << [ kind |-> "mint",
+     account |-> a1,
+     amount |-> 0,
+     event |-> e1,
+     verified |-> FALSE ],
+   [ kind |-> "mint",
+     account |-> a2,
+     amount |-> 0,
+     event |-> e2,
+     verified |-> FALSE ] >>
+/\ locked = (a1 :> 0 @@ a2 :> 0)
+
+State 4: <SetBalance line 108, col 5 to line 112, col 38 of module LockAndMintEventId>
+/\ balance = (a1 :> 0 @@ a2 :> 0)
+/\ processed = {e1, e2}
+/\ history = << [ kind |-> "mint",
+     account |-> a1,
+     amount |-> 0,
+     event |-> e1,
+     verified |-> FALSE ],
+   [ kind |-> "mint",
+     account |-> a2,
+     amount |-> 0,
+     event |-> e2,
+     verified |-> FALSE ],
+   [ kind |-> "setbalance",
+     account |-> a1,
+     amount |-> 0,
+     event |-> "none",
+     verified |-> FALSE ] >>
+/\ locked = (a1 :> 0 @@ a2 :> 0)
+
+49 states generated, 49 distinct states found, 25 states left on queue.
+The depth of the complete state graph search is 4.
+Finished in 00s at (2026-08-24 08:20:35)
+
+real	0m0.677s
+user	0m0.757s
+sys	0m0.137s
