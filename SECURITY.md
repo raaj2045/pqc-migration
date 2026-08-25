@@ -21,10 +21,8 @@ Specifically:
   for local testing.
 - A custom bridge module, `x/lockandmint`, was retired from this chain.
   Its `Mint` and `SetBalance` handlers performed no proof verification
-  and no authority check. The specification, model-checking results and
-  counterexamples are retained as a case study in
-  [`docs/formal-verification-case-study/`](docs/formal-verification-case-study/);
-  the code is no longer part of the system.
+  and no authority check. The code is no longer part of the system; all
+  asset transfer now goes through ICS-20 over light clients.
 - The pre-funded test accounts and devnet default keys in this repo are
   documented as such and **must never** be reused on any network where
   they hold real value.

@@ -4,13 +4,11 @@ A TLA+ model of the transfer path this chain **actually runs** — ICS-20
 over IBC v2 (Eureka), with packet commitments verified against a light
 client — checked with two independent model checkers.
 
-This is the companion to the
-[retired-module case study](../formal-verification-case-study/), and the
-contrast is the point. That study modelled `x/lockandmint`, a custom bridge
-module, and found real defects: it minted without verifying any proof and
-without checking any authority. This one models the code that replaced it.
-The invariants that failed there hold here, and the reason they hold is
-visible in the model rather than asserted.
+The custom bridge module this path replaced, `x/lockandmint`, was retired
+after modelling showed it credited without verifying any proof. This model
+asks whether the ICS-20 path that replaced it has the property that one
+lacked — and the reason it holds is visible in the model rather than
+asserted.
 
 ## Running
 
@@ -110,8 +108,7 @@ Neither touches the transition relation.
 ## Results
 
 Every invariant holds under both tools. Nothing was violated, so there are no
-counterexamples in this directory — unlike the retired-module study, where
-there are three.
+counterexamples in this directory.
 
 | Invariant | TLC 2.19 | Apalache 0.62.1 |
 |---|---|---|
@@ -148,8 +145,8 @@ result than one.
 - **`NoCreditWithoutVerifiedPacket`** — `recvPacket` calls `VerifyMembership`
   before `SetPacketReceipt`, and the credit happens downstream of both. The
   adversarial relayer modelled by `RecvPacketRejected` cannot reach the
-  credit. This is precisely the invariant `x/lockandmint` violated: its
-  `Mint` handler performed no proof verification at all.
+  credit. This is precisely the property the retired `x/lockandmint` module
+  lacked: its `Mint` handler performed no proof verification at all.
 - **`NoDoublePacketProcessing`** — the receipt check precedes verification and
   short-circuits with `ErrNoOpMsg`. Because the receipt is committed even on
   application failure, a failed transfer cannot be replayed.

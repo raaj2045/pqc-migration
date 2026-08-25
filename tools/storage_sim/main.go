@@ -24,7 +24,7 @@ import (
 // ML-DSA-44: parameter set defined in NIST FIPS 204. Sizes match
 // github.com/cloudflare/circl/sign/mldsa/mldsa44 (PublicKeySize=1312,
 // SignatureSize=2420). Retained at the ML-DSA-44 parameter set the published
-// figures were measured against; see docs/formal-verification-case-study/.
+// figures were measured against; see the "Known gaps" section of REPRODUCE.md.
 const (
 	Secp256k1PubKeyBytes = 33
 	Secp256k1SigBytes    = 64

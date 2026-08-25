@@ -98,9 +98,9 @@ runs in production for the Ethereum path. Fuzzing the contract's internals
 requires a Rust harness (`cargo-fuzz` or `proptest`) against the
 `ethereum-light-client` crate, and has not been done.
 
-**2. Upstream consensus verification is a trusted assumption.** As with the
-formal-verification case study, the correctness of the light clients' own
-consensus checking — sync-committee/BLS verification in `cw-ics08-wasm-eth`,
+**2. Upstream consensus verification is a trusted assumption.** As in
+[`docs/live-path-verification/`](../docs/live-path-verification/), the
+correctness of the light clients' own consensus checking — sync-committee/BLS verification in `cw-ics08-wasm-eth`,
 and `SP1ICS07Tendermint` on the EVM side — is assumed rather than re-derived.
 Note also that the devnet deployment uses a **mock** SP1 verifier, which
 performs no proof checking at all.
