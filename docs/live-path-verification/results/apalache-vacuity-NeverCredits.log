@@ -1,0 +1,81 @@
+# Usage statistics is OFF. We care about your privacy.
+# If you want to help our project, consider enabling statistics with config --enable-stats=true.
+
+Output directory: /home/raaj2045/pqc-migration/docs/live-path-verification/tmp/LivePathApalache.tla/2026-08-25T19-23-11_13911887054288085329
+# APALACHE version: 0.62.1 | build: a321771                       I@19:23:11.853
+Tuning:                                                           I@19:23:11.859
+PASS #0: SanyParser                                               I@19:23:12.028
+PASS #1: TypeCheckerSnowcat                                       I@19:23:12.283
+ > Running Snowcat .::.                                           I@19:23:12.283
+ > Your types are purrfect!                                       I@19:23:12.687
+ > All expressions are typed                                      I@19:23:12.687
+PASS #2: ConfigurationPass                                        I@19:23:12.688
+  > Set the initialization predicate to Init                      I@19:23:12.691
+  > Set the transition predicate to Next                          I@19:23:12.692
+  > Set the constant initialization predicate to ConstInit        I@19:23:12.692
+  > Set an invariant to NeverCredits                              I@19:23:12.692
+PASS #3: DesugarerPass                                            I@19:23:12.695
+  > Desugaring...                                                 I@19:23:12.695
+PASS #4: InlinePass                                               I@19:23:12.833
+Leaving only relevant operators: ConstInit, ConstInitPrimed, Init, InitPrimed, NeverCredits, Next I@19:23:12.834
+PASS #5: TemporalPass                                             I@19:23:12.869
+  > Rewriting temporal operators...                               I@19:23:12.869
+  > No temporal property specified, nothing to encode             I@19:23:12.869
+PASS #6: InlinePass                                               I@19:23:12.869
+Leaving only relevant operators: ConstInit, ConstInitPrimed, Init, InitPrimed, NeverCredits, Next I@19:23:12.870
+PASS #7: PrimingPass                                              I@19:23:12.874
+  > Introducing ConstInitPrimed for ConstInit'                    I@19:23:12.876
+  > Introducing InitPrimed for Init'                              I@19:23:12.882
+PASS #8: VCGen                                                    I@19:23:12.883
+  > Producing verification conditions from the invariant NeverCredits I@19:23:12.884
+  > VCGen produced 1 verification condition(s)                    I@19:23:12.887
+PASS #9: PreprocessingPass                                        I@19:23:12.890
+  > Before preprocessing: unique renaming                         I@19:23:12.890
+ > Applying standard transformations:                             I@19:23:12.894
+  > PrimePropagation                                              I@19:23:12.895
+  > Desugarer                                                     I@19:23:12.896
+  > UniqueRenamer                                                 I@19:23:12.899
+  > Normalizer                                                    I@19:23:12.902
+  > SetMembershipSimplifier                                       I@19:23:12.905
+  > Keramelizer                                                   I@19:23:12.907
+  > After preprocessing: UniqueRenamer                            I@19:23:12.910
+PASS #10: TransitionFinderPass                                    I@19:23:12.913
+  > Found 1 initializing transitions                              I@19:23:12.938
+  > Found 6 transitions                                           I@19:23:12.947
+  > Found constant initializer ConstInit                          I@19:23:12.948
+  > Applying unique renaming                                      I@19:23:12.949
+PASS #11: OptimizationPass                                        I@19:23:12.951
+ > Applying optimizations:                                        I@19:23:12.954
+  > ConstSimplifier                                               I@19:23:12.955
+  > ExprOptimizer                                                 I@19:23:12.959
+  > SetMembershipSimplifier                                       I@19:23:12.961
+  > ConstSimplifier                                               I@19:23:12.962
+PASS #12: AnalysisPass                                            I@19:23:12.965
+ > Marking skolemizable existentials and sets to be expanded...   I@19:23:12.966
+  > Skolemization                                                 I@19:23:12.966
+  > Expansion                                                     I@19:23:12.967
+  > Remove unused let-in defs                                     I@19:23:12.969
+ > Running analyzers...                                           I@19:23:12.971
+  > Introduced expression grades                                  I@19:23:12.973
+PASS #13: BoundedChecker                                          I@19:23:12.973
+State 0: Checking 1 state invariants                              I@19:23:13.248
+State 0: state invariant 0 holds.                                 I@19:23:13.254
+Step 0: picking a transition out of 1 transition(s)               I@19:23:13.256
+Step 1: Transition #4 is disabled                                 I@19:23:13.348
+Step 1: Transition #5 is disabled                                 I@19:23:13.360
+Step 1: picking a transition out of 4 transition(s)               I@19:23:13.361
+Step 2: Transition #4 is disabled                                 I@19:23:13.436
+Step 2: Transition #5 is disabled                                 I@19:23:13.446
+Step 2: picking a transition out of 4 transition(s)               I@19:23:13.447
+Step 3: Transition #4 is disabled                                 I@19:23:13.504
+Step 3: Transition #5 is disabled                                 I@19:23:13.513
+Step 3: picking a transition out of 4 transition(s)               I@19:23:13.513
+State 4: Checking 1 state invariants                              I@19:23:13.574
+Check the trace in: /home/raaj2045/pqc-migration/docs/live-path-verification/tmp/LivePathApalache.tla/2026-08-25T19-23-11_13911887054288085329/violation1.tla, /home/raaj2045/pqc-migration/docs/live-path-verification/tmp/LivePathApalache.tla/2026-08-25T19-23-11_13911887054288085329/MCviolation1.out, /home/raaj2045/pqc-migration/docs/live-path-verification/tmp/LivePathApalache.tla/2026-08-25T19-23-11_13911887054288085329/violation1.json, /home/raaj2045/pqc-migration/docs/live-path-verification/tmp/LivePathApalache.tla/2026-08-25T19-23-11_13911887054288085329/violation1.itf.json I@19:23:13.746
+State 4: state invariant 0 violated.                              I@19:23:13.747
+Found 1 error(s)                                                  I@19:23:13.748
+The outcome is: Error                                             I@19:23:13.750
+Checker has found an error                                        I@19:23:13.773
+It took me 0 days  0 hours  0 min  1 sec                          I@19:23:13.773
+Total time: 1.917 sec                                             I@19:23:13.773
+EXITCODE: ERROR (12)

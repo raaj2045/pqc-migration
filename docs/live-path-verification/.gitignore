@@ -1,0 +1,8 @@
+# Model-checker output is evidence for this study, not build noise.
+# Overrides the root .gitignore rules "*.out" (TLC) and "*.log" (Apalache).
+!results/*.out
+!results/*.log
+
+# Apalache intermediate output (timestamped run directories).
+tmp/
+_apalache-out/

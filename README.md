@@ -48,6 +48,9 @@ go test ./...
 - [docs/formal-verification-case-study/](docs/formal-verification-case-study/)
   — TLA+/TLC analysis of the retired `x/lockandmint` bridge module, kept as
   a worked example of what formal verification catches.
+- [docs/live-path-verification/](docs/live-path-verification/) — TLA+ model of
+  the ICS-20 / light-client path the chain actually runs, checked with both
+  TLC and Apalache.
 
 `devnet/` is JavaScript and Python only. It is not a Go package and is
 invisible to `go build ./...`.

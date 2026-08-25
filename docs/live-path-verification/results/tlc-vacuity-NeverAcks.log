@@ -1,0 +1,97 @@
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+Warning: Please run the Java VM which executes TLC with a throughput optimized garbage collector by passing the "-XX:+UseParallelGC" property.
+(Use the -nowarning option to disable this warning.)
+Running breadth-first search Model-Checking with fp 85 and seed -576029681512172610 with 12 workers on 12 cores with 3886MB heap and 64MB offheap memory [pid: 58074] (Linux 5.15.167.4-microsoft-standard-WSL2 amd64, Eclipse Adoptium 21.0.12.1 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/raaj2045/pqc-migration/docs/live-path-verification/LivePath.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Parsing file /tmp/TLC.tla
+Parsing file /tmp/Naturals.tla
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module LivePath
+Starting... (2026-08-25 19:40:29)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-08-25 19:40:29.
+Error: Invariant NeverAcks is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ credited = {}
+/\ balA = 30
+/\ committedAt = <<{}, {}, {}>>
+/\ ackedA = {}
+/\ trusted = {}
+/\ escrow = 0
+/\ receipts = {}
+/\ commitments = <<FALSE, FALSE>>
+/\ vouchers = 0
+/\ height = 1
+
+State 2: <SendTransfer line 69, col 5 to line 75, col 87 of module LivePath>
+/\ credited = {}
+/\ balA = 20
+/\ committedAt = <<{}, {}, {}>>
+/\ ackedA = {}
+/\ trusted = {}
+/\ escrow = 10
+/\ receipts = {}
+/\ commitments = <<TRUE, FALSE>>
+/\ vouchers = 0
+/\ height = 1
+
+State 3: <Advance line 80, col 5 to line 85, col 58 of module LivePath>
+/\ credited = {}
+/\ balA = 20
+/\ committedAt = <<{}, {1}, {}>>
+/\ ackedA = {}
+/\ trusted = {}
+/\ escrow = 10
+/\ receipts = {}
+/\ commitments = <<TRUE, FALSE>>
+/\ vouchers = 0
+/\ height = 2
+
+State 4: <UpdateClient line 96, col 5 to line 101, col 57 of module LivePath>
+/\ credited = {}
+/\ balA = 20
+/\ committedAt = <<{}, {1}, {}>>
+/\ ackedA = {}
+/\ trusted = {2}
+/\ escrow = 10
+/\ receipts = {}
+/\ commitments = <<TRUE, FALSE>>
+/\ vouchers = 0
+/\ height = 2
+
+State 5: <RecvPacket line 121, col 5 to line 127, col 36 of module LivePath>
+/\ credited = {1}
+/\ balA = 20
+/\ committedAt = <<{}, {1}, {}>>
+/\ ackedA = {}
+/\ trusted = {2}
+/\ escrow = 10
+/\ receipts = {1}
+/\ commitments = <<TRUE, FALSE>>
+/\ vouchers = 10
+/\ height = 2
+
+State 6: <AckPacket line 140, col 5 to line 146, col 46 of module LivePath>
+/\ credited = {1}
+/\ balA = 20
+/\ committedAt = <<{}, {1}, {}>>
+/\ ackedA = {1}
+/\ trusted = {2}
+/\ escrow = 10
+/\ receipts = {1}
+/\ commitments = <<FALSE, FALSE>>
+/\ vouchers = 10
+/\ height = 2
+
+1182 states generated, 219 distinct states found, 70 states left on queue.
+The depth of the complete state graph search is 8.
+The average outdegree of the complete state graph is 2 (minimum is 0, the maximum 5 and the 95th percentile is 4).
+Finished in 00s at (2026-08-25 19:40:29)

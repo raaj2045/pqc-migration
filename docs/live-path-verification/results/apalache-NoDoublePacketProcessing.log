@@ -1,0 +1,115 @@
+# Usage statistics is OFF. We care about your privacy.
+# If you want to help our project, consider enabling statistics with config --enable-stats=true.
+
+Output directory: /home/raaj2045/pqc-migration/docs/live-path-verification/tmp/LivePathApalache.tla/2026-08-25T19-22-39_867381996868044890
+# APALACHE version: 0.62.1 | build: a321771                       I@19:22:39.241
+Tuning:                                                           I@19:22:39.247
+PASS #0: SanyParser                                               I@19:22:39.414
+PASS #1: TypeCheckerSnowcat                                       I@19:22:39.673
+ > Running Snowcat .::.                                           I@19:22:39.673
+ > Your types are purrfect!                                       I@19:22:40.058
+ > All expressions are typed                                      I@19:22:40.059
+PASS #2: ConfigurationPass                                        I@19:22:40.059
+  > Set the initialization predicate to Init                      I@19:22:40.062
+  > Set the transition predicate to Next                          I@19:22:40.062
+  > Set the constant initialization predicate to ConstInit        I@19:22:40.062
+  > Set an invariant to NoDoublePacketProcessing                  I@19:22:40.063
+PASS #3: DesugarerPass                                            I@19:22:40.066
+  > Desugaring...                                                 I@19:22:40.066
+PASS #4: InlinePass                                               I@19:22:40.195
+Leaving only relevant operators: ConstInit, ConstInitPrimed, Init, InitPrimed, Next, NoDoublePacketProcessing I@19:22:40.195
+PASS #5: TemporalPass                                             I@19:22:40.236
+  > Rewriting temporal operators...                               I@19:22:40.236
+  > No temporal property specified, nothing to encode             I@19:22:40.236
+PASS #6: InlinePass                                               I@19:22:40.236
+Leaving only relevant operators: ConstInit, ConstInitPrimed, Init, InitPrimed, Next, NoDoublePacketProcessing I@19:22:40.236
+PASS #7: PrimingPass                                              I@19:22:40.240
+  > Introducing ConstInitPrimed for ConstInit'                    I@19:22:40.241
+  > Introducing InitPrimed for Init'                              I@19:22:40.245
+PASS #8: VCGen                                                    I@19:22:40.245
+  > Producing verification conditions from the invariant NoDoublePacketProcessing I@19:22:40.246
+  > VCGen produced 2 verification condition(s)                    I@19:22:40.249
+PASS #9: PreprocessingPass                                        I@19:22:40.253
+  > Before preprocessing: unique renaming                         I@19:22:40.253
+ > Applying standard transformations:                             I@19:22:40.257
+  > PrimePropagation                                              I@19:22:40.258
+  > Desugarer                                                     I@19:22:40.259
+  > UniqueRenamer                                                 I@19:22:40.262
+  > Normalizer                                                    I@19:22:40.265
+  > SetMembershipSimplifier                                       I@19:22:40.268
+  > Keramelizer                                                   I@19:22:40.272
+  > After preprocessing: UniqueRenamer                            I@19:22:40.276
+PASS #10: TransitionFinderPass                                    I@19:22:40.279
+  > Found 1 initializing transitions                              I@19:22:40.297
+  > Found 6 transitions                                           I@19:22:40.306
+  > Found constant initializer ConstInit                          I@19:22:40.306
+  > Applying unique renaming                                      I@19:22:40.308
+PASS #11: OptimizationPass                                        I@19:22:40.311
+ > Applying optimizations:                                        I@19:22:40.315
+  > ConstSimplifier                                               I@19:22:40.315
+  > ExprOptimizer                                                 I@19:22:40.319
+  > SetMembershipSimplifier                                       I@19:22:40.320
+  > ConstSimplifier                                               I@19:22:40.321
+PASS #12: AnalysisPass                                            I@19:22:40.323
+ > Marking skolemizable existentials and sets to be expanded...   I@19:22:40.325
+  > Skolemization                                                 I@19:22:40.325
+  > Expansion                                                     I@19:22:40.326
+  > Remove unused let-in defs                                     I@19:22:40.328
+ > Running analyzers...                                           I@19:22:40.330
+  > Introduced expression grades                                  I@19:22:40.333
+PASS #13: BoundedChecker                                          I@19:22:40.334
+State 0: Checking 2 state invariants                              I@19:22:40.623
+State 0: state invariant 0 holds.                                 I@19:22:40.629
+State 0: state invariant 1 holds.                                 I@19:22:40.631
+Step 0: picking a transition out of 1 transition(s)               I@19:22:40.632
+Step 1: Transition #4 is disabled                                 I@19:22:40.725
+Step 1: Transition #5 is disabled                                 I@19:22:40.738
+Step 1: picking a transition out of 4 transition(s)               I@19:22:40.739
+Step 2: Transition #4 is disabled                                 I@19:22:40.823
+Step 2: Transition #5 is disabled                                 I@19:22:40.832
+Step 2: picking a transition out of 4 transition(s)               I@19:22:40.833
+Step 3: Transition #4 is disabled                                 I@19:22:40.895
+Step 3: Transition #5 is disabled                                 I@19:22:40.901
+Step 3: picking a transition out of 4 transition(s)               I@19:22:40.901
+State 4: Checking 2 state invariants                              I@19:22:40.966
+State 4: state invariant 0 holds.                                 I@19:22:40.969
+State 4: state invariant 1 holds.                                 I@19:22:40.971
+Step 4: Transition #5 is disabled                                 I@19:22:40.978
+Step 4: picking a transition out of 5 transition(s)               I@19:22:40.979
+State 5: Checking 2 state invariants                              I@19:22:41.060
+State 5: state invariant 0 holds.                                 I@19:22:41.064
+State 5: state invariant 1 holds.                                 I@19:22:41.065
+Step 5: picking a transition out of 6 transition(s)               I@19:22:41.074
+State 6: Checking 2 state invariants                              I@19:22:41.152
+State 6: state invariant 0 holds.                                 I@19:22:41.157
+State 6: state invariant 1 holds.                                 I@19:22:41.161
+Step 6: picking a transition out of 6 transition(s)               I@19:22:41.184
+State 7: Checking 2 state invariants                              I@19:22:41.273
+State 7: state invariant 0 holds.                                 I@19:22:41.279
+State 7: state invariant 1 holds.                                 I@19:22:41.282
+Step 7: picking a transition out of 6 transition(s)               I@19:22:41.319
+State 8: Checking 2 state invariants                              I@19:22:41.414
+State 8: state invariant 0 holds.                                 I@19:22:41.425
+State 8: state invariant 1 holds.                                 I@19:22:41.429
+Step 8: picking a transition out of 6 transition(s)               I@19:22:41.461
+State 9: Checking 2 state invariants                              I@19:22:41.609
+State 9: state invariant 0 holds.                                 I@19:22:41.622
+State 9: state invariant 1 holds.                                 I@19:22:41.631
+Step 9: picking a transition out of 6 transition(s)               I@19:22:41.660
+State 10: Checking 2 state invariants                             I@19:22:41.780
+State 10: state invariant 0 holds.                                I@19:22:41.834
+State 10: state invariant 1 holds.                                I@19:22:41.848
+Step 10: picking a transition out of 6 transition(s)              I@19:22:41.902
+State 11: Checking 2 state invariants                             I@19:22:42.109
+State 11: state invariant 0 holds.                                I@19:22:42.138
+State 11: state invariant 1 holds.                                I@19:22:42.156
+Step 11: picking a transition out of 6 transition(s)              I@19:22:42.190
+State 12: Checking 2 state invariants                             I@19:22:42.451
+State 12: state invariant 0 holds.                                I@19:22:42.485
+State 12: state invariant 1 holds.                                I@19:22:42.511
+Step 12: picking a transition out of 6 transition(s)              I@19:22:42.549
+The outcome is: NoError                                           I@19:22:42.581
+Checker reports no error up to computation length 12              I@19:22:42.582
+It took me 0 days  0 hours  0 min  3 sec                          I@19:22:42.582
+Total time: 3.339 sec                                             I@19:22:42.582
+EXITCODE: OK
