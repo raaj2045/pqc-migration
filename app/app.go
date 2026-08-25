@@ -634,7 +634,15 @@ func (app *App) setAnteHandler(txConfig client.TxConfig) {
 		panic(err)
 	}
 
-	app.SetAnteHandler(anteHandler)
+	// Guard the SDK ante chain: it calls pk.Address() on the
+	// transaction-supplied key, which requires a well-formed ML-DSA-65 key.
+	// See RejectMalformedPubKeys in ante.go.
+	app.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+		if err := RejectMalformedPubKeys(tx); err != nil {
+			return ctx, err
+		}
+		return anteHandler(ctx, tx, simulate)
+	})
 }
 
 func (app *App) setPostHandler() {
