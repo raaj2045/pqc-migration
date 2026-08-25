@@ -1,0 +1,10 @@
+# Fuzz crashers are deliberately not committed.
+#
+# Go replays testdata/fuzz/<Target>/* as seeds on every plain `go test`, so a
+# committed crasher is a permanently failing test. That is the right outcome
+# for a defect we can fix — and the wrong one for a defect in an upstream
+# dependency that we cannot.
+#
+# Crashers for unresolved third-party defects are kept out of the repository
+# entirely rather than merely out of the corpus. See README.md.
+testdata/fuzz/
