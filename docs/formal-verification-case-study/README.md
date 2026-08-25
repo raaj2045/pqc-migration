@@ -204,6 +204,13 @@ side. This model takes their verdicts as trusted inputs rather than
 re-deriving them. Note that `x/lockandmint` does not currently consult those
 clients at all, which is precisely what `NoUnverifiedMint` detects.
 
+**Also out of scope, and worth stating alongside the above.** The Rust internals
+of the Ethereum light client — its Merkle-Patricia proof walker, RLP decoding
+and BLS sync-committee verification — are neither modelled here nor fuzzed by
+[`security/`](../../security/), which is a Go harness and sees the contract only
+as opaque bytes. Covering them requires a Rust fuzzing harness against the
+`ethereum-light-client` crate. See [`security/README.md`](../../security/README.md#scope).
+
 **Not modelled, because absent from the module.** There is no `SubmitHeader`
 action, no stored headers or consensus states, and no burn-proof/redemption
 handler in `x/lockandmint`. `grep -riE "proof|header|consensus"` over the
