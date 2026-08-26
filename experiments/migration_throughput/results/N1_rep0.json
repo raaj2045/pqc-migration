@@ -1,0 +1,31 @@
+{
+  "rate": NaN,
+  "burst_n": 1,
+  "repeat": 0,
+  "duration_s": 472.77046608924866,
+  "offered": 1,
+  "submitted": 1,
+  "committed": 1,
+  "credited": 1,
+  "acked": 1,
+  "failed": 0,
+  "windows_used": 1,
+  "started_at": 1787679917.506573,
+  "finished_at": 1787680390.2770355,
+  "seconds_per_slot": 6,
+  "slots_per_epoch": 32,
+  "packets": [
+    {
+      "seq": 0,
+      "amount": 1000,
+      "submit_ts": 1787679917.6964605,
+      "commit_ts": 1787679920.9057827,
+      "credit_ts": 1787679939.0718915,
+      "ack_ts": 1787680390.2751746,
+      "window_id": 0,
+      "tx_hash": "E525C56102C020949CA28E7C45B4AF18F8F9F694FDA2C78CF05D3B73B71256AC",
+      "status": "acked",
+      "error": ""
+    }
+  ]
+}

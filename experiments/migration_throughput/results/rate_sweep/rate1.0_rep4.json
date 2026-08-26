@@ -1,0 +1,54 @@
+{
+  "rate": 1.0,
+  "repeat": 4,
+  "duration_s": 10.0,
+  "offered": 3,
+  "submitted": 3,
+  "committed": 0,
+  "credited": 3,
+  "acked": 3,
+  "failed": 0,
+  "windows_used": 1,
+  "started_at": 1787676375.4475174,
+  "finished_at": 1787676957.7572246,
+  "seconds_per_slot": 6,
+  "slots_per_epoch": 32,
+  "packets": [
+    {
+      "seq": 0,
+      "amount": 1000,
+      "submit_ts": 1787676375.576382,
+      "commit_ts": 1787676390.4894533,
+      "credit_ts": 1787676403.4667017,
+      "ack_ts": 1787676950.97659,
+      "window_id": 0,
+      "tx_hash": "B5DF716E47166077D5D535D1A356CC98AFF5E03709B0908027C1665599B25CA8",
+      "status": "acked",
+      "error": ""
+    },
+    {
+      "seq": 1,
+      "amount": 1000,
+      "submit_ts": 1787676380.5615013,
+      "commit_ts": 1787676390.6125937,
+      "credit_ts": 1787676414.5816896,
+      "ack_ts": 1787676954.6209302,
+      "window_id": 0,
+      "tx_hash": "460C136BC86AB3E4557313645747DDB9F9C0EBF51813521C4D9E0433E237B1CA",
+      "status": "acked",
+      "error": ""
+    },
+    {
+      "seq": 2,
+      "amount": 1000,
+      "submit_ts": 1787676385.4163952,
+      "commit_ts": 1787676390.7430997,
+      "credit_ts": 1787676427.3474963,
+      "ack_ts": 1787676957.7547503,
+      "window_id": 0,
+      "tx_hash": "788DDCFA37B1CF1FF7D6770AC6ADF39B1164DDA3625386E793034E0481933A81",
+      "status": "acked",
+      "error": ""
+    }
+  ]
+}

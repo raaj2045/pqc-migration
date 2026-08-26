@@ -1,0 +1,79 @@
+{
+  "rate": NaN,
+  "burst_n": 5,
+  "repeat": 0,
+  "duration_s": 604.5612161159515,
+  "offered": 5,
+  "submitted": 5,
+  "committed": 5,
+  "credited": 5,
+  "acked": 5,
+  "failed": 0,
+  "windows_used": 1,
+  "started_at": 1787682695.1481757,
+  "finished_at": 1787683299.7093892,
+  "seconds_per_slot": 6,
+  "slots_per_epoch": 32,
+  "packets": [
+    {
+      "seq": 0,
+      "amount": 1000,
+      "submit_ts": 1787682695.2759416,
+      "commit_ts": 1787682720.2463043,
+      "credit_ts": 1787682735.8764968,
+      "ack_ts": 1787683279.9503531,
+      "window_id": 0,
+      "tx_hash": "C601F62969BC85B4429BEAA575C09AB94F616BDBCBC4A640FA77512CE63E72A6",
+      "status": "acked",
+      "error": ""
+    },
+    {
+      "seq": 1,
+      "amount": 1000,
+      "submit_ts": 1787682698.3307087,
+      "commit_ts": 1787682720.3891637,
+      "credit_ts": 1787682744.6704,
+      "ack_ts": 1787683283.2502334,
+      "window_id": 0,
+      "tx_hash": "4068E07130C1231AB59C21DD46265CBB4DF8694D90781D001B6E938501C27313",
+      "status": "acked",
+      "error": ""
+    },
+    {
+      "seq": 2,
+      "amount": 1000,
+      "submit_ts": 1787682703.228354,
+      "commit_ts": 1787682720.5323184,
+      "credit_ts": 1787682757.4159503,
+      "ack_ts": 1787683288.7340593,
+      "window_id": 0,
+      "tx_hash": "B72CDEEF4BE33947E93C458DC99A74DB62ED2B0175CBF48A8C1DCBC0E9AD9E0D",
+      "status": "acked",
+      "error": ""
+    },
+    {
+      "seq": 3,
+      "amount": 1000,
+      "submit_ts": 1787682708.1264603,
+      "commit_ts": 1787682720.6741037,
+      "credit_ts": 1787682768.3874779,
+      "ack_ts": 1787683294.2326946,
+      "window_id": 0,
+      "tx_hash": "A56745CA39EBD8689370333556942C458FE42A20B373D6647642F6177139C368",
+      "status": "acked",
+      "error": ""
+    },
+    {
+      "seq": 4,
+      "amount": 1000,
+      "submit_ts": 1787682712.995256,
+      "commit_ts": 1787682720.8072972,
+      "credit_ts": 1787682781.1371741,
+      "ack_ts": 1787683299.7067635,
+      "window_id": 0,
+      "tx_hash": "BD33DCDEF0D26B953A6D6D228F7DF233D79CC96E25720B440E0669934942C33C",
+      "status": "acked",
+      "error": ""
+    }
+  ]
+}

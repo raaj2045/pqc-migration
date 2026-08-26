@@ -1,0 +1,29 @@
+{
+  "done": [
+    "N1_rep1",
+    "N1_rep2",
+    "N1_rep3",
+    "N1_rep4",
+    "N5_rep0",
+    "N5_rep1",
+    "N5_rep2",
+    "N5_rep3",
+    "N5_rep4",
+    "N10_rep0",
+    "N10_rep1",
+    "N10_rep2",
+    "N10_rep3",
+    "N10_rep4",
+    "N20_rep0",
+    "N20_rep1",
+    "N20_rep2",
+    "N20_rep3",
+    "N20_rep4",
+    "N40_rep0",
+    "N40_rep1",
+    "N40_rep2",
+    "N40_rep3",
+    "N40_rep4"
+  ],
+  "failed": []
+}

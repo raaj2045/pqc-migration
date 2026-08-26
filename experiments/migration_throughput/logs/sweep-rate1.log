@@ -1,0 +1,13 @@
+[1/5] rate1.0_rep0: running (elapsed 0.00h)
+[1/5] rate1.0_rep0: ok
+[2/5] rate1.0_rep1: running (elapsed 0.13h)
+[2/5] rate1.0_rep1: ok
+[3/5] rate1.0_rep2: running (elapsed 0.29h)
+[3/5] rate1.0_rep2: ok
+[4/5] rate1.0_rep3: running (elapsed 0.46h)
+[4/5] rate1.0_rep3: ok
+[5/5] rate1.0_rep4: running (elapsed 0.61h)
+[5/5] rate1.0_rep4: ok
+aggregated 5 runs
+saturation: not reached — per-window count still scaling at the highest rate tested; saturation not reached within the swept range
+sweep complete: 5 cells, 0 failed

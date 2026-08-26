@@ -1,0 +1,4 @@
+# Per-cell sweep logs are evidence, not build noise: they record the finality
+# epoch transitions (e.g. "window 0: acked 40/40 (epoch 150 -> 153)") that the
+# result JSONs do not capture. Overrides the root .gitignore rule "*.log".
+!logs/*.log

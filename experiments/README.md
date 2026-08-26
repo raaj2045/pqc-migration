@@ -6,6 +6,7 @@ chain end-to-end.
 | Sub-directory             | Status               | What it measures                                                                                                  |
 |---------------------------|----------------------|-------------------------------------------------------------------------------------------------------------------|
 | `validator_scaling_v2/`   | **Headline** (paper) | 30-cell sweep across N ∈ {4, 7, 16} validators × target tx-rate ∈ {10, 50, 100, 200, 500} × scheme ∈ {secp256k1, mldsa44}. Produces Figs. 9-12 of the paper. |
+| `migration_throughput/`   | **Complete** (paper) | Batching on the live bridge: transfers acknowledged per finality window across N ∈ {1, 5, 10, 20, 40} packets offered per window, 5 repeats each. 1,000 transfers, 0 failures. |
 | `cold_sync/`              | Scaffolded, not run  | Block-sync replay time on a fresh full node — see the explicit "scaffolded, not yet run" notice in its README.    |
 
 ## `validator_scaling_v2/`
@@ -29,6 +30,31 @@ discussion.
 Reproduction: see [`../REPRODUCE.md`](../REPRODUCE.md) §1 (Path A for
 the figures from existing data, Path B for the full ~5-hour sweep).
 
+## `migration_throughput/`
+
+Sustained ICS-20 throughput on the **live** bridge — ML-DSA-65 accounts on
+Cosmos, packets verified by the real `cw-ics08-wasm-eth` light client against a
+Kurtosis Ethereum devnet, with no shortcut around finality.
+
+The headline is *transfers acknowledged per finality window*, swept against N,
+the number of packets offered into one window. Scaling is exactly 1:1 across
+N = 1 → 40 with zero variance, so amortised gas per transfer falls from 929,688
+(339 % of the per-packet marginal cost) to 23,242 (8 %) — the
+`MsgUpdateClient`-per-window versus `MsgAcknowledgement`-per-packet asymmetry,
+measured directly.
+
+No batching ceiling was found within the tested range. Its README explains why
+the round trip is measured rather than the forward leg (the forward leg runs a
+mock verifier on this devnet), why the independent variable is packets-per-
+window rather than submission rate, and where the harness's own limits lie.
+
+`results/rate_sweep/` holds a second, independent result: latency is a property
+of the finality window, not of the packet.
+
+Unlike `validator_scaling_v2/`, this experiment needs a live devnet — a
+Kurtosis Ethereum enclave plus a running Cosmos chain with an instantiated
+light client — so it cannot be re-run from committed data alone.
+
 ## `cold_sync/`
 
 Cold-sync was scaffolded — `run_cold_sync.py` and `aggregate.py` are
@@ -40,7 +66,8 @@ The README in that directory leads with this status note.
 
 ## What lives where
 
-- **Raw run data**: `validator_scaling_v2/results/*.json`
+- **Raw run data**: `validator_scaling_v2/results/*.json`,
+  `migration_throughput/results/*.json`
 - **Per-cell CPU timeseries**: `validator_scaling_v2/cpu_samples/`
 - **Per-cell sweep logs**: `validator_scaling_v2/logs/`
 - **Sweep state for resume**: `validator_scaling_v2/sweep_state.json`

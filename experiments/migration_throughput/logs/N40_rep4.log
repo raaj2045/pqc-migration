@@ -1,0 +1,7 @@
+04:27:21 [N=40 repeat=4] submitting burst
+04:30:41   burst of 40: submitted 40/40 in 200.5s (0.20/s achieved)
+04:30:46   committed 40/40
+04:39:03   forward leg: credited 40/40
+04:39:03   window 0: acking 40 packets (finalized epoch 150)
+04:47:39   window 0: acked 40/40 (epoch 150 -> 153)
+04:47:39 wrote /home/raaj2045/pqc-migration/experiments/migration_throughput/results/N40_rep4.json  acked=40/40 credited=40 windows=1

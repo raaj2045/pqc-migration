@@ -1,0 +1,7 @@
+01:38:06 [N=10 repeat=4] submitting burst
+01:38:51   burst of 10: submitted 10/10 in 45.2s (0.22/s achieved)
+01:38:53   committed 10/10
+01:40:49   forward leg: credited 10/10
+01:40:49   window 0: acking 10 packets (finalized epoch 95)
+01:50:32   window 0: acked 10/10 (epoch 95 -> 98)
+01:50:32 wrote /home/raaj2045/pqc-migration/experiments/migration_throughput/results/N10_rep4.json  acked=10/10 credited=10 windows=1

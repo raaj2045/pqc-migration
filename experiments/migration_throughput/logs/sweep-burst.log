@@ -1,0 +1,60 @@
+[1/25] N1_rep0: skip (done)
+[2/25] N1_rep1: running (elapsed 0.00h)
+[2/25] N1_rep1: ok
+[3/25] N1_rep2: running (elapsed 0.16h)
+[3/25] N1_rep2: ok
+[4/25] N1_rep3: running (elapsed 0.32h)
+[4/25] N1_rep3: ok
+[5/25] N1_rep4: running (elapsed 0.48h)
+[5/25] N1_rep4: ok
+aggregated 5 runs
+saturation: not reached — acks/window still scaling at the largest N tested; the batching ceiling is above the swept range
+[6/25] N5_rep0: running (elapsed 0.64h)
+[6/25] N5_rep0: ok
+[7/25] N5_rep1: running (elapsed 0.80h)
+[7/25] N5_rep1: ok
+[8/25] N5_rep2: running (elapsed 0.96h)
+[8/25] N5_rep2: ok
+[9/25] N5_rep3: running (elapsed 1.13h)
+[9/25] N5_rep3: ok
+[10/25] N5_rep4: running (elapsed 1.28h)
+[10/25] N5_rep4: ok
+aggregated 10 runs
+saturation: not reached — acks/window still scaling at the largest N tested; the batching ceiling is above the swept range
+[11/25] N10_rep0: running (elapsed 1.44h)
+[11/25] N10_rep0: ok
+[12/25] N10_rep1: running (elapsed 1.65h)
+[12/25] N10_rep1: ok
+[13/25] N10_rep2: running (elapsed 1.86h)
+[13/25] N10_rep2: ok
+[14/25] N10_rep3: running (elapsed 2.03h)
+[14/25] N10_rep3: ok
+[15/25] N10_rep4: running (elapsed 2.24h)
+[15/25] N10_rep4: ok
+aggregated 15 runs
+saturation: not reached — acks/window still scaling at the largest N tested; the batching ceiling is above the swept range
+[16/25] N20_rep0: running (elapsed 2.45h)
+[16/25] N20_rep0: ok
+[17/25] N20_rep1: running (elapsed 2.68h)
+[17/25] N20_rep1: ok
+[18/25] N20_rep2: running (elapsed 2.93h)
+[18/25] N20_rep2: ok
+[19/25] N20_rep3: running (elapsed 3.16h)
+[19/25] N20_rep3: ok
+[20/25] N20_rep4: running (elapsed 3.42h)
+[20/25] N20_rep4: ok
+aggregated 20 runs
+saturation: not reached — acks/window still scaling at the largest N tested; the batching ceiling is above the swept range
+[21/25] N40_rep0: running (elapsed 3.68h)
+[21/25] N40_rep0: ok
+[22/25] N40_rep1: running (elapsed 4.01h)
+[22/25] N40_rep1: ok
+[23/25] N40_rep2: running (elapsed 4.37h)
+[23/25] N40_rep2: ok
+[24/25] N40_rep3: running (elapsed 4.71h)
+[24/25] N40_rep3: ok
+[25/25] N40_rep4: running (elapsed 5.06h)
+[25/25] N40_rep4: ok
+aggregated 25 runs
+saturation: not reached — acks/window still scaling at the largest N tested; the batching ceiling is above the swept range
+sweep complete: 24 cells, 0 failed

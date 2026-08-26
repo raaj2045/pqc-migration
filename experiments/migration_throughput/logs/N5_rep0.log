@@ -1,0 +1,7 @@
+00:01:35 [N=5 repeat=0] submitting burst
+00:02:00   burst of 5: submitted 5/5 in 24.8s (0.20/s achieved)
+00:02:00   committed 5/5
+00:03:01   forward leg: credited 5/5
+00:03:01   window 0: acking 5 packets (finalized epoch 64)
+00:11:39   window 0: acked 5/5 (epoch 64 -> 67)
+00:11:39 wrote /home/raaj2045/pqc-migration/experiments/migration_throughput/results/N5_rep0.json  acked=5/5 credited=5 windows=1

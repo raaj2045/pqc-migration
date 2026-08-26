@@ -1,0 +1,7 @@
+21:47:26 [rate=1.0/s repeat=1] submitting for 10s
+21:47:38   offered 3 transfers over 10s (target 1.0/s, achieved 0.30/s)
+21:47:38   committed 3/3
+21:48:15   forward leg: credited 3/3
+21:48:15   window 0: acking 3 packets (finalized epoch 22)
+21:56:58   window 0: acked 3/3 (epoch 22 -> 25)
+21:56:58 wrote /home/raaj2045/pqc-migration/experiments/migration_throughput/results/rate1.0_rep1.json  acked=3/3 credited=3 windows=1

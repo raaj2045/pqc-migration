@@ -1,0 +1,7 @@
+23:51:59 [N=1 repeat=4] submitting burst
+23:52:03   burst of 1: submitted 1/1 in 3.2s (0.31/s achieved)
+23:52:03   committed 1/1
+23:52:20   forward leg: credited 1/1
+23:52:20   window 0: acking 1 packets (finalized epoch 61)
+00:01:35   window 0: acked 1/1 (epoch 61 -> 64)
+00:01:35 wrote /home/raaj2045/pqc-migration/experiments/migration_throughput/results/N1_rep4.json  acked=1/1 credited=1 windows=1
