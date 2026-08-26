@@ -83,6 +83,18 @@ as seeds on every plain `go test`, which makes them permanently failing tests â€
 the correct outcome for a defect we can fix, and the wrong one for a defect in
 a dependency we cannot. `security/.gitignore` keeps them out of the tree.
 
+## Live-devnet stress tests
+
+[`light-client-stress/`](light-client-stress/) holds adversarial submissions
+against the real Ethereum light client â€” tampered state roots, tampered block
+numbers, and proofs against non-finalized blocks. All were rejected; controls
+before and after confirm the client was functional throughout.
+
+Those require a live devnet and are run by hand, unlike the fuzz targets here,
+which run in CI. Their README also names what they do *not* establish: the
+finality test submits a non-finalized header directly rather than producing a
+genuine reorg, which this single-validator-client topology cannot do.
+
 ## Scope
 
 Three boundaries are deliberately **not** covered here. Each is a limitation of
