@@ -100,13 +100,6 @@ published results are expected to hold unchanged — but they have not been
 re-executed. The harness needs a live devnet, and rebuilding one solely for this
 is not warranted. **Run it the next time a devnet is up for another reason.**
 
-**The EVM deployment script lives outside this repository.**
-`Phase4aDeploy.s.sol` is kept in the `solidity-ibc-eureka` checkout
-(`ibc-solidity/scripts/`), not here, so the change that deploys the real
-`SP1VerifierGroth16` and stops constructing `SP1ICS07Tendermint` inline is not
-under this repo's version control. `devnet/README.md` documents what that script
-must do; anyone reproducing the bridge needs to apply it there.
-
 ## Known gaps — ML-DSA-44 modules retained for historical reference
 
 **`benchmarks/crypto_micro` and `tools/presigner` measure ML-DSA-44 from
