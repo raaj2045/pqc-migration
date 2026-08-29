@@ -29,6 +29,19 @@ async function sendTx(contract, method, args, overrides = {}) {
   return tx.wait();
 }
 
+// Send pre-encoded calldata (e.g. a proof-api relay multicall) to `to`.
+// Shares the nonce map with sendTx so the two can be interleaved safely.
+async function sendRawTx(signer, to, data, overrides = {}) {
+  const from = await signer.getAddress();
+  if (!nonces.has(from)) {
+    nonces.set(from, await signer.provider.getTransactionCount(from, "pending"));
+  }
+  const nonce = nonces.get(from);
+  nonces.set(from, nonce + 1);
+  const tx = await signer.sendTransaction({ to, data, nonce, ...overrides });
+  return tx.wait();
+}
+
 function evm(env) {
   config.require_(env, "GETH_RPC", "DEPLOYER_PK", "ICS26_ROUTER");
   const url = env.GETH_RPC.startsWith("http") ? env.GETH_RPC : `http://${env.GETH_RPC}`;
@@ -106,7 +119,7 @@ const T_UPDATE_OUTPUT =
 const T_MSG_UPDATE_CLIENT = `(${T_SP1_PROOF})`;
 
 module.exports = {
-  ROOT, config, loadEnv, abi, evm, sendTx, cosmosCli, cosmosRpc, cosmosRpcUrl,
+  ROOT, config, loadEnv, abi, evm, sendTx, sendRawTx, cosmosCli, cosmosRpc, cosmosRpcUrl,
   cosmosHeader, cosmosHeight,
   waitCosmosHeight, coder, ethers,
   T_CLIENT_STATE, T_CONSENSUS_STATE, T_KVPAIR, T_MEMBERSHIP_OUTPUT, T_SP1_PROOF,
