@@ -10,7 +10,8 @@ Two independent tracks live in this repository:
 > This file describes the tree as it stands after the rebuild
 > (`v1-mldsa44-fork` is the previous, fork-based implementation). The
 > paper's implementation section is being rewritten to match; expect
-> another pass here when that lands. See [Known gaps](#known-gaps).
+> another pass here when that lands. See
+> [Known gaps](#known-gaps--ml-dsa-44-modules-retained-for-historical-reference).
 
 ---
 
@@ -89,6 +90,22 @@ Runtime: a few seconds each. Re-render with the respective `plot.py`
 afterwards. These tools build standalone and are covered by CI.
 
 ---
+
+## Known gaps — outstanding verification
+
+**`security/light-client-stress/` has not been re-run since the EVM light
+client was moved from the mock SP1 verifier to the real Groth16 one.** That work
+did not touch `cw-ics08-wasm-eth`, which is what these tests exercise, so the
+published results are expected to hold unchanged — but they have not been
+re-executed. The harness needs a live devnet, and rebuilding one solely for this
+is not warranted. **Run it the next time a devnet is up for another reason.**
+
+**The EVM deployment script lives outside this repository.**
+`Phase4aDeploy.s.sol` is kept in the `solidity-ibc-eureka` checkout
+(`ibc-solidity/scripts/`), not here, so the change that deploys the real
+`SP1VerifierGroth16` and stops constructing `SP1ICS07Tendermint` inline is not
+under this repo's version control. `devnet/README.md` documents what that script
+must do; anyone reproducing the bridge needs to apply it there.
 
 ## Known gaps — ML-DSA-44 modules retained for historical reference
 

@@ -25,14 +25,24 @@ verification.
 
 | Leg | Direction | Verified by | Finality-bound? |
 |---|---|---|---|
-| Forward | Cosmos → EVM | `SP1ICS07Tendermint`, running a **mock** verifier on this devnet | **No** |
+| Forward | Cosmos → EVM | `SP1ICS07Tendermint`, running a **mock** verifier *for this experiment* | **No** |
 | Return (ack) | EVM → Cosmos | `cw-ics08-wasm-eth`, **real** BLS sync-committee verification | **Yes** |
 
 The forward leg proves the packet against Cosmos state one block after it
-commits, and the devnet's SP1 verifier performs no proof checking at all. It
+commits, and the mock SP1 verifier performs no proof checking at all. It
 is fast and involves no finality window. Measuring it would produce throughput
 numbers that say nothing about light-client verification — the very thing this
 experiment exists to characterise.
+
+> **The mock verifier is no longer the only option.** Real SP1 Groth16 proving
+> now works end to end on this devnet — see [devnet/README.md](../../devnet/README.md).
+> The figures below were nonetheless measured against the **mock** forward leg
+> and are reported as such. They are not stale: they characterise the
+> finality-bound return leg, which real proving does not change. But the
+> forward-leg numbers do **not** carry over to the real-verifier path, where a
+> single proof costs ~10 minutes of CPU rather than ~25 seconds. Re-running this
+> sweep with real proving would measure prover throughput, not light-client
+> verification, and at ~10 min/proof a 1,000-transfer sweep is not practical.
 
 The return leg is where the architecture actually shows itself. The ack cannot
 be submitted until Ethereum finality covers the execution block containing it,
@@ -45,7 +55,7 @@ A measured single round trip makes the split concrete:
 | Segment | Time | Verifier |
 |---|---|---|
 | submit → commit | 3.9 s | Cosmos consensus |
-| submit → credit (forward) | 24.9 s | mock SP1 |
+| submit → credit (forward) | 24.9 s | mock SP1 (real Groth16: ~10 min, see note above) |
 | credit → ack (return) | **487.8 s** | real light client |
 | submit → ack (round trip) | 512.8 s | — |
 
