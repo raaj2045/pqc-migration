@@ -35,14 +35,105 @@ the JSON hand-off files the steps write between each other
 - A local Ethereum devnet at **Electra or later** with the Beacon API's
   light-client endpoints enabled, and the IBC Eureka contracts deployed
   (`ICS26Router`, `ICS20Transfer`, escrow, `SP1ICS07Tendermint`).
-- `node` and `python3`. The scripts use `ethers` v6; point `node_modules` at an
-  install that has it.
+- A running **proof-api** (solidity-ibc-eureka) with a `cosmos_to_eth` module
+  pointed at this chain and this EVM. `step-recv.js` and `step-redeem-ack.js`
+  request their proofs from it; see [Proving](#proving) below.
+- `node` and `python3`. The scripts use `ethers` v6 plus `@grpc/grpc-js` and
+  `@grpc/proto-loader`; point `node_modules` at an install that has them.
+  Note that `node_modules` here is typically a **symlink** to a shared install —
+  running `npm install` in this directory replaces the symlink with a real
+  directory and silently strips everything except the newly-installed packages.
+  Install into the symlink's target instead.
+
+## Proving
+
+The EVM-side light client (`SP1ICS07Tendermint`) verifies Cosmos state with SP1
+Groth16 proofs. Which verifier it uses is fixed **at client creation**, by the
+address passed as proof-api's `sp1_verifier` parameter:
+
+| Verifier | Use |
+|---|---|
+| `SP1VerifierGroth16` (v6.1.0) | Real proving. Proofs are cryptographically checked on chain. |
+| `SP1MockVerifier` | Fast iteration. Accepts any public values with an empty proof. **No checking at all.** |
+
+Both are deployed; only one is bound. A client bound to the mock cannot be
+switched to the real verifier — create a new client instead.
+
+### Why client creation goes through proof-api
+
+The client's four program verification keys must match the SP1 program ELFs.
+proof-api derives them from the ELF bytes (`SP1Program::get_vkey`) and returns
+the full deployment calldata from `CreateClient`, along with client and
+consensus state read live from this chain. Constructing the client by hand
+means faking both — which is only survivable against the mock verifier, because
+a real verifier rejects a zero verification key.
+
+Pass `role_manager` = the `ICS26Router` address. Omitting it defaults to
+`address(0)`, which takes the contract's **permissionless** branch
+(`_grantRole(PROOF_SUBMITTER_ROLE, address(0))`) and lets anyone submit proofs.
+
+### Cost
+
+Measured on 6 cores / 12 threads, CPU prover, artifacts already cached:
+
+| | |
+|---|---|
+| Time per proof | **~10 min** (~8-9 min STARK/recursion, ~60-90 s Groth16 wrap) |
+| Peak memory | **~27.5 GB** of a 28 GB ceiling, plus 5-8 GB swap |
+| Groth16 artifacts | 5.8 GB download once, unpacking to 7.9 GB in `~/.sp1/circuits/` |
+
+Two operational notes, both learned the hard way:
+
+- **Restart proof-api between proofs.** It does not release swapped pages. After
+  one proof it held 6.1 GB of swap — 78 % of all swap in use — leaving 113 MB
+  free, so the next proof started from far worse headroom and saturated swap
+  during recursion. Restarting is safe: proof-api holds no chain or client
+  state, and costs ~30 s of prover re-init.
+- **Alarm on the recursion phase, not the wrap.** Recursion is where headroom is
+  actually consumed. A threshold that first fires during the wrap fires too
+  late: by then the proof is seconds from completing, and acting on the warning
+  discards ~10 minutes of work for nothing.
+
+### Evidence that verification is real
+
+Against a client bound to `SP1VerifierGroth16`, on a relay transaction replayed
+at the block before it landed:
+
+| Input | Result | Kind |
+|---|---|---|
+| Untampered (control) | succeeds | — |
+| Proof bytes altered | `ProofInvalid()` `0x7fcdd1f4` | **cryptographic** — the Groth16 pairing check fails |
+| Verification key altered | `VerificationKeyMismatch(bytes32,bytes32)` `0xd56bdc26` | **cryptographic** — client enforces its stored vkeys |
+| Bytes altered mid-calldata | `FailedCall()` `0xd6bda275` | *structural* — the multicall's inner encoding broke |
+
+Only the first two are evidence about proof verification. `FailedCall()` means
+the transaction never reached the verifier, so it says nothing about whether
+proofs are checked; it is listed here so it is not mistaken for a
+cryptographic rejection. A call trace of the same transaction shows two calls
+to the Groth16 verifier — the client update and the membership proof — and none
+to the mock.
 
 ## Which direction is which
 
 `stake` is Cosmos-native, so **Cosmos holds the escrow and Ethereum holds the
 IBCERC20 vouchers**. Redemption therefore burns the voucher on Ethereum and
 unescrows on Cosmos — the reverse of the outbound transfer.
+
+## Forward leg
+
+A Cosmos→EVM transfer is submitted as a `MsgTransfer` with
+`encoding: application/x-solidity-abi` (the CLI cannot set that field), then
+relayed:
+
+```bash
+# Relay the packet to the EVM side. Requests the proof from proof-api, which
+# returns one ICS26Router multicall carrying both the client update and the
+# packet membership proof. With the real verifier this takes ~10 minutes.
+node step-recv.js <cosmos-tx-hash>
+
+# Acknowledge it back on Cosmos.
+node step-ack.js
+```
 
 ## Redemption cycle
 
@@ -89,6 +180,11 @@ waiting for finality to cover block 3549 (at 3488)
 A full cycle (outbound transfer, then redemption) waits for finality twice, so
 budget **~10 minutes**. This is the protocol's latency, not the script's.
 
+With the **real** Groth16 verifier bound, proving dominates instead: each of the
+two SP1 legs (`step-recv.js` and `step-redeem-ack.js`) adds ~10 minutes of CPU
+proving on top, so a full cycle is closer to **~30 minutes**. Against the mock
+verifier those legs are near-instant. See [Proving](#proving).
+
 ## Light-client helpers
 
 ```bash
@@ -118,9 +214,12 @@ slot, which is expected rather than an error.
 
 | Path | Purpose |
 |---|---|
+| `step-recv.js` | Forward leg: relay a Cosmos→EVM packet, with a real SP1 proof |
+| `step-ack.js` | Forward leg: acknowledge that packet back on Cosmos |
 | `step-redeem-{send,recv,ack}.js` | The three redemption steps, in order |
 | `relayer/update-eth-client.py` | Light-client updates from finality updates |
 | `light-client/` | `pubkeys_hash` derivation and its verification |
 | `cosmos/sendtx.py` | Assemble, ML-DSA-65 sign, broadcast, await a Cosmos tx |
 | `lib/` | Config resolution, EVM/Cosmos helpers, IBC packet encoding |
+| `lib/proofapi.js` | gRPC client for proof-api (`RelayByTx`, `CreateClient`, `Info`) |
 | `abi/` | Contract ABIs, generated from the Eureka contracts |

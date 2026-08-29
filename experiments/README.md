@@ -44,9 +44,11 @@ N = 1 → 40 with zero variance, so amortised gas per transfer falls from 929,68
 measured directly.
 
 No batching ceiling was found within the tested range. Its README explains why
-the round trip is measured rather than the forward leg (the forward leg runs a
-mock verifier on this devnet), why the independent variable is packets-per-
-window rather than submission rate, and where the harness's own limits lie.
+the round trip is measured rather than the forward leg (that sweep ran the
+forward leg on a mock verifier; real SP1 Groth16 proving now works, but at
+~10 min per proof it is impractical for a 1,000-transfer sweep), why the
+independent variable is packets-per-window rather than submission rate, and
+where the harness's own limits lie.
 
 `results/rate_sweep/` holds a second, independent result: latency is a property
 of the finality window, not of the packet.

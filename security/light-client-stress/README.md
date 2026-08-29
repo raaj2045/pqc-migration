@@ -163,9 +163,16 @@ or a devnet rebuild.
 ## Scope
 
 - **One client implementation.** These test `cw-ics08-wasm-eth`. The EVM-side
-  `SP1ICS07Tendermint` runs a **mock** verifier on this devnet and is not
-  exercised here — see
-  [`../../experiments/migration_throughput/README.md`](../../experiments/migration_throughput/README.md).
+  `SP1ICS07Tendermint` is not exercised here. It can now be bound to the **real**
+  SP1 Groth16 verifier rather than the mock — that path has its own adversarial
+  evidence, recorded in [`../../devnet/README.md`](../../devnet/README.md) — but
+  these tests do not touch it either way.
+- **Not re-run since the real-verifier integration.** Nothing in that work
+  touched `cw-ics08-wasm-eth`, so these results are expected to hold unchanged;
+  they simply have not been re-executed, because the harness needs a live devnet
+  and rebuilding one solely for this is not warranted. Run them the next time a
+  devnet is up for other reasons. See
+  [`../../REPRODUCE.md`](../../REPRODUCE.md#known-gaps--outstanding-verification).
 - **Rejection, not exhaustiveness.** These confirm that four specific
   adversarial inputs are rejected. They do not establish that no adversarial
   input is accepted.
