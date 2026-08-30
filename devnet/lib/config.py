@@ -15,6 +15,24 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _LINE = re.compile(r"^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$")
 
 
+def expand(value):
+    """Expand the placeholders devnet.env.example ships with.
+
+    Values here are handed to subprocess calls without a shell, so nothing else
+    would expand them.
+
+      $DEVNET_ROOT  this devnet/ directory, so entries pointing at scripts in
+                    this repository work from any checkout location
+      $HOME, ~      the user's home directory
+    """
+    if not isinstance(value, str):
+        return value
+    home = os.path.expanduser("~")
+    value = re.sub(r"\$DEVNET_ROOT\b", ROOT, value)
+    value = re.sub(r"\$HOME\b", home, value)
+    return re.sub(r"(^|\s)~(?=/|$)", r"\1" + home, value)
+
+
 def _parse(path):
     out = {}
     if not os.path.exists(path):
@@ -25,7 +43,7 @@ def _parse(path):
                 continue
             m = _LINE.match(line)
             if m:
-                out[m.group(1)] = m.group(2)
+                out[m.group(1)] = expand(m.group(2))
     return out
 
 
@@ -34,7 +52,7 @@ def load():
     cfg.update(_parse(os.path.join(ROOT, "devnet.env")))
     for k in list(cfg):
         if os.environ.get(k):
-            cfg[k] = os.environ[k]
+            cfg[k] = expand(os.environ[k])
 
     devnet_dir = cfg.get("DEVNET_DIR", "")
     if not devnet_dir or not os.path.isdir(devnet_dir):

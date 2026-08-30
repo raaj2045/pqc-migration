@@ -7,16 +7,31 @@
 //   4. the generated env files inside DEVNET_DIR (ports.env, cosmos.env,
 //      deploy.env), which hold values produced by the devnet tooling itself
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
+
+// Expand the placeholders devnet.env.example ships with. Values here are handed
+// to subprocess calls without a shell, so nothing else would expand them.
+//
+//   $DEVNET_ROOT  this devnet/ directory, so entries pointing at scripts in
+//                 this repository work from any checkout location
+//   $HOME, ~      the user's home directory
+function expand(value) {
+  if (typeof value !== "string") return value;
+  return value
+    .replace(/\$DEVNET_ROOT\b/g, ROOT)
+    .replace(/\$HOME\b/g, os.homedir())
+    .replace(/(^|\s)~(?=\/|$)/g, `$1${os.homedir()}`);
+}
 
 function parseEnvFile(file) {
   const out = {};
   if (!fs.existsSync(file)) return out;
   for (const line of fs.readFileSync(file, "utf8").split("\n")) {
     const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
-    if (m && !line.trim().startsWith("#")) out[m[1]] = m[2];
+    if (m && !line.trim().startsWith("#")) out[m[1]] = expand(m[2]);
   }
   return out;
 }
@@ -26,7 +41,7 @@ function load() {
   const local = parseEnvFile(path.join(ROOT, "devnet.env"));
   const cfg = { ...defaults, ...local };
   for (const k of Object.keys(cfg)) {
-    if (process.env[k]) cfg[k] = process.env[k];
+    if (process.env[k]) cfg[k] = expand(process.env[k]);
   }
 
   const devnetDir = cfg.DEVNET_DIR;
@@ -63,4 +78,4 @@ function require_(cfg, ...keys) {
   return cfg;
 }
 
-module.exports = { load, require_, ROOT };
+module.exports = { load, require_, expand, ROOT };
