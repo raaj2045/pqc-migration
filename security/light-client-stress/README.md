@@ -167,14 +167,23 @@ or a devnet rebuild.
   SP1 Groth16 verifier rather than the mock — that path has its own adversarial
   evidence, recorded in [`../../devnet/README.md`](../../devnet/README.md) — but
   these tests do not touch it either way.
-- **Not re-run since the real-verifier integration.** Nothing in that work
-  touched `cw-ics08-wasm-eth`, so these results are expected to hold unchanged;
-  they simply have not been re-executed, because the harness needs a live devnet
-  and rebuilding one solely for this is not warranted. Run them the next time a
-  devnet is up for other reasons. See
-  [`../../REPRODUCE.md`](../../REPRODUCE.md#known-gaps--outstanding-verification).
+- **Run by hand, not in CI.** The harness drives a live devnet, so these are not
+  part of the automated suite and are not required for
+  [reproduction](../../REPRODUCE.md).
+- **Not re-run since the EVM client moved to the real Groth16 verifier.** That
+  change did not touch `cw-ics08-wasm-eth`, so these results are expected to
+  hold unchanged, but they have not been re-executed. Doing so needs a **full
+  devnet rebuild**, not a restart: the Kurtosis enclave's execution layer does
+  not persist (see
+  [devnet/README.md](../../devnet/README.md#the-evm-devnet-does-not-survive-a-restart)),
+  so contracts must be redeployed and the light client recreated first. Best
+  bundled with a rebuild done for another reason.
 - **Rejection, not exhaustiveness.** These confirm that four specific
   adversarial inputs are rejected. They do not establish that no adversarial
   input is accepted.
 - **Devnet, not mainnet.** A 128-validator devnet sync committee is far smaller
   than mainnet's 512-of-a-much-larger-set.
+
+---
+
+[Project README](../../README.md) · [Testing](../../docs/testing.md) · [Architecture](../../docs/architecture.md)

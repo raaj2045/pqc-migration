@@ -1,8 +1,13 @@
-# devnet tooling
+# Devnet runbook
 
 Scripts for driving a transfer and redemption cycle between this chain and a
 local Ethereum devnet, with the Cosmos side verified by the real
 `cw-ics08-wasm-eth` light client — no attestation, no trusted party.
+
+For the design these scripts exercise, see
+[Architecture](../docs/architecture.md). For build requirements and the
+hardware needed for local proving, see
+[Getting started](../docs/getting-started.md).
 
 These are JavaScript and Python only: `devnet/` is not a Go package and is
 invisible to `go build ./...`.
@@ -45,6 +50,26 @@ the JSON hand-off files the steps write between each other
   directory and silently strips everything except the newly-installed packages.
   Install into the symlink's target instead.
 
+## The EVM devnet does not survive a restart
+
+The Kurtosis Ethereum enclave's geth datadir (`--datadir=/data/geth/execution-data`)
+is **not volume-backed**, so any container restart or host reboot discards the
+execution layer's state and re-initialises it from genesis. The consensus layer
+resumes from where it was, leaving the two irreconcilable.
+
+The practical consequence: after a restart, `eth_getCode` returns `0x` for every
+deployed contract and the chain reports block 0. Restarting the containers does
+not recover it. A new enclave is required, followed by a redeployment via
+[`deploy/DevnetDeploy.s.sol`](deploy/README.md) and creation of a new light
+client — the previous one references contract addresses that no longer hold
+code, and a beacon chain that no longer exists.
+
+Docker also reassigns host ports on each enclave, so `ports.env` and any
+addresses in `deploy.env` are stale afterwards.
+
+The Cosmos chain is unaffected: its data persists on disk, including stored
+wasm code, so it restarts normally.
+
 ## Proving
 
 The EVM-side light client (`SP1ICS07Tendermint`) verifies Cosmos state with SP1
@@ -82,7 +107,7 @@ Measured on 6 cores / 12 threads, CPU prover, artifacts already cached:
 | Peak memory | **~27.5 GB** of a 28 GB ceiling, plus 5-8 GB swap |
 | Groth16 artifacts | 5.8 GB download once, unpacking to 7.9 GB in `~/.sp1/circuits/` |
 
-Two operational notes, both learned the hard way:
+Two operational requirements:
 
 - **Restart proof-api between proofs.** It does not release swapped pages. After
   one proof it held 6.1 GB of swap — 78 % of all swap in use — leaving 113 MB
@@ -117,7 +142,8 @@ to the mock.
 
 `stake` is Cosmos-native, so **Cosmos holds the escrow and Ethereum holds the
 IBCERC20 vouchers**. Redemption therefore burns the voucher on Ethereum and
-unescrows on Cosmos — the reverse of the outbound transfer.
+unescrows on Cosmos — the reverse of the outbound transfer. See
+[Architecture](../docs/architecture.md#asset-transfer).
 
 ## Forward leg
 
@@ -223,3 +249,7 @@ slot, which is expected rather than an error.
 | `lib/` | Config resolution, EVM/Cosmos helpers, IBC packet encoding |
 | `lib/proofapi.js` | gRPC client for proof-api (`RelayByTx`, `CreateClient`, `Info`) |
 | `abi/` | Contract ABIs, generated from the Eureka contracts |
+
+---
+
+[Project README](../README.md) · [Architecture](../docs/architecture.md) · [Getting started](../docs/getting-started.md) · [EVM deployment](deploy/README.md)
