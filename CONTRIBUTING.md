@@ -35,3 +35,7 @@ first so the change can be evaluated against the published paper.
 For paper-related correspondence, contact the corresponding author
 listed in [`CITATION.cff`](CITATION.cff). For confidential
 vulnerability reports, see [`SECURITY.md`](SECURITY.md).
+
+---
+
+[Project README](README.md) · [Getting started](docs/getting-started.md)

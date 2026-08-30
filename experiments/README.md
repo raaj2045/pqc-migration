@@ -9,6 +9,11 @@ chain end-to-end.
 | `migration_throughput/`   | **Complete** (paper) | Batching on the live bridge: transfers acknowledged per finality window across N ∈ {1, 5, 10, 20, 40} packets offered per window, 5 repeats each. 1,000 transfers, 0 failures. |
 | `cold_sync/`              | Scaffolded, not run  | Block-sync replay time on a fresh full node — see the explicit "scaffolded, not yet run" notice in its README.    |
 
+Each experiment's own README states its method, bounds and limitations:
+[validator_scaling_v2](validator_scaling_v2/summary.md) ·
+[migration_throughput](migration_throughput/README.md) ·
+[cold_sync](cold_sync/README.md).
+
 ## `validator_scaling_v2/`
 
 This is the experiment the paper uses for its headline scaling
@@ -86,3 +91,7 @@ All `validator_scaling_v2/` data was collected on a single AMD
 Ryzen 5 7600X under WSL2 Linux 5.15, Go 1.23.5, with 4-16 Cosmos SDK
 validators in Docker containers each capped at 1 CPU. Single 300 s
 run per (N, target rate, scheme) cell.
+
+---
+
+[Project README](../README.md) · [REPRODUCE](../REPRODUCE.md) · [Architecture](../docs/architecture.md)

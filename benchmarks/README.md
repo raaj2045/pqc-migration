@@ -14,6 +14,9 @@ figure that carries the IEEE-style caption text.
 See [`../REPRODUCE.md`](../REPRODUCE.md) for the exact command per
 figure.
 
+Per-benchmark notes: [block_packing](block_packing/summary.md) ·
+[storage_sim](storage_sim/summary.md).
+
 ## Reading the data
 
 Each `results*.json` is human-readable. Crypto-micro `results.json` is
@@ -46,3 +49,7 @@ There is no run-to-run variance reported in the figures because
 `testing.B` auto-tunes its own iteration count. Numbers will differ
 slightly on different hardware; the magnitudes and ratios that the
 paper draws conclusions from are stable.
+
+---
+
+[Project README](../README.md) · [REPRODUCE](../REPRODUCE.md)

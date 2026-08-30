@@ -202,3 +202,7 @@ limit of this result.
 - **Model checking is not proof.** These are bounded results. TLC is exhaustive
   only within the configured constants; Apalache is exhaustive only within
   `--length`. Neither establishes correctness for unbounded sequence counts.
+
+---
+
+[Project README](../../README.md) · [Testing](../testing.md) · [Architecture](../architecture.md)

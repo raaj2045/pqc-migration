@@ -35,3 +35,7 @@ find . -name '*.wasm'
 cp -r <that-dir>/state/* state/ && cp -r <that-dir>/cache/* cache/
 rm -rf [0-9]*/
 ```
+
+---
+
+[Project README](../README.md) · [Getting started](getting-started.md) · [Architecture](architecture.md)

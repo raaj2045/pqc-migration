@@ -10,7 +10,7 @@ requires a passing governance proposal. On a devnet, shorten the voting period
 in genesis (`app_state.gov.params.voting_period`) or the proposal will not pass
 within a working session.
 
-## Two things that are easy to get wrong
+## Consensus state fields
 
 ### `state_root` is the execution root, not the beacon root
 
@@ -60,5 +60,9 @@ python3 light-client/verify_pubkeys_hash.py [bootstrap.json]
 
 `MsgUpdateClient` makes the contract issue an `AggregateVerify` custom query
 back to the chain. `app.go` registers `blsverifier.CustomQuerier()` for this;
-without it every update fails. See [building.md](building.md) for the
+without it every update fails. See [Getting started](getting-started.md#cgo-libstdc-is-required) for the
 `libstdc++` link requirement that comes with it.
+
+---
+
+[Project README](../README.md) · [Architecture](architecture.md) · [Devnet runbook](../devnet/README.md)

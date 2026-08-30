@@ -1,6 +1,6 @@
 # EVM deployment
 
-`Phase4aDeploy.s.sol` deploys the IBC Eureka contracts this devnet drives:
+`DevnetDeploy.s.sol` deploys the IBC Eureka contracts this devnet drives:
 `AccessManager`, `ICS26Router`, `ICS20Transfer` (with Escrow and IBCERC20
 beacons), and both SP1 verifiers.
 
@@ -12,13 +12,13 @@ tree** (`../contracts/...`, `./deployments/...`) and its `@sp1-contracts/` and
 repository. Copy it into that checkout's script directory and build there:
 
 ```bash
-cp devnet/deploy/Phase4aDeploy.s.sol <solidity-ibc-eureka>/ibc-solidity/scripts/
+cp devnet/deploy/DevnetDeploy.s.sol <solidity-ibc-eureka>/ibc-solidity/scripts/
 cd <solidity-ibc-eureka>/ibc-solidity
-forge script scripts/Phase4aDeploy.s.sol:Phase4aDeploy \
+forge script scripts/DevnetDeploy.s.sol:DevnetDeploy \
   --rpc-url "$GETH_RPC" --private-key "$DEPLOYER_PK" --broadcast
 ```
 
-It prints a `PHASE4A_RESULT` JSON line with the deployed addresses. Those feed
+It prints a `DEPLOY_RESULT` JSON line with the deployed addresses. Those feed
 `$DEVNET_DIR/deploy.env`, which `devnet/lib/config.js` reads.
 
 The copy here is the authoritative one; it is vendored so the deployment is
@@ -57,7 +57,6 @@ sufficient. That shortcut is not available for the real verifier, which rejects
 a zero verification key, so the real path must obtain its client-creation
 calldata from proof-api.
 
-## See also
+---
 
-- [devnet/README.md](../README.md) — running the bridge, proving, costs
-- [../../docs/ethereum-light-client.md](../../docs/ethereum-light-client.md) — the Cosmos-side light client
+[Project README](../../README.md) · [Architecture](../../docs/architecture.md) · [Devnet runbook](../README.md)
