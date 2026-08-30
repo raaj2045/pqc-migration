@@ -47,3 +47,5 @@ prompted the move to packets-per-window as the independent variable.
 
 `verify_roundtrip.json` is the single-transfer end-to-end verification run,
 kept as provenance for the harness.
+
+Tabulated figures: [summary.md](summary.md).

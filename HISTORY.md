@@ -1,56 +1,80 @@
 # History and attribution
 
-This repository was assembled from two source repositories prior to
-the public release.
+The current implementation runs on **stock Cosmos SDK v0.55 / CometBFT v0.40**
+with native ML-DSA-65 account keys. It replaced an earlier fork-based
+implementation carrying ML-DSA-44, which remains available in full at the
+**`v1-mldsa44-fork`** tag.
 
-## `cosmos/`
+This page records where the code came from and what remains from the previous
+approach. For the system as it stands, see
+[Architecture](docs/architecture.md).
 
-`cosmos/` is a fork of the upstream
-[cosmos-sdk](https://github.com/cosmos/cosmos-sdk) (Apache-2.0,
-copyright the Cosmos SDK contributors). The fork base is approximately
-v0.50 / v0.53 — see [`cosmos/CHANGELOG.md`](cosmos/CHANGELOG.md) for
-the upstream changelog and
-[`cosmos/README.upstream.md`](cosmos/README.upstream.md) for the
-unmodified upstream README.
+## The previous implementation
 
-Modifications introduced for this paper (a non-exhaustive list — the
-diff against the closest upstream tag is the source of truth):
+The first version forked the Cosmos SDK to add ML-DSA-44 (FIPS 204) account
+keys, in a `cosmos/` directory that is no longer part of this tree. That fork
+added:
 
-- New package `cosmos/crypto/keys/mldsa/` implementing
-  `cryptotypes.PrivKey` / `PubKey` for ML-DSA-44 (FIPS 204), wrapping
-  [cloudflare/circl](https://github.com/cloudflare/circl)'s
-  implementation.
-- `--key-type mldsa44` plumbed through `simd testnet init-files` and
-  `x/genutil`.
-- A multi-validator Docker testnet harness at
-  `cosmos/docker/testnet/`, used by the paper's experiments.
-- The `cosmos/docker/testnet/scripts/init_testnet.sh` deterministic
-  genesis logic, including pre-funded loadgen-sender accounts.
+- `cosmos/crypto/keys/mldsa/` implementing `cryptotypes.PrivKey` / `PubKey` for
+  ML-DSA-44, wrapping [cloudflare/circl](https://github.com/cloudflare/circl);
+- `--key-type mldsa44` plumbed through `simd testnet init-files` and `x/genutil`;
+- a multi-validator Docker testnet harness used by the paper's experiments.
 
-The upstream Cosmos SDK git history was **not** carried across into
-this monorepo. To see the upstream history before the fork point,
-consult the
-[upstream repository](https://github.com/cosmos/cosmos-sdk).
+Stock SDK v0.55 subsequently shipped `crypto/keys/mldsa65` natively, making the
+fork unnecessary. The fork was removed and the chain rebuilt on the stock SDK.
 
-## `ethereum/`
+The upstream Cosmos SDK git history was **not** carried into this repository.
+For history before the fork point, consult the
+[upstream repository](https://github.com/cosmos/cosmos-sdk) (Apache-2.0,
+copyright the Cosmos SDK contributors).
 
-`ethereum/` is built on top of the
-[Hardhat](https://github.com/NomicFoundation/hardhat) project
-boilerplate (MIT, copyright Nomic Foundation). All files in
-`ethereum/contracts/`, `ethereum/scripts/`, `ethereum/test/`,
-`ethereum/tools/`, and `ethereum/ignition/modules/` are original to
-this work. The Hardhat-toolchain configuration (`hardhat.config.js`,
-`package.json`, the `.gitignore` template) is the standard Hardhat
-setup with paper-specific dependencies added.
+## ML-DSA-44 modules still in the tree
+
+Two modules measure **ML-DSA-44 from the superseded fork**, not the ML-DSA-65
+implementation this repository now builds. They are retained for historical
+reference.
+
+| Module | State |
+|---|---|
+| `benchmarks/crypto_micro` | `go test -bench` imports `crypto/keys/mldsa` via a `replace` onto the removed `cosmos/` fork |
+| `tools/presigner` | Same import, same `replace` |
+
+Both are **excluded from CI**: the fork they resolve against is no longer in the
+tree, so neither builds here. Their source is unchanged from the fork-based
+prototype.
+
+The committed `benchmarks/crypto_micro/results.json` likewise reflects
+ML-DSA-44, so those figures plot the previous implementation's numbers rather
+than the current chain's.
+
+**These are not to be ported to ML-DSA-65 as a mechanical fix.** Stock SDK v0.55
+ships `crypto/keys/mldsa65` — a different package *and* a different parameter
+set — so dropping the `replace` directive is not sufficient. Porting changes
+what is being measured, and the resulting numbers would not be comparable to
+those already published. Whether to re-measure, and how to present both sets of
+figures, is tied to the paper rewrite.
+
+## The retired bridge module
+
+`x/lockandmint`, a custom bridge module, was retired in favour of ICS-20 over
+verified light clients. No custom bridge module remains; see
+[Architecture](docs/architecture.md#asset-transfer).
+
+## Ethereum side
+
+The Ethereum contracts were originally built on the
+[Hardhat](https://github.com/NomicFoundation/hardhat) project boilerplate (MIT,
+copyright Nomic Foundation), with the contracts, scripts, tests and tooling
+original to this work. The current bridge uses the IBC Eureka contracts; see
+[EVM deployment](devnet/deploy/README.md).
 
 ## Repository assembly
 
-This repository was assembled from two pre-existing private GitHub
-remotes:
+This repository was assembled from two pre-existing private remotes —
+`postquantum-cosmos` (the Cosmos fork) and `ethereum-lockandmint` (the Ethereum
+side). Their histories were squashed into a single fresh history under this
+monorepo, which is now the authoritative source.
 
-- `postquantum-cosmos` — the cosmos fork
-- `ethereum-lockandmint` — the ethereum side
+---
 
-Their histories were squashed and folded into a single fresh git
-history under this monorepo. The pre-existing remotes are no longer
-the authoritative source; this monorepo is.
+[Project README](README.md) · [Architecture](docs/architecture.md)

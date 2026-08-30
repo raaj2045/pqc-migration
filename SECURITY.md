@@ -50,3 +50,7 @@ process](https://github.com/cosmos/cosmos-sdk/security/policy). For
 IBC or Eureka contract issues, report upstream to
 [ibc-go](https://github.com/cosmos/ibc-go/security/policy) or
 [solidity-ibc-eureka](https://github.com/cosmos/solidity-ibc-eureka).
+
+---
+
+[Project README](README.md) · [Testing](docs/testing.md)

@@ -10,6 +10,8 @@ own `go.mod` so they can be built independently of the cosmos fork.
 | `storage_sim/`    | Simulator for on-chain account-state growth at 100 k / 1 M / 10 M txs. Computes per-tx wire size and per-account state size for both schemes. Pure-stdlib. | `benchmarks/storage_sim/plot.py` |
 | `block_packing/`  | Computes the maximum number of transfers per block for both schemes at default / 2× / 4× block-size limits, using the CometBFT MaxDataBytes overhead model. Pure-stdlib. | `benchmarks/block_packing/plot.py` |
 
+Individual tools: [presigner](presigner/README.md).
+
 ## Building
 
 Each tool builds independently:
@@ -31,3 +33,7 @@ These tools sit outside `cosmos/` so they stay paper-specific and don't
 clutter the upstream Cosmos SDK directory layout. `cosmos/tools/` retains
 upstream tools (`cosmovisor`, `confix`, `benchmark`); only the four
 listed above are paper additions.
+
+---
+
+[Project README](../README.md) · [REPRODUCE](../REPRODUCE.md)

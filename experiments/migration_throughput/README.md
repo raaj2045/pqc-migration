@@ -64,10 +64,13 @@ return leg. Measuring only the forward leg would have reported a ~25 s
 "end-to-end" latency and a batching curve that was an artifact of the harness
 rather than a property of the bridge.
 
-### Why the headline metric is the right one
+#Results: [summary](results/summary.md) ·
+[rate sweep](results/rate_sweep/README.md).
+
+## Why the headline metric is the right one
 
 The cost structure of this path is asymmetric, and the asymmetry is already
-measured in the Phase 5 numbers:
+measured:
 
 | Message | Gas | Frequency |
 |---|---|---|

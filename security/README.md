@@ -119,3 +119,7 @@ performs no proof checking at all.
 
 **3. Fuzzing is not proof.** These targets establish the absence of crashes on
 the inputs explored within the time budget, not the absence of crashes.
+
+---
+
+[Project README](../README.md) · [Testing](../docs/testing.md) · [Architecture](../docs/architecture.md)
