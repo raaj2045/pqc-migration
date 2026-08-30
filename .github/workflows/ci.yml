@@ -29,7 +29,7 @@ jobs:
           cache: true
 
       # The 08-wasm BLS verifier links against herumi/bls-eth-go-binary,
-      # which needs libstdc++ at link time. See docs/building.md.
+      # which needs libstdc++ at link time. See docs/getting-started.md.
       - name: install libstdc++
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++
 
@@ -43,6 +43,25 @@ jobs:
         run: |
           go build -o /tmp/pqchaind ./cmd/pqchaind
           /tmp/pqchaind version
+
+  devnet-config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Unit tests for the config layer's placeholder expansion
+      # ($DEVNET_ROOT / $HOME / ~). Both files use only their standard
+      # libraries, so nothing needs installing. Running the devnet itself
+      # needs a live chain and is out of scope here.
+      - name: test config layer
+        run: |
+          node devnet/lib/config.test.js
+          python3 devnet/lib/config_test.py
 
   tools:
     runs-on: ubuntu-latest
