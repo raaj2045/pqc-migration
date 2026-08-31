@@ -13,14 +13,48 @@ Build the chain, run the tests, and bring up the bridge.
 
 ## Requirements
 
-| | |
+Building and testing the chain:
+
+| | Version |
 |---|---|
 | Go | 1.26.5 |
 | C toolchain | `g++` or `libstdc++-dev` (see [CGO](#cgo-libstdc-is-required)) |
-| Node.js, Python 3 | For the devnet tooling |
+| Node.js | 20 |
+| Python | 3 |
 
-Running the **bridge** additionally needs a local Ethereum devnet and, for real
-SP1 proving, a prover host — see [Hardware for local proving](#hardware-for-local-proving).
+Running the bridge additionally needs:
+
+| | Version | Notes |
+|---|---|---|
+| Docker | — | Required for the Ethereum devnet and the Groth16 wrap |
+| Kurtosis CLI | **1.15.2** | Pin is load-bearing, see [below](#kurtosis-version-pins) |
+| `ethereum-package` | **6.0.0** | Pin is load-bearing, see [below](#kurtosis-version-pins) |
+| Foundry (`forge`, `cast`) | 1.0.0-stable | |
+| protoc | 36.0 | Must be >= 3.15; `aggregator.proto` uses proto3 optional |
+| SP1 toolchain (`sp1up`) | circuits v6.1.0 | Must match the deployed `SP1VerifierGroth16` |
+
+Reproducing the formal verification also needs a JRE 21 with
+[TLC](https://github.com/tlaplus/tlaplus) 2.19 and
+[Apalache](https://github.com/apalache-mc/apalache) 0.62.1.
+
+For real SP1 proving, see [Hardware for local proving](#hardware-for-local-proving).
+
+### Kurtosis version pins
+
+Kurtosis publishes no binaries on GitHub releases — only an apt repo
+(`https://apt.fury.io/kurtosis-tech/`), whose index stops at 1.15.2 even though
+the CLI advertises newer versions. Without root, install with `dpkg-deb -x` of
+the 1.15.2 deb into a directory that precedes `/usr/bin` on `PATH`, then run
+`kurtosis engine restart` so the engine matches the CLI.
+
+Because the CLI is 1.15.2, `ethereum-package` must be pinned to tag **6.0.0**.
+Newer tags pull in the zkboost module, which needs a Starlark `GpuConfig` type
+that only newer Kurtosis provides.
+
+The devnet arguments are in
+[`devnet/kurtosis/network_params.yaml`](../devnet/kurtosis/network_params.yaml);
+[`verify-devnet.sh`](../devnet/kurtosis/verify-devnet.sh) checks the fork
+schedule, slot progression, finality and the light-client endpoints.
 
 ## Build
 
@@ -56,6 +90,39 @@ CGO_LDFLAGS="-L$HOME/.local/lib" go build ./...
 ```
 
 wasmvm also links dynamically, so `libwasmvm` must be reachable at runtime.
+
+### Building solidity-ibc-eureka
+
+The bridge's forward leg needs `proof-api` from
+[`solidity-ibc-eureka`](https://github.com/srdtrk/solidity-ibc-eureka), built
+from a checkout with [this project's patches](../devnet/patches/README.md)
+applied.
+
+That build needs four environment overrides:
+
+```bash
+PATH="$HOME/.local/gxx11/bin:$HOME/.local/protoc/bin:$PATH" \
+PROTOC=$HOME/.local/protoc/bin/protoc \
+LIBRARY_PATH="$HOME/.local/gxx11/usr/lib/gcc/x86_64-linux-gnu/11" \
+CARGO_TARGET_DIR=$HOME/.cache/sibe/target \
+just install-proof-api
+```
+
+- **`CARGO_TARGET_DIR`** — `just build-cw-ics08-wasm-eth` runs Docker as root
+  and leaves a root-owned `target/`. The override directory must itself be named
+  `target`: `sp1-recursion-core`'s `build.rs` walks up from `OUT_DIR` for an
+  ancestor named exactly that, and panics otherwise.
+- **`PATH`, `LIBRARY_PATH`** — supply a C++ compiler and the `libstdc++.so` dev
+  symlink the final link needs. Use `LIBRARY_PATH`, **not `RUSTFLAGS`**:
+  `RUSTFLAGS` is part of the build fingerprint, so changing it discards the
+  whole build cache. Where gcc is unavailable system-wide, unpack it with
+  `dpkg -x` into a user directory. A nix gcc 13.3 is not a substitute — it
+  compiles against a newer GLIBCXX than a 11.x system runtime provides, and the
+  result links and then segfaults.
+- **`PROTOC`** — points at protoc >= 3.15.
+
+With root available, the first two reduce to installing `g++` and taking
+ownership of `target/`.
 
 ### wasmvm data directory
 
