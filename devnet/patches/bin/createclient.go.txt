@@ -1,0 +1,55 @@
+// Standalone CreateClient probe against a running proof-api.
+// Usage: go run ./cmd/createclient <addr> <srcChain> <dstChain> <sp1Verifier> <zkAlgorithm>
+package main
+
+import (
+	"context"
+	"encoding/hex"
+	"fmt"
+	"os"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	proofapitypes "github.com/srdtrk/solidity-ibc-eureka/e2e/v8/types/proofapi"
+)
+
+func main() {
+	if len(os.Args) != 6 && len(os.Args) != 7 {
+		fmt.Fprintln(os.Stderr, "usage: createclient <addr> <srcChain> <dstChain> <sp1Verifier> <zkAlgorithm> [roleManager]")
+		os.Exit(2)
+	}
+	addr, src, dst, verifier, zk := os.Args[1], os.Args[2], os.Args[3], os.Args[4], os.Args[5]
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "dial:", err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+
+	client := proofapitypes.NewProofApiServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	params := map[string]string{
+		"sp1_verifier": verifier,
+		"zk_algorithm": zk,
+	}
+	if len(os.Args) == 7 {
+		params["role_manager"] = os.Args[6]
+	}
+
+	resp, err := client.CreateClient(ctx, &proofapitypes.CreateClientRequest{
+		SrcChain:   src,
+		DstChain:   dst,
+		Parameters: params,
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "CreateClient error:", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("OK\ncalldata_len=%d\naddress=%q\ncalldata=0x%s\n", len(resp.Tx), resp.Address, hex.EncodeToString(resp.Tx))
+}
