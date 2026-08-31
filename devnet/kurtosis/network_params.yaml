@@ -1,0 +1,26 @@
+# Kurtosis ethereum-package config for the cw-ics08-wasm-eth light client.
+#
+# Lighthouse is the consensus client because its light-client server is the most
+# complete. It serves /eth/v1/beacon/light_client/* by DEFAULT — the only related
+# flag is --disable-light-client-server, so nothing needs enabling here.
+#
+# Fork epochs are left at the package defaults, which put Electra (and Fulu) at
+# genesis. cw-ics08-wasm-eth requires Electra or later:
+# verify_supported_fork_at_epoch errors MustBeElectraOrLater when
+# epoch < fork_parameters.electra.epoch.
+participants:
+  - el_type: geth
+    cl_type: lighthouse
+    count: 1
+
+network_params:
+  # Short slots/epochs so finality (needed for a light client bootstrap)
+  # arrives in minutes rather than hours.
+  seconds_per_slot: 6
+  # Keep the chain on plain Electra. The package default activates Fulu at
+  # genesis too, which makes the Beacon API report version "fulu";
+  # cw-ics08-wasm-eth's tests target Electra, so pin Fulu out of reach.
+  # 18446744073709551615 is the package's FAR_FUTURE_EPOCH.
+  fulu_fork_epoch: 18446744073709551615
+
+additional_services: []

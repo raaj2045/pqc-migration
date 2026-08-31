@@ -213,6 +213,18 @@ verifier those legs are near-instant. See [Proving](#proving).
 
 ## Light-client helpers
 
+Creating the Cosmos-side client against a running Ethereum devnet is two steps,
+both run with `DEVNET_DIR` set:
+
+```bash
+./light-client/collect-instantiate-inputs.sh          # gathers bootstrap + spec
+python3 light-client/assemble-instantiate-msg.py <router> <pubkeys_hash> <checksum>
+```
+
+The first writes `instantiate-inputs/` into `$DEVNET_DIR`; the second assembles
+`instantiate-msg.json` from it. Neither instantiates the client — broadcast the
+message with `cosmos/sendtx.py`.
+
 ```bash
 python3 light-client/pubkeys_hash.py <pubkeys.json>   # SSZ HTR of the sync committee
 python3 light-client/verify_pubkeys_hash.py [bootstrap.json]
@@ -248,6 +260,9 @@ slot, which is expected rather than an error.
 | `cosmos/sendtx.py` | Assemble, ML-DSA-65 sign, broadcast, await a Cosmos tx |
 | `lib/` | Config resolution, EVM/Cosmos helpers, IBC packet encoding |
 | `lib/proofapi.js` | gRPC client for proof-api (`RelayByTx`, `CreateClient`, `Info`) |
+| `deploy/` | EVM contract deployment |
+| `patches/` | Local patches to the solidity-ibc-eureka checkout |
+| `kurtosis/` | Ethereum devnet arguments and a verification script |
 | `abi/` | Contract ABIs, generated from the Eureka contracts |
 
 ---
