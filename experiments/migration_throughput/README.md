@@ -65,7 +65,8 @@ return leg. Measuring only the forward leg would have reported a ~25 s
 rather than a property of the bridge.
 
 #Results: [summary](results/summary.md) ·
-[rate sweep](results/rate_sweep/README.md).
+[rate sweep](results/rate_sweep/README.md) ·
+[real-verifier relay costs](results/real-verifier/README.md).
 
 ## Why the headline metric is the right one
 

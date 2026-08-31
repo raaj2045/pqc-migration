@@ -74,7 +74,11 @@ def write_raw_packets(runs):
         w = csv.writer(f)
         w.writerow(["burst_n", "repeat", "seq", "status", "window_id",
                     "submit_ts", "commit_ts", "credit_ts", "ack_ts",
-                    "commit_latency_s", "forward_latency_s", "roundtrip_latency_s"])
+                    "commit_latency_s", "forward_latency_s", "roundtrip_latency_s",
+                    # Measured cost, empty for runs recorded before the relay
+                    # scripts reported it.
+                    "recv_gas", "recv_bytes", "prove_seconds",
+                    "ack_gas", "update_client_gas"])
         for r in runs:
             for p in r["packets"]:
                 cl = (p["commit_ts"] - p["submit_ts"]) if p["commit_ts"] else ""
@@ -82,7 +86,10 @@ def write_raw_packets(runs):
                 rl = (p["ack_ts"] - p["submit_ts"]) if p.get("ack_ts") else ""
                 w.writerow([r["burst_n"], r["repeat"], p["seq"], p["status"],
                             p["window_id"], p["submit_ts"], p["commit_ts"],
-                            p["credit_ts"], p.get("ack_ts", 0), cl, fl, rl])
+                            p["credit_ts"], p.get("ack_ts", 0), cl, fl, rl,
+                            p.get("recv_gas", ""), p.get("recv_bytes", ""),
+                            p.get("prove_seconds", ""), p.get("ack_gas", ""),
+                            p.get("update_client_gas", "")])
     return out
 
 

@@ -62,6 +62,15 @@ class Packet:
     status: str = "pending"   # pending | committed | credited | failed
     error: str = ""
 
+    # Measured cost. The relay scripts already report all of this; it is
+    # recorded per packet so a cost model can be fitted from measurement
+    # rather than derived by dividing a constant.
+    recv_gas: int = 0            # EVM forward relay (SP1-verified)
+    recv_bytes: int = 0          # its calldata size
+    prove_seconds: float = 0.0   # SP1 proving time for that relay
+    ack_gas: int = 0             # Cosmos MsgAcknowledgement (once per packet)
+    update_client_gas: int = 0   # Cosmos MsgUpdateClient (once per window)
+
     @property
     def latency(self) -> float | None:
         """Round-trip latency: submission until the ack is verified on Cosmos."""
@@ -93,6 +102,25 @@ class RunResult:
         d = asdict(self)
         d["packets"] = [asdict(p) for p in self.packets]
         return d
+
+
+def _gas_from_stdout(text):
+    """Every gas_used value in a relay script's stdout, in order.
+
+    step-ack.js forwards sendtx.py's JSON verbatim, one object per Cosmos tx it
+    broadcasts: the MsgUpdateClient that advances the light client, then the
+    MsgAcknowledgement for the packet. Both were previously discarded.
+    """
+    out = []
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if not line.startswith("{") or "gas_used" not in line:
+            continue
+        try:
+            out.append(int(json.loads(line)["gas_used"]))
+        except (ValueError, KeyError, TypeError):
+            continue
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -311,10 +339,22 @@ def relay_and_observe(cfg, packets: list[Packet], beacon: Beacon,
         recv_path = devnet_dir / f"recv-result-{p.seq}.json"
         env = dict(os.environ, RECV_RESULT_PATH=str(recv_path))
         try:
+            # A real Groth16 proof takes ~10 min, and proof-api's own gRPC
+            # deadline is 30 min; this must exceed it or the relay is killed
+            # after the proving cost has already been paid.
             subprocess.run(recv_cmd.split() + [p.tx_hash], check=True,
-                           capture_output=True, text=True, timeout=600, env=env)
+                           capture_output=True, text=True, timeout=2400, env=env)
             p.credit_ts = time.time()
             p.status = "credited"
+            # step-recv.js records its own cost; read it back rather than
+            # re-deriving anything.
+            try:
+                rr = json.loads(recv_path.read_text())
+                p.recv_gas = int(rr.get("recvGas", 0) or 0)
+                p.recv_bytes = int(rr.get("relayTxBytes", 0) or 0)
+                p.prove_seconds = float(rr.get("proveSeconds", 0) or 0)
+            except (OSError, ValueError, TypeError) as err:
+                log(f"  recv seq={p.seq}: cost not recorded ({err})")
         except subprocess.CalledProcessError as e:
             p.status = "failed"
             p.error = ((e.stderr or e.stdout) or "")[-300:]
@@ -340,11 +380,21 @@ def relay_and_observe(cfg, packets: list[Packet], beacon: Beacon,
         for p in outstanding:
             recv_path = devnet_dir / f"recv-result-{p.seq}.json"
             try:
-                subprocess.run(ack_cmd.split() + [str(recv_path)], check=True,
-                               capture_output=True, text=True, timeout=900)
+                r = subprocess.run(ack_cmd.split() + [str(recv_path)], check=True,
+                                   capture_output=True, text=True, timeout=2400)
                 p.ack_ts = time.time()
                 p.window_id = w
                 p.status = "acked"
+                # step-ack.js prints one sendtx.py JSON object per Cosmos tx.
+                # When the light client had to be advanced first there are two,
+                # MsgUpdateClient then MsgAcknowledgement; otherwise just the
+                # ack. Attribute them by position, and record the update cost
+                # once per window rather than per packet.
+                gas = _gas_from_stdout(r.stdout)
+                if len(gas) >= 2:
+                    p.update_client_gas, p.ack_gas = gas[0], gas[-1]
+                elif gas:
+                    p.ack_gas = gas[0]
             except subprocess.CalledProcessError as e:
                 p.error = ((e.stderr or e.stdout) or "")[-300:]
                 log(f"  ack seq={p.seq} deferred: {p.error[:140]}")

@@ -1,0 +1,8 @@
+{
+  "sequence": "1",
+  "ackGas": "445761",
+  "ackBlockNumber": "2853",
+  "relayTxHash": "0x145312488a22db7a4c565a47cc8a17e94afb137c441ab83440456dd49a8d49e3",
+  "proveSeconds": "581.2",
+  "relayTxBytes": 3716
+}
