@@ -10,6 +10,10 @@ set -uo pipefail
 # where the collected inputs belong, alongside the other generated files.
 DEVNET_DIR="${DEVNET_DIR:?set DEVNET_DIR (see devnet/devnet.env.example)}"
 cd "$DEVNET_DIR"
+if [ ! -f ports.env ]; then
+  echo "ports.env missing in $DEVNET_DIR; generating it (kurtosis port print)..." >&2
+  "$(dirname "${BASH_SOURCE[0]}")/../scripts/write-ports-env.sh"
+fi
 source ports.env
 OUT=instantiate-inputs
 mkdir -p "$OUT"

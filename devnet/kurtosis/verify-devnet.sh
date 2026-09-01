@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # Verify the Kurtosis eth devnet is usable for cw-ics08-wasm-eth:
 # real slot progression, finality, and a light client bootstrap with data.
+#
+# Usage: verify-devnet.sh              one-shot report (original behavior)
+#        verify-devnet.sh wait-for-finality
+#          poll until finalized epoch > 0, then exit 0. Intended for
+#          devnet/scripts/bring-up-devnet.sh, which needs to know finality
+#          has actually arrived before handing off to steps that read
+#          finalized state (deploy, light-client instantiation).
 set -uo pipefail
 
 BEACON="${BEACON:-}"
@@ -10,6 +17,25 @@ if [ -z "$BEACON" ]; then
 fi
 echo "beacon endpoint: $BEACON"
 echo
+
+if [ "${1:-}" = "wait-for-finality" ]; then
+  echo "waiting for finality (polling every 15s, up to 20m)..."
+  deadline=$(($(date +%s) + 1200))
+  while true; do
+    epoch=$(curl -s "$BEACON/eth/v1/beacon/states/head/finality_checkpoints" | jq -r '.data.finalized.epoch // "0"' 2>/dev/null)
+    slot=$(curl -s "$BEACON/eth/v1/beacon/headers/head" | jq -r '.data.header.message.slot // "?"' 2>/dev/null)
+    echo "  head slot $slot, finalized epoch ${epoch:-0}"
+    if [ -n "$epoch" ] && [ "$epoch" -gt 0 ] 2>/dev/null; then
+      echo "RESULT: finality reached (epoch $epoch)"
+      exit 0
+    fi
+    if [ "$(date +%s)" -ge "$deadline" ]; then
+      echo "RESULT: finality not reached within 20 minutes" >&2
+      exit 1
+    fi
+    sleep 15
+  done
+fi
 
 echo "=== fork schedule ==="
 curl -s "$BEACON/eth/v1/config/spec" | jq -r '.data | {
