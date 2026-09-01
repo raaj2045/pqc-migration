@@ -13,6 +13,9 @@ Build the chain, run the tests, and bring up the bridge.
 
 ## Requirements
 
+`devnet/scripts/setup-toolchain.sh` installs and version-checks everything
+below (plus `bun`/`just` for the devnet tooling).
+
 Building and testing the chain:
 
 | | Version |
@@ -93,6 +96,9 @@ wasmvm also links dynamically, so `libwasmvm` must be reachable at runtime.
 
 ### Building solidity-ibc-eureka
 
+`devnet/scripts/setup-eureka-checkout.sh` automates this section; the manual
+steps below are for debugging a build failure.
+
 The bridge's forward leg needs `proof-api` from
 [`solidity-ibc-eureka`](https://github.com/srdtrk/solidity-ibc-eureka), built
 from a checkout with [this project's patches](../devnet/patches/README.md)
@@ -132,9 +138,12 @@ chain that cannot reload its own contracts. See
 
 ## Running the bridge
 
-Both directions are driven by the scripts in [`devnet/`](../devnet/README.md):
-a forward transfer (Cosmos escrow, Ethereum voucher mint) and a reverse
-redemption (Ethereum voucher burn, Cosmos unescrow).
+[`devnet/scripts/bring-up-devnet.sh`](../devnet/README.md#bringing-up-a-devnet)
+stands up the devnet, ending with the light client live and `Active`. Both
+transfer directions are then driven by the scripts in
+[`devnet/`](../devnet/README.md): a forward transfer (Cosmos escrow, Ethereum
+voucher mint) and a reverse redemption (Ethereum voucher burn, Cosmos
+unescrow).
 
 Prerequisites, configuration, step order and timing are documented in
 [devnet/README.md](../devnet/README.md). Contract deployment is

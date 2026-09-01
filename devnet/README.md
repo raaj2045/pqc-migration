@@ -12,6 +12,32 @@ hardware needed for local proving, see
 These are JavaScript and Python only: `devnet/` is not a Go package and is
 invisible to `go build ./...`.
 
+## Bringing up a devnet
+
+Requires the toolchain in `scripts/setup-toolchain.sh` (installed
+automatically as stage 1). One command brings up a full devnet — Ethereum
+devnet, Cosmos chain, contract deployment, and the 08-wasm light client —
+ending with the client live and `Active`:
+
+```bash
+devnet/scripts/bring-up-devnet.sh
+```
+
+Each stage is individually skippable (`--skip-<stage>`, `--help` for the
+full list) and also runs as a standalone script under `devnet/scripts/`:
+
+| Script | Does |
+|---|---|
+| `setup-toolchain.sh` | Installs/version-checks the host toolchain |
+| `setup-eureka-checkout.sh` | Checks out solidity-ibc-eureka, builds proof-api |
+| `build-wasm-light-client.sh` | Builds `cw-ics08-wasm-eth` |
+| `init-chain.sh` | Initializes the Cosmos chain |
+| `get-deployer-key.sh` | Derives the funded EL deployer key |
+| `deploy-contracts.sh` | Deploys the EVM contracts |
+| `store-and-vote-wasm-code.sh` | Stores the wasm code via governance |
+| `create-light-client.sh` | Creates the 08-wasm light client |
+| `write-ports-env.sh` | Writes `ports.env` from Kurtosis |
+
 ## Configuration
 
 Every host path and endpoint is resolved by `lib/config.js` and `lib/config.py`,
@@ -213,24 +239,18 @@ verifier those legs are near-instant. See [Proving](#proving).
 
 ## Light-client helpers
 
-Creating the Cosmos-side client against a running Ethereum devnet is two steps,
-both run with `DEVNET_DIR` set:
+`scripts/create-light-client.sh` creates the Cosmos-side light client
+(stage 9/10 of `bring-up-devnet.sh`, or run it standalone — see `--help`).
+
+Lower-level pieces it uses, useful standalone for debugging:
 
 ```bash
 ./light-client/collect-instantiate-inputs.sh          # gathers bootstrap + spec
-python3 light-client/assemble-instantiate-msg.py <router> <pubkeys_hash> <checksum>
-```
-
-The first writes `instantiate-inputs/` into `$DEVNET_DIR`; the second assembles
-`instantiate-msg.json` from it. Neither instantiates the client — broadcast the
-message with `cosmos/sendtx.py`.
-
-```bash
 python3 light-client/pubkeys_hash.py <pubkeys.json>   # SSZ HTR of the sync committee
 python3 light-client/verify_pubkeys_hash.py [bootstrap.json]
 ```
 
-The second validates the first against consensus data by folding the
+The third validates the second against consensus data by folding the
 bootstrap's sync-committee branch to the finalized header's `state_root`. See
 [../docs/ethereum-light-client.md](../docs/ethereum-light-client.md).
 
@@ -252,6 +272,7 @@ slot, which is expected rather than an error.
 
 | Path | Purpose |
 |---|---|
+| `scripts/` | Setup and devnet bring-up automation — see [Bringing up a devnet](#bringing-up-a-devnet) |
 | `step-recv.js` | Forward leg: relay a Cosmos→EVM packet, with a real SP1 proof |
 | `step-ack.js` | Forward leg: acknowledge that packet back on Cosmos |
 | `step-redeem-{send,recv,ack}.js` | The three redemption steps, in order |

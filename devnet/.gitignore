@@ -5,6 +5,7 @@ devnet.env
 node_modules
 __pycache__/
 *.pyc
+artifacts/
 
 # Hand-off files written between steps live in $DEVNET_DIR, but tolerate them
 # here in case DEVNET_DIR is pointed at this directory.
@@ -13,3 +14,6 @@ redeem-recv.json
 redeem-ack.json
 msg-*.json
 *.log
+instantiate-inputs/
+instantiate-msg.json
+*_wrapped.json
