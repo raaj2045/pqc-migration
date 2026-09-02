@@ -12,6 +12,9 @@ artifacts/
 redeem-send.json
 redeem-recv.json
 redeem-ack.json
+native-send.json
+native-recv.json
+native-ack.json
 msg-*.json
 *.log
 instantiate-inputs/

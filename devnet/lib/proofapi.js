@@ -61,8 +61,23 @@ async function relayByTx(client, { srcChain, dstChain, sourceTxIds, srcClientId,
   return { tx: resp.tx, address: resp.address };
 }
 
+// Ask proof-api for the deployment tx of a brand-new light client on the
+// destination chain (e.g. SP1ICS07Tendermint on the EVM, verifying srcChain).
+// `parameters` is module-specific — see programs/proof-api/README.md's
+// per-module config table (e.g. sp1_verifier/zk_algorithm for cosmos_to_eth).
+// The returned tx is a contract-creation tx: broadcast it with `to: null`.
+async function createClient(client, { srcChain, dstChain, parameters }) {
+  const resp = await call(client, "CreateClient", {
+    src_chain: srcChain,
+    dst_chain: dstChain,
+    parameters: parameters || {},
+  });
+  if (!resp.tx || resp.tx.length === 0) throw new Error("proof-api returned an empty create-client tx");
+  return { tx: resp.tx, address: resp.address };
+}
+
 async function info(client, { srcChain, dstChain }) {
   return call(client, "Info", { src_chain: srcChain, dst_chain: dstChain }, 30_000);
 }
 
-module.exports = { connect, relayByTx, info };
+module.exports = { connect, relayByTx, createClient, info };
