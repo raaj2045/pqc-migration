@@ -38,6 +38,30 @@ full list) and also runs as a standalone script under `devnet/scripts/`:
 | `create-light-client.sh` | Creates the 08-wasm light client |
 | `write-ports-env.sh` | Writes `ports.env` from Kurtosis |
 
+### Bringing up the native-asset devnet
+
+`bring-up-devnet.sh` covers the stake flow (Cosmos→EVM) only. The reverse
+direction — an Ethereum-native asset escrowed on Ethereum, a voucher minted on
+Cosmos, see [Which direction is which](#which-direction-is-which) — needs an
+EVM-side `SP1ICS07Tendermint` client, which `bring-up-devnet.sh` deliberately
+does not create (see [`deploy/README.md`](deploy/README.md)). Run this after
+`bring-up-devnet.sh`:
+
+```bash
+devnet/scripts/bring-up-native-asset.sh
+```
+
+| Stage | Does |
+|---|---|
+| verify stake-flow prerequisites | Fails clearly if the chain, contracts, Cosmos light client, or `PROOF_API_ADDR` config aren't already in place |
+| verify-and-repoint proof-api | Builds the SP1 programs if missing, regenerates `proof-api`'s config against the current `deploy.env`/`ports.env`, restarts it if stale or not running |
+| `create-eth-client.js` | Creates (or reuses) the EVM-side `SP1ICS07Tendermint` client and registers the counterparty on both chains |
+| `deploy-test-token.sh` | Deploys `TestERC20` |
+| verify test-wallet vars | Checks `RECEIVER_ADDR`/`RECEIVER_PK`/`USER`/`VALIDATOR` are set in `devnet.env`, funds `RECEIVER_ADDR` if needed |
+
+Every stage is individually skippable (`--skip-<stage>`, `--help` for the full
+list) and safe to re-run.
+
 ## Configuration
 
 Every host path and endpoint is resolved by `lib/config.js` and `lib/config.py`,
@@ -171,6 +195,10 @@ IBCERC20 vouchers**. Redemption therefore burns the voucher on Ethereum and
 unescrows on Cosmos — the reverse of the outbound transfer. See
 [Architecture](../docs/architecture.md#asset-transfer).
 
+The reverse asset direction also runs: an Ethereum-native ERC-20 (`TestERC20`)
+escrowed on Ethereum, a voucher minted on Cosmos — see
+[Native-asset cycle](#native-asset-cycle).
+
 ## Forward leg
 
 A Cosmos→EVM transfer is submitted as a `MsgTransfer` with
@@ -218,6 +246,33 @@ transaction returns `code 0` and consumes gas, but the packet receipt prevents
 any state change — no token callback, no second acknowledgement, balances
 unmoved. Replay safety here comes from the packet receipt, not from an
 application-level identifier check.
+
+## Native-asset cycle
+
+Requires [`bring-up-native-asset.sh`](#bringing-up-the-native-asset-devnet).
+Run in order:
+
+```bash
+cd devnet
+
+# 1. Escrow TestERC20 on Ethereum and emit an IBC packet to Cosmos.
+#    Writes $DEVNET_DIR/native-send.json. USER must be the Cosmos receiver
+#    address — set it explicitly, since it collides with the ambient $USER.
+USER=<cosmos-receiver-address> node step-native-send.js 2000000
+
+# 2. Prove the escrow to Cosmos and mint the voucher, via the real
+#    cw-ics08-wasm-eth light client. Note the MsgRecvPacket txhash, not the
+#    MsgUpdateClient one printed just before it.
+node step-native-recv.js
+
+# 3. Prove the Cosmos acknowledgement back to Ethereum, closing the packet,
+#    via a real SP1 Groth16 proof.
+node step-native-ack.js <recv-txhash-from-step-2>
+```
+
+The minted voucher's denom trace resolves to `{base: <TestERC20 address>,
+trace: [{port: "transfer", channel: <COSMOS_CLIENT_ID>}]}` — no
+pre-registration on either side, same auto-derivation as the forward leg.
 
 ## Timing
 
@@ -276,6 +331,8 @@ slot, which is expected rather than an error.
 | `step-recv.js` | Forward leg: relay a Cosmos→EVM packet, with a real SP1 proof |
 | `step-ack.js` | Forward leg: acknowledge that packet back on Cosmos |
 | `step-redeem-{send,recv,ack}.js` | The three redemption steps, in order |
+| `step-native-{send,recv,ack}.js` | The three native-asset steps, in order |
+| `create-eth-client.js` | Creates/reuses the EVM-side SP1ICS07Tendermint client, registers the counterparty on both chains |
 | `relayer/update-eth-client.py` | Light-client updates from finality updates |
 | `light-client/` | `pubkeys_hash` derivation and its verification |
 | `cosmos/sendtx.py` | Assemble, ML-DSA-65 sign, broadcast, await a Cosmos tx |

@@ -30,6 +30,11 @@ standard ICS-20 packets whose proofs are checked by light clients on both sides.
 IBCERC20 vouchers**. Redemption burns the voucher on Ethereum and unescrows on
 Cosmos — the mirror of the outbound transfer.
 
+The reverse direction runs too: an Ethereum-native ERC-20 escrowed on
+Ethereum, with a voucher auto-minted on Cosmos — no pre-registration on either
+side, same denom-trace mechanism as the forward leg. See
+[devnet/README.md#native-asset-cycle](../devnet/README.md#native-asset-cycle).
+
 ## The two light clients
 
 Each chain verifies the other's consensus itself. Neither direction trusts a

@@ -1,20 +1,14 @@
 #!/usr/bin/env bash
 # Deploy TestERC20 (devnet/deploy/TestERC20.sol) to the running eth-devnet
 # enclave and write its address to $DEVNET_DIR/deploy.env as TEST_ERC20.
+# Escrowed (not minted/burned) by ICS20Transfer's native branch since it is
+# never mapped as an IBCERC20 voucher — see devnet/deploy/TestERC20.sol.
 #
-# This is the Ethereum-native asset the native-transfer scripts
-# (step-native-{send,recv,ack}.js) escrow: unlike IBCERC20, ICS20Transfer
-# never maps it to a denom, so ICS20Transfer.sendTransfer takes the native
-# branch (escrow, not burn). See devnet/deploy/TestERC20.sol and
-# docs/architecture.md.
+# Unlike deploy-contracts.sh, this upserts only TEST_ERC20 in deploy.env,
+# leaving ICS26_ROUTER/ICS20_TRANSFER/etc. intact.
 #
-# Unlike deploy-contracts.sh, this does NOT overwrite deploy.env: it upserts
-# only the TEST_ERC20 line, leaving ICS26_ROUTER/ICS20_TRANSFER/etc. from a
-# prior deploy-contracts.sh run intact.
-#
-# Re-running this deploys a brand-new TestERC20 every time (same caveat as
-# deploy-contracts.sh) — safe, but not a no-op, and it invalidates any
-# native-send.json produced against the old token address.
+# Re-running deploys a brand-new TestERC20 every time — safe, but not a
+# no-op, and it invalidates any native-send.json from the old token address.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh

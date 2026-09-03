@@ -88,12 +88,15 @@ BIN=("$PQCHAIND_BIN" --home "$CHAIN_HOME" --node "$CHAIN_NODE")
 tx() { "${BIN[@]}" tx "$@" --chain-id "$CHAIN_ID" --keyring-backend test --gas auto --gas-adjustment 1.5 -y -o json; }
 qry() { "${BIN[@]}" query "$@" -o json; }
 
-# --- instantiate-inputs: collect if missing --------------------------------
+# --- instantiate-inputs: always re-collect, never reuse ---------------------
+# A cached copy from a prior enclave looks valid but isn't: ethereum-package
+# reuses the same validator set every rebuild, so pubkeys_hash verification
+# passes even against stale data — only genesis_time actually differs, and
+# nothing was checking it. Re-collecting is a few seconds of API calls.
 INPUTS="$DEVNET_DIR/instantiate-inputs"
-if [ ! -f "$INPUTS/client_state.json" ] || [ ! -f "$INPUTS/consensus_state.json" ]; then
-  log "instantiate-inputs missing in $DEVNET_DIR; collecting from the live Ethereum devnet"
-  DEVNET_DIR="$DEVNET_DIR" "$DEVNET_ROOT/light-client/collect-instantiate-inputs.sh"
-fi
+log "collecting instantiate-inputs from the live Ethereum devnet"
+rm -rf "$INPUTS"
+DEVNET_DIR="$DEVNET_DIR" "$DEVNET_ROOT/light-client/collect-instantiate-inputs.sh"
 require_file "$INPUTS/client_state.json"
 require_file "$INPUTS/consensus_state.json"
 
@@ -197,4 +200,14 @@ status="$(qry ibc client status "$client_id" | jq -r '.status')"
 [ "$status" = "Active" ] || die "client $client_id created (tx $hash) but status is $status, not Active"
 
 ok "client $client_id created and Active (tx $hash, height $(jq -r '.height' <<<"$included"))"
+
+# Persist alongside deploy-contracts.sh's output so later tooling can
+# discover the current Cosmos client without guessing.
+DEPLOY_ENV="$DEVNET_DIR/deploy.env"
+touch "$DEPLOY_ENV"
+grep -v '^COSMOS_CLIENT_ID=' "$DEPLOY_ENV" > "$DEPLOY_ENV.tmp" || true
+mv "$DEPLOY_ENV.tmp" "$DEPLOY_ENV"
+echo "COSMOS_CLIENT_ID=$client_id" >> "$DEPLOY_ENV"
+ok "wrote COSMOS_CLIENT_ID=$client_id to $DEPLOY_ENV"
+
 echo "$client_id"
