@@ -96,6 +96,8 @@ node relay-recv-batch.js "$DEVNET_DIR/migration-volume/send-x.json" \
 | `Recv_Gas_Per_Transfer` | receive gas alone, per migration |
 | `Update_Client_Gas`, `Recv_Packet_Gas` | the two operations, measured separately |
 | `Recv_Tx_Bytes` | on-wire size of the receive transaction |
+| `Credited_Height`, `Credited_Block_Ts` | the Cosmos block that credited the cohort |
+| `Chain_Host_Skew_s` | block header time minus relay-host clock at that moment |
 | `T_Submit_s` | phase 1, measured |
 | `T_Finality_Wait_s` | phase 2, measured — real time blocked on beacon finality |
 | `T_Proof_and_Relay_s` | phase 3, measured (`eth_getProof` + update + tx) |
@@ -107,9 +109,17 @@ node relay-recv-batch.js "$DEVNET_DIR/migration-volume/send-x.json" \
 granularity, gaps between phases. It is deliberately *not* folded into the
 finality wait, which the paper quotes.
 
-`T_Total_Latency_s` ends at the **timestamp of the Cosmos block** that credited
-the cohort, read from the transaction result. The whole cohort is credited in
-one block, so this is an exact instant rather than a subprocess's wall clock.
+**Every span and the total are on the relay host's clock.** The Cosmos block
+header time is a different clock — CometBFT derives it from the median of the
+previous commit's validator timestamps, so it lags the host by seconds (−6.4 s
+observed) — and is carried separately as `Credited_Block_Ts`, with the offset
+in `Chain_Host_Skew_s`. Mixing the two books that skew as negative
+unattributed time. The whole cohort is still credited in one Cosmos block, so
+`Credited_Block_Ts` remains the exact chain-side instant; it just is not
+subtracted from a host timestamp.
+
+The driver aborts if the measured phases sum to more than the total, rather
+than recording a negative residual.
 
 `plot_data.py` writes `migration_latency_ci.pdf`,
 `migration_throughput.pdf`, `cosmos_gas_per_transfer.pdf`,

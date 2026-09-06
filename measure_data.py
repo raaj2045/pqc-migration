@@ -19,6 +19,15 @@ of the wall clock after the four measured phases; it is named for what it is
 (process startup, polling granularity, inter-phase gaps) rather than being
 folded into the finality wait, which would overstate a term the paper quotes.
 
+One clock
+---------
+Every span and the total are on the relay host's clock. The Cosmos block
+header time is a different clock — CometBFT derives it from the median of the
+previous commit's validator timestamps, so it lags the host by seconds — and
+is carried separately as `Credited_Block_Ts`, with the offset in
+`Chain_Host_Skew_s`. Mixing the two books the skew as negative unattributed
+time.
+
 Deterministic paths
 -------------------
 Every cell has a run label, passed to both scripts, and both write files named
@@ -65,6 +74,9 @@ COLUMNS = [
     "Recv_Packet_Gas",
     "Recv_Tx_Bytes",
     "Throughput_TPS",
+    "Credited_Height",
+    "Credited_Block_Ts",
+    "Chain_Host_Skew_s",
     "T_Submit_s",
     "T_Finality_Wait_s",
     "T_Proof_and_Relay_s",
@@ -82,16 +94,28 @@ def run(cmd, label):
 
 
 def require(d, key, where, positive=True):
-    """Read a field that must exist, refusing to substitute a default.
+    """Read a numeric field that must be present and must have parsed.
 
     Silently defaulting a missing field to 0 is how an unparsed gas figure
     becomes a plausible-looking data point, so every read goes through here.
+    Gas totals cross the JSON boundary as strings because they are BigInts on
+    the JavaScript side, so the check is that the value *is a number*, not that
+    it arrived as one. `positive=False` allows zero (a wait that was already
+    satisfied), never a negative or an unparseable value.
     """
     if key not in d or d[key] is None:
         raise SystemExit(f"{where}: missing required field {key!r}; got keys {sorted(d)}")
     v = d[key]
-    if positive and not (isinstance(v, (int, float)) and v > 0):
+    try:
+        num = float(v)
+    except (TypeError, ValueError):
+        raise SystemExit(f"{where}: field {key!r} is {v!r}, which is not a number")
+    if num != num:                                   # NaN
+        raise SystemExit(f"{where}: field {key!r} is NaN")
+    if positive and num <= 0:
         raise SystemExit(f"{where}: field {key!r} is {v!r}, expected a positive number")
+    if not positive and num < 0:
+        raise SystemExit(f"{where}: field {key!r} is {v!r}, expected a non-negative number")
     return v
 
 
@@ -151,39 +175,76 @@ def preflight_capacity(cfg, max_n):
 
 # --- one cell ---------------------------------------------------------------
 
-def run_cell(cfg, out_dir, n, trial, signer_key, amount):
-    label = f"n{n}-t{trial}-{signer_key}"
-    print(f"\n=== N={n} trial={trial} signer={signer_key} (label {label}) ===")
+def load_cell(out_dir, label, n):
+    """Read a cell's two artifacts, or return None if it has not run.
 
-    run(["node", str(EXP / "setup-user-pool.js"), str(n)], f"{label}/setup")
-    run(["node", str(EXP / "submit-migrations.js"), str(n), str(amount),
-         f"--label={label}"], f"{label}/submit")
-
-    # Deterministic paths, both named by the run label. Nothing here globs.
+    Both are addressed by label, never by mtime, and each is checked to carry
+    the label it was asked for — so a file left behind by a different cell is
+    rejected rather than silently adopted.
+    """
     send_path = out_dir / f"send-{label}.json"
-    if not send_path.exists():
-        raise SystemExit(f"{label}: submit-migrations.js did not write {send_path}")
-    send = json.loads(send_path.read_text())
-    if send.get("label") != label:
-        raise SystemExit(f"{send_path}: label is {send.get('label')!r}, expected {label!r}")
-    committed = require(send, "committed", str(send_path))
-    if committed != n:
-        raise SystemExit(f"{label}: only {committed}/{n} sendTransfer calls committed")
-
-    run(["node", str(EXP / "relay-recv-batch.js"), str(send_path),
-         f"--count={n}", f"--label={label}", f"--signer-key={signer_key}"],
-        f"{label}/relay")
-
     recv_path = out_dir / f"recv-{label}.json"
-    if not recv_path.exists():
-        raise SystemExit(f"{label}: relay-recv-batch.js did not write {recv_path}")
+    if not (send_path.exists() and recv_path.exists()):
+        return None
+    send = json.loads(send_path.read_text())
     recv = json.loads(recv_path.read_text())
-    if recv.get("label") != label:
-        raise SystemExit(f"{recv_path}: label is {recv.get('label')!r}, expected {label!r}")
+    for path, doc in ((send_path, send), (recv_path, recv)):
+        if doc.get("label") != label:
+            raise SystemExit(f"{path}: label is {doc.get('label')!r}, expected {label!r}")
     if not recv.get("ok"):
         raise SystemExit(f"{label}: receive transaction failed — {recv.get('rawLog')}")
     if recv.get("count") != n:
         raise SystemExit(f"{label}: recv summary covers {recv.get('count')} packets, expected {n}")
+    # The two files must describe the same packets, not merely share a label.
+    sent = {str(p.get("sequence")) for p in send.get("packets", [])
+            if p.get("status") == "committed"}
+    got = {str(x) for x in recv.get("sequences", [])}
+    if not got or not got <= sent:
+        raise SystemExit(f"{label}: recv sequences {sorted(got)[:5]}... are not a subset "
+                         f"of the send file's committed sequences — mismatched artifacts")
+    return send, recv
+
+
+def run_cell(cfg, out_dir, n, trial, signer_key, amount, reuse=False):
+    label = f"n{n}-t{trial}-{signer_key}"
+    print(f"\n=== N={n} trial={trial} signer={signer_key} (label {label}) ===")
+
+    # A cell costs a full finality wait, so a complete-but-unrecorded one is
+    # salvaged rather than re-run. --resume only; a default run always
+    # re-measures.
+    cached = load_cell(out_dir, label, n) if reuse else None
+    if cached:
+        print(f"    reusing existing artifacts for {label} (both files complete)")
+        send, recv = cached
+        send_path = out_dir / f"send-{label}.json"
+        recv_path = out_dir / f"recv-{label}.json"
+    else:
+        run(["node", str(EXP / "setup-user-pool.js"), str(n)], f"{label}/setup")
+        run(["node", str(EXP / "submit-migrations.js"), str(n), str(amount),
+             f"--label={label}"], f"{label}/submit")
+
+        # Deterministic paths, both named by the run label. Nothing here globs.
+        send_path = out_dir / f"send-{label}.json"
+        if not send_path.exists():
+            raise SystemExit(f"{label}: submit-migrations.js did not write {send_path}")
+        send = json.loads(send_path.read_text())
+        if send.get("label") != label:
+            raise SystemExit(f"{send_path}: label is {send.get('label')!r}, expected {label!r}")
+        committed = require(send, "committed", str(send_path))
+        if committed != n:
+            raise SystemExit(f"{label}: only {committed}/{n} sendTransfer calls committed")
+
+        run(["node", str(EXP / "relay-recv-batch.js"), str(send_path),
+             f"--count={n}", f"--label={label}", f"--signer-key={signer_key}"],
+            f"{label}/relay")
+
+        recv_path = out_dir / f"recv-{label}.json"
+        if not recv_path.exists():
+            raise SystemExit(f"{label}: relay-recv-batch.js did not write {recv_path}")
+        loaded = load_cell(out_dir, label, n)
+        if not loaded:
+            raise SystemExit(f"{label}: artifacts incomplete after a successful run")
+        send, recv = loaded
 
     # --- gas ----------------------------------------------------------------
     # MsgUpdateClient and the N MsgRecvPacket are SEPARATE transactions, so the
@@ -195,18 +256,34 @@ def run_cell(cfg, out_dir, n, trial, signer_key, amount):
     cosmos_total = recv_gas + update_gas
 
     # --- time ---------------------------------------------------------------
-    # Four measured phases plus an explicit residual. The residual is NOT
-    # relabelled as the finality wait: it is whatever the phases do not span.
+    # Every span below is on the RELAY HOST'S clock, and so is the total. The
+    # Cosmos block header time is a chain clock: CometBFT sets it from the
+    # median of the previous commit's validator timestamps, so it lags the host
+    # by seconds. Subtracting one from the other silently books that skew as
+    # negative unattributed time, so the two clocks are kept apart and the
+    # offset is recorded as its own column instead.
     t_submit = float(require(send, "elapsedSeconds", str(send_path)))
     t_finality = float(require(recv, "finalityWaitSeconds", str(recv_path), positive=False))
     t_relay = sum(float(require(recv, k, str(recv_path), positive=False))
                   for k in ("updateSeconds", "proofSeconds", "txSeconds"))
     t_start = float(require(send, "firstSubmittedTs", str(send_path)))
-    t_credit = float(require(recv, "creditedTs", str(recv_path)))
-    t_total = t_credit - t_start
+    t_credit_host = float(require(recv, "creditedWallTs", str(recv_path)))
+    t_credit_chain = float(require(recv, "creditedTs", str(recv_path)))
+    t_total = t_credit_host - t_start
     if t_total <= 0:
-        raise SystemExit(f"{label}: credited ({t_credit}) is not after first submit ({t_start})")
+        raise SystemExit(f"{label}: credited ({t_credit_host}) is not after first submit ({t_start})")
+
+    # Four measured phases plus an explicit residual. The residual is NOT
+    # relabelled as the finality wait: it is whatever the phases do not span.
     t_unattributed = t_total - (t_submit + t_finality + t_relay)
+    # A materially negative residual means the spans overlap or the clocks were
+    # mixed again — either way the decomposition is wrong, so say so rather
+    # than plot a negative bar.
+    if t_unattributed < -1.0:
+        raise SystemExit(
+            f"{label}: measured phases sum to {t_submit + t_finality + t_relay:.2f}s, "
+            f"more than the {t_total:.2f}s total — the spans overlap or two clocks "
+            f"were mixed; refusing to record a negative residual")
 
     return {
         "N_Users": n,
@@ -227,6 +304,9 @@ def run_cell(cfg, out_dir, n, trial, signer_key, amount):
         "Recv_Packet_Gas": recv_gas,
         "Recv_Tx_Bytes": int(require(recv, "txBytes", str(recv_path))),
         "Throughput_TPS": n / t_total,
+        "Credited_Height": int(require(recv, "creditedHeight", str(recv_path))),
+        "Credited_Block_Ts": t_credit_chain,
+        "Chain_Host_Skew_s": t_credit_chain - t_credit_host,
         "T_Submit_s": t_submit,
         "T_Finality_Wait_s": t_finality,
         "T_Proof_and_Relay_s": t_relay,
@@ -249,7 +329,9 @@ def main():
     ap.add_argument("--amount", default="2000", help="tokens migrated per user")
     ap.add_argument("--out", default="migration_metrics_detailed.csv")
     ap.add_argument("--resume", action="store_true",
-                    help="append to --out, skipping cells already present")
+                    help="append to --out, skipping cells already in it and "
+                         "reusing on-disk artifacts for cells that completed "
+                         "but were never recorded")
     args = ap.parse_args()
 
     n_users = [int(x) for x in args.n.split(",") if x]
@@ -283,7 +365,8 @@ def main():
                         print(f"[{i}/{total}] {label} — already recorded, skipping")
                         continue
                     print(f"[{i}/{total}]", end=" ")
-                    w.writerow(run_cell(cfg, out_dir, n, trial, signer_key, args.amount))
+                    w.writerow(run_cell(cfg, out_dir, n, trial, signer_key,
+                                       args.amount, reuse=args.resume))
                     f.flush()
 
     print(f"\nwrote {out_path}")
