@@ -1,7 +1,7 @@
 // Config resolution for the devnet redemption scripts.
 //
 // Precedence, highest first:
-//   1. process.env
+//   1. process.env, except for the shell-owned names in SHELL_OWNED
 //   2. devnet.env (next to this package, if present)
 //   3. devnet.env.example defaults
 //   4. the generated env files inside DEVNET_DIR (ports.env, cosmos.env,
@@ -36,12 +36,20 @@ function parseEnvFile(file) {
   return out;
 }
 
+// Names the shell owns. process.env wins over devnet.env for every other key,
+// but these are set for every process by login/the OS, so an ambient value
+// would silently shadow the devnet.env entry rather than override it on
+// purpose. Anything named here must be set in devnet.env or not at all.
+const SHELL_OWNED = new Set([
+  "USER", "LOGNAME", "HOME", "PATH", "SHELL", "PWD", "OLDPWD", "TERM", "LANG",
+]);
+
 function load() {
   const defaults = parseEnvFile(path.join(ROOT, "devnet.env.example"));
   const local = parseEnvFile(path.join(ROOT, "devnet.env"));
   const cfg = { ...defaults, ...local };
   for (const k of Object.keys(cfg)) {
-    if (process.env[k]) cfg[k] = expand(process.env[k]);
+    if (process.env[k] && !SHELL_OWNED.has(k)) cfg[k] = expand(process.env[k]);
   }
 
   const devnetDir = cfg.DEVNET_DIR;
@@ -78,4 +86,4 @@ function require_(cfg, ...keys) {
   return cfg;
 }
 
-module.exports = { load, require_, expand, ROOT };
+module.exports = { load, require_, expand, ROOT, SHELL_OWNED };

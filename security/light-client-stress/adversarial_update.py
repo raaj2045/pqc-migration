@@ -31,7 +31,6 @@ from __future__ import annotations
 
 import base64
 import json
-import os
 import subprocess
 import sys
 import time
@@ -57,10 +56,17 @@ def main():
     cfg = config.require(
         config.load(),
         "PQCHAIND_BIN", "CHAIN_HOME", "CHAIN_NODE",
-        "BEACON_URL", "COSMOS_CLIENT_ID", "SENDTX_CMD", "VALIDATOR",
+        "BEACON_URL", "COSMOS_CLIENT_ID", "SENDTX_CMD", "RELAYER_KEY",
     )
     client_id = sys.argv[2] if len(sys.argv) > 2 else cfg["COSMOS_CLIENT_ID"]
     beacon = cfg["BEACON_URL"].rstrip("/")
+
+    # The msg's `signer` must be the address of the key that actually signs the
+    # tx (RELAYER_KEY, below), so resolve it from the keyring rather than from
+    # a config entry that can drift out of step with it.
+    signer_addr = subprocess.check_output(
+        [cfg["PQCHAIND_BIN"], "keys", "show", cfg["RELAYER_KEY"], "-a",
+         "--home", cfg["CHAIN_HOME"], "--keyring-backend", "test"], text=True).strip()
 
     def cli(args):
         return subprocess.check_output(
@@ -142,7 +148,7 @@ def main():
             "data": base64.b64encode(
                 json.dumps(header, separators=(",", ":")).encode()).decode(),
         },
-        "signer": cfg["VALIDATOR"],
+        "signer": signer_addr,
     }
     path = Path(cfg["DEVNET_DIR"]) / f"msg-adv-{mode}.json"
     path.write_text(json.dumps(msg))
@@ -150,7 +156,7 @@ def main():
     # The contract derives "current slot" from Cosmos block time, which can lag
     # the beacon. That is not a rejection, just an early submission -- retry.
     for attempt in range(6):
-        out = subprocess.run(cfg["SENDTX_CMD"].split() + [str(path), "validator", "4000000"],
+        out = subprocess.run(cfg["SENDTX_CMD"].split() + [str(path), cfg["RELAYER_KEY"], "4000000"],
                              capture_output=True, text=True)
         res = (out.stdout or "").strip() + (out.stderr or "").strip()[-1500:]
         if "more recent than the calculated current slot" in res:

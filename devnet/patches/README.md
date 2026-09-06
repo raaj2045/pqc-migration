@@ -32,6 +32,12 @@ Not part of the patch — copy into the checkout separately.
 | `bin/sp1-account.rs` | `packages/sp1-ics07-tendermint-prover/src/bin/` | Queries prover-network balance and settlement |
 | `bin/createclient.go.txt` | `e2e/interchaintestv8/cmd/createclient/main.go` | Calls proof-api `CreateClient` directly and prints the deployment calldata. Carries a `.txt` suffix so it is not compiled as part of this module; rename on copy. |
 
+## Reference tooling (not auto-applied)
+
+| File | Purpose |
+|---|---|
+| `bin/execute-probe.rs` | Ad-hoc SP1 execute-mode driver: reports cycle count and `syscall_counts` for the update-client guest program, to check whether Ed25519 verification is running SP1-precompiled or plain software. Not copied by `setup-eureka-checkout.sh` — see the file's header for manual setup/run steps. |
+
 ## Building
 
 The build needs several environment overrides; see

@@ -11,7 +11,6 @@ import base64
 import json
 import os
 import re
-import subprocess
 import sys
 
 # Reads and writes inside $DEVNET_DIR, next to the files

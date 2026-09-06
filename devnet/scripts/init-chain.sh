@@ -3,16 +3,24 @@
 # gentx, collect-gentxs, validate.
 #
 # Idempotent guard: if CHAIN_HOME already exists and has produced blocks,
-# this refuses to touch it — pass --force to wipe and reinitialize. This is
-# the check the manual process this session lacked: editing genesis.json (in
-# particular the gov voting_period) AFTER the chain has already started is
-# silently ignored by CometBFT/cosmos-sdk (genesis is only read once, at
-# height 0), which is how a running chain's params got corrupted by a
-# well-intentioned re-edit. The gov edit here always happens between `init`
-# and the first `start`, never after.
+# this refuses to reinitialize it — pass --force to wipe and reinitialize.
+# This is the check the manual process this session lacked: editing
+# genesis.json (in particular the gov voting_period) AFTER the chain has
+# already started is silently ignored by CometBFT/cosmos-sdk (genesis is
+# only read once, at height 0), which is how a running chain's params got
+# corrupted by a well-intentioned re-edit. The gov edit here always happens
+# between `init` and the first `start`, never after.
 #
-# Refuses outright, --force or not, if pqchaind is currently running against
-# CHAIN_HOME — this script never touches a live node's data directory.
+# An existing chain with state is not itself an error, though — that's the
+# normal case after any machine restart. This script only performs `init`;
+# starting/skip-starting is handled by the caller (bring-up-devnet.sh), so
+# here we just report which of the three cases applies and get out of the
+# way for the two non-init cases:
+#   - no state at all                       -> initialize (falls through)
+#   - state exists, pqchaind already running -> skip, exit 0
+#   - state exists, pqchaind not running     -> skip (don't reinit), exit 0
+# --force always wipes and reinitializes state that isn't currently backing
+# a running node; it never touches a live node's data directory.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
@@ -44,9 +52,43 @@ TEST_KEYS_ML_DSA=(relayer loadgen)
 GENTX_AMOUNT="${GENTX_AMOUNT:-1000000000stake}"
 FUND_AMOUNT="${FUND_AMOUNT:-100000000000stake}"
 
-# --- refuse to touch a live node ------------------------------------------
-if pgrep -f "pqchaind[[:space:]].*--home[[:space:]=]*$CHAIN_HOME" >/dev/null 2>&1; then
-  die "pqchaind is currently running against $CHAIN_HOME — stop it first. This script never touches a live node's data directory, --force or not."
+is_running() {
+  pgrep -f "pqchaind[[:space:]].*--home[[:space:]=]*$CHAIN_HOME" >/dev/null 2>&1
+}
+
+chain_has_blocks() {
+  local pvs="$CHAIN_HOME/data/priv_validator_state.json"
+  [ -f "$pvs" ] || return 1
+  local h
+  h="$(python3 -c "import json;print(json.load(open('$pvs')).get('height','0'))" 2>/dev/null || echo 0)"
+  [ -n "$h" ] && [ "$h" != "0" ]
+}
+
+chain_height() {
+  python3 -c "import json;print(json.load(open('$CHAIN_HOME/data/priv_validator_state.json')).get('height','0'))" 2>/dev/null || echo 0
+}
+
+# --- three-way idempotency guard -------------------------------------------
+if [ -d "$CHAIN_HOME" ] && chain_has_blocks; then
+  if is_running; then
+    ok "chain already running at height $(chain_height), skipping"
+    exit 0
+  fi
+  if [ "$FORCE" != "1" ]; then
+    log "existing chain found at height $(chain_height), starting"
+    exit 0
+  fi
+  warn "wiping $CHAIN_HOME (--force)"
+  rm -rf "$CHAIN_HOME"
+elif [ -d "$CHAIN_HOME" ]; then
+  # directory exists but no blocks produced yet (e.g. a prior init was
+  # interrupted) — safe to reinitialize in place, but not if something is
+  # currently running against it.
+  if is_running; then
+    die "pqchaind is currently running against $CHAIN_HOME — stop it first. This script never touches a live node's data directory."
+  fi
+  log "$CHAIN_HOME exists but has produced no blocks; reinitializing in place"
+  rm -rf "$CHAIN_HOME"
 fi
 
 # --- build pqchaind if missing ---------------------------------------------
@@ -56,26 +98,6 @@ if [ ! -x "$PQCHAIND_BIN" ]; then
   (cd "$REPO_ROOT" && go build -o "$PQCHAIND_BIN" ./cmd/pqchaind)
 fi
 BIN=("$PQCHAIND_BIN")
-
-# --- idempotency guard -----------------------------------------------------
-chain_has_blocks() {
-  local pvs="$CHAIN_HOME/data/priv_validator_state.json"
-  [ -f "$pvs" ] || return 1
-  local h
-  h="$(python3 -c "import json;print(json.load(open('$pvs')).get('height','0'))" 2>/dev/null || echo 0)"
-  [ -n "$h" ] && [ "$h" != "0" ]
-}
-
-if [ -d "$CHAIN_HOME" ]; then
-  if chain_has_blocks; then
-    [ "$FORCE" = "1" ] || die "$CHAIN_HOME already has a chain with blocks (height > 0). Refusing to touch it. Re-run with --force to wipe and reinitialize — this destroys all chain state."
-    warn "wiping $CHAIN_HOME (--force)"
-    rm -rf "$CHAIN_HOME"
-  else
-    log "$CHAIN_HOME exists but has produced no blocks; reinitializing in place"
-    rm -rf "$CHAIN_HOME"
-  fi
-fi
 
 # --- init --------------------------------------------------------------
 log "pqchaind init"

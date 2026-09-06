@@ -57,7 +57,7 @@ devnet/scripts/bring-up-native-asset.sh
 | verify-and-repoint proof-api | Builds the SP1 programs if missing, regenerates `proof-api`'s config against the current `deploy.env`/`ports.env`, restarts it if stale or not running |
 | `create-eth-client.js` | Creates (or reuses) the EVM-side `SP1ICS07Tendermint` client and registers the counterparty on both chains |
 | `deploy-test-token.sh` | Deploys `TestERC20` |
-| verify test-wallet vars | Checks `RECEIVER_ADDR`/`RECEIVER_PK`/`USER`/`VALIDATOR` are set in `devnet.env`, funds `RECEIVER_ADDR` if needed |
+| verify test-wallet vars | Checks `RECEIVER_ADDR`/`RECEIVER_PK`/`COSMOS_RECEIVER` are set in `devnet.env`, funds `RECEIVER_ADDR` if needed |
 
 Every stage is individually skippable (`--skip-<stage>`, `--help` for the full
 list) and safe to re-run.
@@ -67,11 +67,19 @@ list) and safe to re-run.
 Every host path and endpoint is resolved by `lib/config.js` and `lib/config.py`,
 which read, highest precedence first:
 
-1. the process environment
+1. the process environment, except for the shell-owned names in the config
+   layer's `SHELL_OWNED` (`USER`, `HOME`, `PATH`, …). Login sets those for
+   every process, so an ambient value would shadow rather than override the
+   file; keys named there must come from `devnet.env`.
 2. `devnet.env` (git-ignored, create it from the example)
 3. `devnet.env.example` defaults
 4. the generated env files inside `$DEVNET_DIR` — `ports.env`, `cosmos.env`,
    `deploy.env` — which the devnet tooling itself writes
+
+A Cosmos message's `signer` field is never read from config. It must carry the
+address of the key that actually signs the transaction or the ante handler
+rejects it, so the scripts resolve it from `RELAYER_KEY` (or their own
+`--signer-key=`) via `lib.js`'s `signerAddress`.
 
 ```bash
 cp devnet.env.example devnet.env   # then edit
@@ -188,6 +196,15 @@ cryptographic rejection. A call trace of the same transaction shows two calls
 to the Groth16 verifier — the client update and the membership proof — and none
 to the mock.
 
+### Batch scaling against the mock verifier
+
+[`experiments/batch_scaling/`](../experiments/batch_scaling/README.md) groups
+transfers under one shared light-client update — against `SP1MockVerifier`,
+so it measures the transfer mechanism's scaling rather than proving time —
+and stops automatically at the first group size that hits a real limit (gas,
+timeout, revert). It checks the mock verifier is actually bound before
+running.
+
 ## Which direction is which
 
 `stake` is Cosmos-native, so **Cosmos holds the escrow and Ethereum holds the
@@ -256,9 +273,9 @@ Run in order:
 cd devnet
 
 # 1. Escrow TestERC20 on Ethereum and emit an IBC packet to Cosmos.
-#    Writes $DEVNET_DIR/native-send.json. USER must be the Cosmos receiver
-#    address — set it explicitly, since it collides with the ambient $USER.
-USER=<cosmos-receiver-address> node step-native-send.js 2000000
+#    Writes $DEVNET_DIR/native-send.json. The Cosmos receiver comes from
+#    COSMOS_RECEIVER in devnet.env.
+node step-native-send.js 2000000
 
 # 2. Prove the escrow to Cosmos and mint the voucher, via the real
 #    cw-ics08-wasm-eth light client. Note the MsgRecvPacket txhash, not the

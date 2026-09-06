@@ -1,6 +1,6 @@
 // Return leg (EVM -> Cosmos), verified by the REAL Ethereum light client.
 //
-// Usage: node step-ack.js [recv-result.json]
+// Usage: node step-ack.js [recv-result.json] [--signer-key=<keyring key name>]
 //
 // Builds an eth_getProof membership proof of the acknowledgement stored in
 // ICS26Router and submits MsgAcknowledgement, which cw-ics08-wasm-eth verifies
@@ -11,20 +11,30 @@
 // the MsgUpdateClient it triggers BLS-verifies the 512-key sync committee.
 // The forward leg, by contrast, is checked by a MOCK SP1 verifier on this
 // devnet. See experiments/migration_throughput/README.md.
+//
+// --signer-key defaults to RELAYER_KEY (devnet.env, itself defaulting to
+// "validator"). Passing a different keyring key (e.g. from ack_pool.py's
+// concurrent pool workers) makes THAT account sign and pay for both this
+// MsgAcknowledgement and the MsgUpdateClient it may trigger — the msg
+// "signer" address is resolved from the given key, not a fixed config entry, since a Cosmos tx is rejected if its declared signer address
+// doesn't match whoever actually signed it.
 const fs = require("fs");
 const { execFileSync } = require("child_process");
 const path = require("path");
-const { loadEnv, evm, cosmosCli, ethers } = require("./lib/lib");
+const { loadEnv, evm, cosmosCli, ethers, signerAddress } = require("./lib/lib");
 const P = require("./lib/packet");
 
 // Everything below resolves through the shared config layer; this script holds
 // no path, port or address of its own.
 const ENV = loadEnv();
-const RECV_RESULT = process.argv[2]
+const argv = process.argv.slice(2);
+const signerArg = argv.find((a) => a.startsWith("--signer-key="));
+const SIGNER_KEY = (signerArg && signerArg.split("=")[1]) || ENV.RELAYER_KEY || "validator";
+const RECV_RESULT = argv.find((a) => !a.startsWith("--signer-key="))
   || path.join(ENV.DEVNET_DIR, "recv-result.json");
 
 const beaconUrl = () => (ENV.BEACON_URL || ENV.BEACON).replace(/\/$/, "");
-const validator = () => ENV.VALIDATOR;
+const signer = () => signerAddress(ENV, SIGNER_KEY);
 
 const b64 = (hex) => Buffer.from(hex.replace(/^0x/, ""), "hex").toString("base64");
 const get = (url) => JSON.parse(execFileSync("curl", ["-s", url], { maxBuffer: 64e6 }));
@@ -67,15 +77,71 @@ const cli = (args) => cosmosCli([...args, "-o", "json"]);
   const proofBlock = Number(hdr.execution.block_number);
   console.log(`proof slot    : ${proofSlot} (execution block ${proofBlock})`);
 
-  // 4. Make sure the light client holds a consensus state at that slot.
+  // 4. Wait until the light client actually holds a consensus state at or
+  //    after that slot, rather than assuming one update call produced it.
+  //
+  //    A single MsgUpdateClient is not enough under a concurrent ack pool.
+  //    Every worker runs this same step against the ONE shared client, so a
+  //    worker's own update can lose the race in several ordinary ways: it
+  //    reverts because a peer landed the same header first, it is still in
+  //    the mempool when the query below runs, or the header it submitted was
+  //    already superseded. Failing optimistically on the first query turns
+  //    all of those into a hard packet failure ("no consensus state at or
+  //    after slot N"), which is what killed seq 0/596/635 in the last run —
+  //    the `have` lists in those errors were filling up as the failures
+  //    happened, i.e. the state was arriving, just not yet.
+  //
+  //    So: poll, and re-trigger an update periodically while polling.
+  //    - POLL_S = 12s, one Ethereum slot — the finest granularity at which
+  //      new beacon data can exist, so polling faster only burns queries.
+  //    - UPDATE_EVERY = 3 polls (36s) — long enough for a submitted update
+  //      to be included in a Cosmos block and for a peer's update to become
+  //      visible, so we re-submit only when nothing landed, instead of
+  //      paying for a redundant 512-key BLS verification every 12s.
+  //    - WAIT_S = 480s (8 min) — one Ethereum finality epoch is ~6.4 min
+  //      (2 epochs, 64 slots), so this covers the worst honest case: the
+  //      finality update we read in step 3 was superseded and we must wait
+  //      for the next finalization to be provable again, plus tx queueing
+  //      behind 25 concurrent workers. It stays well inside ack_pool.py's
+  //      2400s per-packet subprocess timeout, so a genuinely stuck client
+  //      still surfaces as this explicit error rather than as a timeout.
+  const POLL_S = 12;
+  const UPDATE_EVERY = 3;
+  const WAIT_S = 480;
   const updParts = ENV.UPDATE_CLIENT_CMD.split(" ");
-  execFileSync(updParts[0], [...updParts.slice(1), env.COSMOS_CLIENT_ID],
-    { stdio: "inherit" });
-  const states = JSON.parse(cli(["query", "ibc", "client", "consensus-states", env.COSMOS_CLIENT_ID]));
-  const have = states.consensus_states.map((e) => Number(e.height.revision_height));
-  const useSlot = have.includes(proofSlot) ? proofSlot : Math.max(...have.filter((s) => s >= proofSlot));
+  const updateClient = () => {
+    try {
+      execFileSync(updParts[0],
+        [...updParts.slice(1), env.COSMOS_CLIENT_ID, `--signer-key=${SIGNER_KEY}`],
+        { stdio: "inherit" });
+    } catch (e) {
+      // Not fatal: a concurrent worker may have landed the same header first.
+      // Whatever actually made it on-chain is what the next poll reads.
+      console.log(`  update-client attempt failed (${String(e.message).split("\n")[0]}) `
+        + `— continuing to poll`);
+    }
+  };
+  const consensusHeights = () => JSON.parse(
+    cli(["query", "ibc", "client", "consensus-states", env.COSMOS_CLIENT_ID])
+  ).consensus_states.map((e) => Number(e.height.revision_height));
+
+  const deadline = Date.now() + WAIT_S * 1000;
+  let useSlot = null;
+  let have = [];
+  for (let attempt = 0; ; attempt++) {
+    if (attempt % UPDATE_EVERY === 0) updateClient();
+    have = consensusHeights();
+    const usable = have.filter((s) => s >= proofSlot);
+    if (usable.length) { useSlot = Math.max(...usable); break; }
+    const left = Math.round((deadline - Date.now()) / 1000);
+    if (left <= 0) break;
+    console.log(`  waiting for a consensus state at or after slot ${proofSlot} `
+      + `(have ${have.length ? have.join(",") : "none"}; ${left}s left)`);
+    execFileSync("sleep", [String(POLL_S)]);
+  }
   if (!useSlot || !Number.isFinite(useSlot)) {
-    throw new Error(`no consensus state at or after slot ${proofSlot}; have ${have}`);
+    throw new Error(`no consensus state at or after slot ${proofSlot} after ${WAIT_S}s `
+      + `of waiting and periodic client updates; have ${have}`);
   }
   // Re-derive the execution block for the slot we will actually prove against.
   const blk = get(`${beaconUrl()}/eth/v2/beacon/blocks/${useSlot}`);
@@ -126,7 +192,7 @@ const cli = (args) => cosmosCli([...args, "-o", "json"]);
     acknowledgement: { app_acknowledgements: [b64(ackHex)] },
     proof_acked: Buffer.from(JSON.stringify(membershipProof)).toString("base64"),
     proof_height: { revision_number: "0", revision_height: String(useSlot) },
-    signer: validator(),
+    signer: signer(),
   };
   const msgPath = path.join(ENV.DEVNET_DIR,
     `msg-ack-wasm-${pkt.sourceClient}-${pkt.sequence}.json`);
@@ -134,7 +200,7 @@ const cli = (args) => cosmosCli([...args, "-o", "json"]);
 
   const txParts = ENV.SENDTX_CMD.split(" ");
   const out = execFileSync(txParts[0],
-    [...txParts.slice(1), msgPath, ENV.RELAYER_KEY || "validator", "3000000"],
+    [...txParts.slice(1), msgPath, SIGNER_KEY, "3000000"],
     { encoding: "utf8" });
   console.log(out.trim());
   fs.unlinkSync(msgPath);

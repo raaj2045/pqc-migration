@@ -74,3 +74,25 @@ protocgen.log
 /tools/block_packing/block_packing
 /tools/loadgen/loadgen
 /tools/storage_sim/storage_sim
+
+# Local devnet node_modules (a shared install, not part of the repo).
+/devnet-node-modules/
+
+# Toolchain downloads and runtime pidfiles.
+/protoc-*.zip
+/proof-api.pid
+
+# Sweep output and figures: regenerable from a live devnet via
+# measure_data.py / plot_data.py, and meaningless without one.
+/migration_metrics*.csv
+/*.pdf
+
+# Raw per-run experiment data. Regenerate by re-running against your own
+# devnet; only the scripts that produce it are tracked. validator_scaling_v2
+# and migration_throughput are the exceptions — their result sets are the
+# paper's committed evidence and stay tracked.
+experiments/*/results/
+!experiments/validator_scaling_v2/results/
+!experiments/migration_throughput/results/
+experiments/*/logs/
+experiments/*/sweep_state.json

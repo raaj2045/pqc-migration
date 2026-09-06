@@ -25,8 +25,10 @@ const AMOUNT = BigInt(process.argv[2] || "2000000");
   const testErc20 = new ethers.Contract(env.TEST_ERC20, require("./abi/TestERC20.json"), holder);
   const transfer = new ethers.Contract(env.ICS20_TRANSFER, require("./abi/ICS20Transfer.json"), holder);
 
-  const cosmosReceiver = env.USER;
-  if (!cosmosReceiver) throw new Error("USER (cosmos receiver) not set; see devnet.env.example");
+  const cosmosReceiver = env.COSMOS_RECEIVER;
+  if (!cosmosReceiver || !cosmosReceiver.startsWith("cosmos1")) {
+    throw new Error(`COSMOS_RECEIVER must be a bech32 cosmos address, got ${JSON.stringify(cosmosReceiver)}; see devnet.env.example`);
+  }
 
   // TestERC20.mint is unrestricted, so the holder tops itself up directly
   // rather than routing a mint through the deployer key.
@@ -41,8 +43,8 @@ const AMOUNT = BigInt(process.argv[2] || "2000000");
 
   // ICS20Transfer pulls the tokens into escrow (native branch: no burn,
   // because TEST_ERC20 is not a mapped IBCERC20 voucher).
-  let r = await sendTx(testErc20, "approve", [env.ICS20_TRANSFER, AMOUNT]);
-  console.log(`approve -> status ${r.status}, gas ${r.gasUsed}`);
+  const approveReceipt = await sendTx(testErc20, "approve", [env.ICS20_TRANSFER, AMOUNT]);
+  console.log(`approve -> status ${approveReceipt.status}, gas ${approveReceipt.gasUsed}`);
 
   const timeout = BigInt(Math.floor(Date.now() / 1000) + 3600);
   const msg = {
@@ -54,12 +56,12 @@ const AMOUNT = BigInt(process.argv[2] || "2000000");
     timeoutTimestamp: timeout,
     memo: "",
   };
-  r = await sendTx(transfer, "sendTransfer", [msg], { gasLimit: 3_000_000 });
-  console.log(`sendTransfer -> status ${r.status}, gas ${r.gasUsed}`);
+  const sendReceipt = await sendTx(transfer, "sendTransfer", [msg], { gasLimit: 3_000_000 });
+  console.log(`sendTransfer -> status ${sendReceipt.status}, gas ${sendReceipt.gasUsed}`);
 
   // Pull the packet out of the router's SendPacket event.
   let packet = null;
-  for (const log of r.logs) {
+  for (const log of sendReceipt.logs) {
     try {
       const parsed = router.interface.parseLog(log);
       if (parsed && parsed.name === "SendPacket") packet = parsed.args.packet;
@@ -105,9 +107,9 @@ const AMOUNT = BigInt(process.argv[2] || "2000000");
       value: pkt.payloads[0].value,
     },
     commitment,
-    sendBlockNumber: String(r.blockNumber),
-    approveGas: String(r.gasUsed),
-    sendGas: String(r.gasUsed),
+    sendBlockNumber: String(sendReceipt.blockNumber),
+    approveGas: String(approveReceipt.gasUsed),
+    sendGas: String(sendReceipt.gasUsed),
   }, null, 2));
   console.log(`wrote ${env.file("native-send.json")}`);
 })();

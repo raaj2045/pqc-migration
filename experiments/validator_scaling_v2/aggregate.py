@@ -22,7 +22,6 @@ and emits:
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -30,7 +29,6 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
 
 EXP_DIR = Path(__file__).parent.resolve()
 RESULTS_DIR = EXP_DIR / "results"
@@ -41,7 +39,6 @@ SCHEMES = ["secp256k1", "mldsa44"]
 
 SCHEME_COLORS = {"secp256k1": "#1f77b4", "mldsa44": "#d62728"}
 SCHEME_LABELS = {"secp256k1": "secp256k1", "mldsa44": "ML-DSA-44"}
-N_MARKERS = {4: "o", 7: "s", 16: "^"}
 
 # Reviewer-readiness style — applied to every figure produced here.
 plt.style.use("seaborn-v0_8-whitegrid")

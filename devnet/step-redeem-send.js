@@ -15,8 +15,10 @@ const AMOUNT = BigInt(process.argv[2] || "2000000");
   const erc20 = new ethers.Contract(env.IBCERC20, require("./abi/IBCERC20.json"), holder);
   const transfer = new ethers.Contract(env.ICS20_TRANSFER, require("./abi/ICS20Transfer.json"), holder);
 
-  const cosmosReceiver = env.USER;
-  if (!cosmosReceiver) throw new Error("USER (cosmos receiver) not set; see devnet.env.example");
+  const cosmosReceiver = env.COSMOS_RECEIVER;
+  if (!cosmosReceiver || !cosmosReceiver.startsWith("cosmos1")) {
+    throw new Error(`COSMOS_RECEIVER must be a bech32 cosmos address, got ${JSON.stringify(cosmosReceiver)}; see devnet.env.example`);
+  }
   console.log(`voucher balance before: ${await erc20.balanceOf(holder.address)}`);
   console.log(`total supply before   : ${await erc20.totalSupply()}`);
 

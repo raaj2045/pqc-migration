@@ -1,0 +1,6 @@
+# Raw results and logs from running this sweep are local data, not
+# committed — regenerate them by re-running against your own devnet (see
+# README.md). Only the scripts that produce them are tracked.
+results/
+logs/
+sweep_state.json

@@ -10,12 +10,38 @@
 // independently, so a partial prior run (e.g. EVM client created but Cosmos
 // registration failed) resumes correctly rather than reporting false success.
 //
-// Usage: node create-eth-client.js
+// Which SP1 verifier the new client is bound to (SP1MockVerifier, near-free
+// but not a real proof; or SP1VerifierGroth16, a real ~10 min proof — see
+// devnet/README.md#proving) is an EXPLICIT, REQUIRED argument, not a default,
+// so a client's verifier is always a deliberate choice made visible in the
+// log, not something left over from whichever value deploy.env happened to
+// hold. A client's verifier is fixed permanently at creation and can never be
+// switched later (see devnet/deploy/README.md#verifier-paths).
+//
+// Usage: node create-eth-client.js --verifier=mock|real
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
 const { loadEnv, sendTx, sendRawTx, ethers, abi, config } = require("./lib/lib");
 const proofapi = require("./lib/proofapi");
+
+function parseVerifierArg(argv) {
+  const arg = argv.find((a) => a.startsWith("--verifier="));
+  const mode = arg && arg.split("=")[1];
+  if (mode !== "mock" && mode !== "real") {
+    console.error(
+      "usage: node create-eth-client.js --verifier=mock|real\n\n" +
+      "  mock  bind the new client to SP1MockVerifier (near-instant, NOT a real\n" +
+      "        proof — for mechanism/scaling tests, e.g. experiments/batch_scaling)\n" +
+      "  real  bind the new client to SP1VerifierGroth16 (real proving, ~10 min/proof\n" +
+      "        — see devnet/README.md#proving)\n\n" +
+      "No default: which verifier a client is bound to is permanent and affects every\n" +
+      "result produced against it, so it must be chosen explicitly every time."
+    );
+    process.exit(2);
+  }
+  return mode;
+}
 
 // Avoids lib.js's evm(): that also builds an SP1ICS07Tendermint handle from
 // env.SP1_ICS07, which may not exist yet.
@@ -45,6 +71,15 @@ async function hasLiveCode(provider, address) {
   return code !== "0x";
 }
 
+// keccak256("VERIFIER()")[:4] — the SP1ICS07Tendermint accessor for the
+// verifier address it was constructed with (immutable, so this is a live
+// read of a permanent fact, not just of deploy.env's bookkeeping).
+const VERIFIER_SELECTOR = "0x08c84e70";
+async function boundVerifier(provider, sp1Ics07Address) {
+  const result = await provider.call({ to: sp1Ics07Address, data: VERIFIER_SELECTOR });
+  return "0x" + result.slice(-40);
+}
+
 // pqchaind prints full CLI usage to stderr on a "not found" query error;
 // suppress it since that's an expected outcome here, not a failure to report.
 function counterpartyOf(env, clientId) {
@@ -60,13 +95,26 @@ function counterpartyOf(env, clientId) {
 
 // Returns { clientId, address } for a live, correctly-paired EVM client, or
 // deploys and registers a new one. Does not touch the Cosmos side.
-async function getOrCreateEvmClient(env, { provider, router, deployer }, chainId, cosmosClientId) {
+async function getOrCreateEvmClient(env, { provider, router, deployer }, chainId, cosmosClientId, verifierMode, verifierAddr) {
   if (env.ETH_CLIENT_ID) {
     const clientAddr = await router.getClient(env.ETH_CLIENT_ID).catch(() => null);
     if (clientAddr && await hasLiveCode(provider, clientAddr)) {
       const counterparty = await router.getCounterparty(env.ETH_CLIENT_ID);
       if (counterparty.clientId === cosmosClientId) {
-        console.log(`reusing ${env.ETH_CLIENT_ID} @ ${clientAddr} (paired with ${cosmosClientId})`);
+        // A client's verifier is fixed forever at creation — reusing one
+        // bound to the WRONG verifier for the requested mode would silently
+        // give real-proving results to a caller that asked for mock, or
+        // vice versa. Confirm the live binding before reusing it.
+        const bound = await boundVerifier(provider, clientAddr);
+        if (bound.toLowerCase() !== verifierAddr.toLowerCase()) {
+          throw new Error(
+            `${env.ETH_CLIENT_ID} @ ${clientAddr} is already bound to ${bound}, not the ` +
+            `requested --verifier=${verifierMode} verifier (${verifierAddr}). A client's ` +
+            `verifier can never be changed after creation. Create a new Cosmos-side client ` +
+            `(devnet/scripts/create-light-client.sh) to pair with a fresh EVM client bound to ` +
+            `${verifierMode}, then re-run.`);
+        }
+        console.log(`reusing ${env.ETH_CLIENT_ID} @ ${clientAddr} (paired with ${cosmosClientId}, bound to ${verifierMode})`);
         return { clientId: env.ETH_CLIENT_ID, address: clientAddr };
       }
       console.log(`${env.ETH_CLIENT_ID} exists but is paired with "${counterparty.clientId}", not "${cosmosClientId}" — creating a new client`);
@@ -93,14 +141,14 @@ async function getOrCreateEvmClient(env, { provider, router, deployer }, chainId
   }
 
   console.log(`cosmos: ${env.CHAIN_ID} (${cosmosClientId})  eth: ${chainId}`);
-  console.log(`sp1 verifier: ${env.SP1_VERIFIER_GROTH16}  role_manager: ${env.ICS26_ROUTER}`);
+  console.log(`sp1 verifier: ${verifierAddr} (--verifier=${verifierMode})  role_manager: ${env.ICS26_ROUTER}`);
 
   const client = proofapi.connect(env);
   console.log("requesting SP1ICS07Tendermint deployment tx from proof-api...");
   const created = await proofapi.createClient(client, {
     srcChain: env.CHAIN_ID,
     dstChain: chainId,
-    parameters: { sp1_verifier: env.SP1_VERIFIER_GROTH16, role_manager: env.ICS26_ROUTER },
+    parameters: { sp1_verifier: verifierAddr, role_manager: env.ICS26_ROUTER },
   });
 
   const data = "0x" + Buffer.from(created.tx).toString("hex");
@@ -110,6 +158,14 @@ async function getOrCreateEvmClient(env, { provider, router, deployer }, chainId
   const sp1Ics07Address = r.contractAddress;
   if (!sp1Ics07Address) throw new Error("no contractAddress in deployment receipt");
   console.log(`SP1ICS07Tendermint deployed at: ${sp1Ics07Address}`);
+
+  const actuallyBound = await boundVerifier(provider, sp1Ics07Address);
+  if (actuallyBound.toLowerCase() !== verifierAddr.toLowerCase()) {
+    throw new Error(
+      `deployed contract's VERIFIER() = ${actuallyBound}, expected ${verifierAddr} ` +
+      `(--verifier=${verifierMode}) — proof-api built the deployment tx with the wrong parameter.`);
+  }
+  console.log(`confirmed on-chain: VERIFIER() = ${actuallyBound} (--verifier=${verifierMode})`);
 
   // addClient(counterpartyInfo, client): 2-arg, permissionless, auto-ID overload.
   const counterpartyInfo = [cosmosClientId, [ethers.toUtf8Bytes("ibc"), ethers.toUtf8Bytes("")]];
@@ -180,12 +236,27 @@ function registerCosmosCounterparty(env, cosmosClientId, ethClientId) {
 }
 
 (async () => {
+  const verifierMode = parseVerifierArg(process.argv.slice(2));
   const env = loadEnv();
-  config.require_(env, "CHAIN_ID", "PROOF_API_ADDR", "ICS26_ROUTER", "SP1_VERIFIER_GROTH16", "DEPLOYER_PK", "COSMOS_CLIENT_ID");
+  config.require_(env, "CHAIN_ID", "PROOF_API_ADDR", "ICS26_ROUTER", "DEPLOYER_PK", "COSMOS_CLIENT_ID",
+    "SP1_VERIFIER_MOCK", "SP1_VERIFIER_GROTH16");
+  const verifierAddr = verifierMode === "mock" ? env.SP1_VERIFIER_MOCK : env.SP1_VERIFIER_GROTH16;
+
+  console.log("=".repeat(72));
+  console.log(`VERIFIER MODE: ${verifierMode.toUpperCase()} (${verifierAddr})`);
+  console.log(verifierMode === "mock"
+    ? "  near-instant, NOT a real proof — every result produced against the"
+    : "  REAL Groth16 proving, ~10 min/proof — see devnet/README.md#proving");
+  console.log("=".repeat(72));
+
   const evm = evmNoLc(env);
   const chainId = (await evm.provider.getNetwork()).chainId.toString();
   const cosmosClientId = env.COSMOS_CLIENT_ID;
 
-  const { clientId: ethClientId } = await getOrCreateEvmClient(env, evm, chainId, cosmosClientId);
+  const { clientId: ethClientId } = await getOrCreateEvmClient(env, evm, chainId, cosmosClientId, verifierMode, verifierAddr);
   registerCosmosCounterparty(env, cosmosClientId, ethClientId);
-})();
+  console.log(`done — ${ethClientId} is bound to ${verifierMode.toUpperCase()} (${verifierAddr})`);
+})().catch((e) => {
+  console.error(e.message || e);
+  process.exit(1);
+});

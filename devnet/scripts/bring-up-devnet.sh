@@ -71,9 +71,71 @@ if [ "$SKIP_ETH_DEVNET" = 1 ]; then
 else
   stage "2/10 kurtosis eth-devnet"
   require_cmd kurtosis
-  if kurtosis enclave ls 2>/dev/null | awk '{print $2}' | grep -qx "$ENCLAVE"; then
-    ok "enclave '$ENCLAVE' already exists"
+  # An enclave is only usable if its SERVICES are up — the enclave-level
+  # status is not sufficient evidence of that, in either direction:
+  #
+  #   * `kurtosis enclave ls` reports STOPPED after a host reboot or an
+  #     explicit `kurtosis enclave stop`, and there is no `kurtosis enclave
+  #     start` to resume one.
+  #   * It reports RUNNING while every container inside is STOPPED or gone
+  #     outright — the state an unclean host shutdown leaves behind. Here
+  #     `kurtosis enclave inspect` itself fails ("couldn't find service with
+  #     uuid ... in backend") and `kurtosis port print` returns nothing.
+  #
+  # Either way the containers, and the EVM state inside them, are gone for
+  # good (see "The EVM devnet does not survive a restart" in ../README.md),
+  # so both cases get the same treatment: remove and recreate. Treating
+  # "exists" — or even "exists and says RUNNING" — as "usable" made this
+  # stage silently skip creation and then hang for the full 20 minutes
+  # polling finality from a beacon node that was not running.
+  #
+  # The helper retries before returning false, because a failed inspect is AMBIGUOUS: it
+  # means the services are unrecoverable, but it equally means the kurtosis
+  # engine is still warming up and cannot answer yet (observed: "Failed to get
+  # service info from API container ... couldn't find service with uuid" a few
+  # seconds after the engine starts, then a clean inspect moments later).
+  # Recreating is destructive and costs a fresh 20-minute finality wait, so a
+  # transient engine hiccup must not trigger it. A genuinely stopped service is
+  # definitive and answers immediately; only the ambiguous cases pay the retry.
+  enclave_services_running() {
+    local out svcs attempt
+    for attempt in 1 2 3; do
+      # Only the User Services table — the enclave's own "Status: RUNNING"
+      # line sits above it and is exactly what must not be trusted here. Note
+      # a service's extra port lines continue below its row with an empty
+      # status column, so match on the status words, not on line counts.
+      if out="$(kurtosis enclave inspect "$1" 2>/dev/null)"; then
+        svcs="$(awk '/^=+ User Services =+$/ {f=1; next} /^=+ .+ =+$/ {f=0} f' <<<"$out")"
+        if grep -qw STOPPED <<<"$svcs"; then
+          return 1                            # definitive: a service is down
+        elif grep -qw RUNNING <<<"$svcs"; then
+          return 0                            # every listed service is up
+        fi
+        # else: inspect succeeded but listed no services — ambiguous, retry.
+      fi
+      if [ "$attempt" -lt 3 ]; then sleep 5; fi
+    done
+    return 1
+  }
+
+  enclave_line="$(kurtosis enclave ls 2>/dev/null | awk -v e="$ENCLAVE" '$2 == e')"
+  if [ -z "$enclave_line" ]; then
+    recreate_reason=""
+  elif grep -qw STOPPED <<<"$enclave_line"; then
+    recreate_reason="it is stopped (containers gone, not resumable)"
+  elif ! enclave_services_running "$ENCLAVE"; then
+    recreate_reason="the enclave reports RUNNING but its services are stopped or missing"
   else
+    recreate_reason="none"
+  fi
+
+  if [ "$recreate_reason" = "none" ]; then
+    ok "enclave '$ENCLAVE' already exists and its services are running"
+  else
+    if [ -n "$recreate_reason" ]; then
+      log "enclave '$ENCLAVE' exists but $recreate_reason — removing it"
+      kurtosis enclave rm "$ENCLAVE" -f
+    fi
     log "running ethereum-package@$ETHEREUM_PACKAGE_VERSION into enclave '$ENCLAVE'"
     kurtosis run "github.com/ethpandaops/ethereum-package@$ETHEREUM_PACKAGE_VERSION" \
       --args-file "$DEVNET_ROOT/kurtosis/network_params.yaml" --enclave "$ENCLAVE"

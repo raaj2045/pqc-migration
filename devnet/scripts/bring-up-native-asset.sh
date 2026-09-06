@@ -10,14 +10,32 @@
 #                         counterparty registration — one script, since the
 #                         Cosmos side needs the EVM client's auto-assigned ID)
 #   --skip-test-token     skip deploy-test-token.sh
-#   --skip-wallet-check   skip verifying RECEIVER_ADDR/RECEIVER_PK/USER/
-#                         VALIDATOR are set in devnet.env
+#   --skip-wallet-check   skip verifying RECEIVER_ADDR/RECEIVER_PK/
+#                         COSMOS_RECEIVER are set in devnet.env
+#   --verifier=mock|real  which SP1 verifier the new EVM light client binds to
+#                         AND, necessarily, which prover proof-api is configured
+#                         with — the two are one setting, not two. mock binds
+#                         SP1MockVerifier (near-instant, not a real proof) and
+#                         proof-api's mock prover; real binds SP1VerifierGroth16
+#                         (~10 min/proof) and proof-api's cpu prover. No default
+#                         — always explicit, so it's unambiguous which mode
+#                         produced a given run's results. Passed through to
+#                         create-eth-client.js and into proof-api-config.json.
+#
+#                         These MUST agree. SP1MockVerifier's entire body is
+#                         `assert(proofBytes.length == 0)`, so a mock-bound
+#                         client handed a real Groth16 proof reverts with
+#                         Panic(0x01) on every single relay — and a real-bound
+#                         client handed an empty mock proof fails just as
+#                         surely. Configuring one side without the other is the
+#                         defect this flag exists to make impossible.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
 SKIP_PREREQ=0 SKIP_PROOF_API=0 SKIP_ETH_CLIENT=0 SKIP_TEST_TOKEN=0 SKIP_WALLET_CHECK=0
+VERIFIER=""
 for arg in "$@"; do
   case "$arg" in
     --skip-prereq-check) SKIP_PREREQ=1 ;;
@@ -25,10 +43,26 @@ for arg in "$@"; do
     --skip-eth-client) SKIP_ETH_CLIENT=1 ;;
     --skip-test-token) SKIP_TEST_TOKEN=1 ;;
     --skip-wallet-check) SKIP_WALLET_CHECK=1 ;;
+    --verifier=mock|--verifier=real) VERIFIER="${arg#--verifier=}" ;;
     -h|--help) grep '^#' "$0" | sed 's/^#//'; exit 0 ;;
     *) die "unknown flag: $arg (--help for usage)" ;;
   esac
 done
+# Required by BOTH the proof-api stage (prover) and the eth-client stage
+# (on-chain verifier) — either one running without it would pick a side
+# blind, which is exactly how a mock verifier ends up paired with a real
+# prover.
+if { [ "$SKIP_ETH_CLIENT" != 1 ] || [ "$SKIP_PROOF_API" != 1 ]; } && [ -z "$VERIFIER" ]; then
+  die "--verifier=mock|real is required (no default) — it selects BOTH the SP1 verifier the EVM light client binds to AND proof-api's prover, which must match. See --help."
+fi
+
+# The prover that pairs with each verifier. mock <-> mock is not an
+# optimization, it is a correctness requirement (see --help).
+case "$VERIFIER" in
+  mock) PROVER_TYPE="mock" ;;
+  real) PROVER_TYPE="cpu" ;;
+  "")   PROVER_TYPE="" ;;   # only reachable with both stages skipped
+esac
 
 stage() { printf '\n\033[1;36m### %s\033[0m\n' "$*" >&2; }
 
@@ -111,6 +145,7 @@ else
     --arg ucm "$ELF_DIR/sp1-ics07-tendermint-uc-and-membership" \
     --arg mis "$ELF_DIR/sp1-ics07-tendermint-misbehaviour" \
     --arg addr "${PROOF_API_ADDR%%:*}" --argjson port "${PROOF_API_ADDR##*:}" \
+    --arg prover "$PROVER_TYPE" \
     '{
       server: { address: $addr, port: $port },
       observability: { level: "info", use_otel: false, service_name: "pqc-proof-api", otel_endpoint: null },
@@ -118,7 +153,7 @@ else
         name: "cosmos_to_eth", src_chain: $cosmos_chain, dst_chain: $eth_chain,
         config: {
           tm_rpc_url: $tm_rpc, ics26_address: $ics26, eth_rpc_url: $eth_rpc,
-          mode: { sp1: { sp1_prover: { type: "cpu" },
+          mode: { sp1: { sp1_prover: { type: $prover },
             sp1_programs: { update_client: $uc, membership: $mem, update_client_and_membership: $ucm, misbehaviour: $mis }
           } }
         }
@@ -137,20 +172,49 @@ else
 
   if [ "$needs_restart" = 1 ]; then
     echo "$NEW_CONFIG" > "$CONFIG_FILE"
-    ok "wrote $CONFIG_FILE (ics26=$ICS26_ROUTER eth_rpc=$GETH_RPC)"
-    pkill -f "proof-api start --config $CONFIG_FILE" 2>/dev/null || true
-    sleep 1
-    (cd "$DEVNET_DIR" && nohup proof-api start --config "$CONFIG_FILE" > proof-api.log 2>&1 & disown)
+    ok "wrote $CONFIG_FILE (ics26=$ICS26_ROUTER eth_rpc=$GETH_RPC prover=$PROVER_TYPE, paired with --verifier=$VERIFIER)"
     host="${PROOF_API_ADDR%%:*}" port="${PROOF_API_ADDR##*:}"
-    log "waiting for proof-api to bind $PROOF_API_ADDR"
+    port_open() { (exec 3<>"/dev/tcp/$host/$port") 2>/dev/null && { exec 3<&- 3>&-; return 0; }; return 1; }
+
+    # Wait for the OLD process to release the port before rebinding. `pkill`
+    # returns as soon as the signal is sent, and a fixed `sleep 1` raced it:
+    # the new proof-api died with "Address already in use", the old one then
+    # exited too, and the bind check below — which cannot tell old from new —
+    # saw the still-listening old process and reported success. The result was
+    # a devnet with NO proof-api and a script that said it was running.
+    pkill -f "proof-api start --config $CONFIG_FILE" 2>/dev/null || true
+    for _ in $(seq 1 30); do port_open || break; sleep 1; done
+    if port_open; then
+      die "something is still listening on $PROOF_API_ADDR after stopping the old proof-api; refusing to start a second one that would fail to bind."
+    fi
+
+    # Background the SUBSHELL and let it exec into proof-api, so `$!` is
+    # proof-api's own pid. Writing it any other way gives the pid of a wrapper
+    # instead: `( cmd & )` leaves `$!` unset in this shell, and
+    # `( cd X && nohup cmd & )` applies `&` to the whole `cd && nohup` list, so
+    # `$!` names the subshell that merely parents proof-api. The liveness
+    # checks below are only meaningful against the real process.
+    api_pid_file="$DEVNET_DIR/proof-api.pid"
+    (
+      cd "$DEVNET_DIR" || exit 1
+      exec nohup proof-api start --config "$CONFIG_FILE" > proof-api.log 2>&1
+    ) &
+    api_pid=$!
+    disown "$api_pid" 2>/dev/null || true
+    echo "$api_pid" > "$api_pid_file"
+    log "waiting for proof-api (pid $api_pid) to bind $PROOF_API_ADDR"
     for _ in $(seq 1 60); do
-      (exec 3<>"/dev/tcp/$host/$port") 2>/dev/null && { exec 3<&- 3>&-; break; }
+      port_open && break
+      # A dead child will never bind — fail now with the log, rather than
+      # burning the full timeout.
+      kill -0 "$api_pid" 2>/dev/null \
+        || die "proof-api (pid $api_pid) exited before binding $PROOF_API_ADDR; check $DEVNET_DIR/proof-api.log"
       sleep 2
     done
-    (exec 3<>"/dev/tcp/$host/$port") 2>/dev/null \
-      || die "proof-api did not bind $PROOF_API_ADDR within 120s; check $DEVNET_DIR/proof-api.log"
-    exec 3<&- 3>&-
-    ok "proof-api running with current config, listening on $PROOF_API_ADDR"
+    port_open || die "proof-api did not bind $PROOF_API_ADDR within 120s; check $DEVNET_DIR/proof-api.log"
+    kill -0 "$api_pid" 2>/dev/null \
+      || die "$PROOF_API_ADDR is bound but the proof-api we started (pid $api_pid) is gone — a stale process is holding the port; check $DEVNET_DIR/proof-api.log"
+    ok "proof-api (pid $api_pid) running with prover=$PROVER_TYPE, listening on $PROOF_API_ADDR"
   fi
 fi
 
@@ -158,8 +222,8 @@ fi
 if [ "$SKIP_ETH_CLIENT" = 1 ]; then
   stage "3/5 create-eth-client.js — skipped"
 else
-  stage "3/5 create-eth-client.js (EVM client + Cosmos counterparty registration)"
-  (cd "$DEVNET_ROOT" && node create-eth-client.js)
+  stage "3/5 create-eth-client.js (EVM client + Cosmos counterparty registration, --verifier=$VERIFIER)"
+  (cd "$DEVNET_ROOT" && node create-eth-client.js "--verifier=$VERIFIER")
 fi
 
 # --- 4: deploy TestERC20 ----------------------------------------------------
@@ -171,22 +235,20 @@ else
 fi
 
 # --- 5: verify the remaining hand-set devnet.env vars are present ----------
-# RECEIVER_ADDR/RECEIVER_PK/USER/VALIDATOR are user-maintained (devnet.env,
+# RECEIVER_ADDR/RECEIVER_PK/COSMOS_RECEIVER are user-maintained (devnet.env,
 # gitignored) — this only verifies and reports what's missing, it doesn't
 # write into a file devnet.env.example documents as yours to edit.
 if [ "$SKIP_WALLET_CHECK" = 1 ]; then
   stage "5/5 verify test-wallet vars — skipped"
 else
   stage "5/5 verify test-wallet vars"
-  eval "$(devnet_cfg RECEIVER_ADDR RECEIVER_PK VALIDATOR GETH_RPC)"
-  # Read USER directly from devnet.env, not via devnet_cfg: it collides with
-  # the ambient $USER (login name), which config.js's env-over-file
-  # precedence would return instead of the file's actual value.
-  cosmos_user="$(grep -E '^USER=' "$DEVNET_ROOT/devnet.env" 2>/dev/null | tail -n1 | cut -d= -f2-)"
+  eval "$(devnet_cfg RECEIVER_ADDR RECEIVER_PK COSMOS_RECEIVER GETH_RPC)"
   missing=()
   [ -n "${RECEIVER_ADDR:-}" ] && [ -n "${RECEIVER_PK:-}" ] || missing+=("RECEIVER_ADDR/RECEIVER_PK — generate with: cast wallet new")
-  [ -n "$cosmos_user" ] || missing+=("USER — a Cosmos bech32 receiver address, e.g. an ML-DSA-65 test key: pqchaind keys show relayer -a --keyring-backend test")
-  [ -n "${VALIDATOR:-}" ] || missing+=("VALIDATOR — the chain's validator address: pqchaind keys show validator -a --keyring-backend test")
+  case "${COSMOS_RECEIVER:-}" in
+    cosmos1*) ;;
+    *) missing+=("COSMOS_RECEIVER — a Cosmos bech32 receiver address, e.g. an ML-DSA-65 test key: pqchaind keys show relayer -a --keyring-backend test") ;;
+  esac
   if [ "${#missing[@]}" -gt 0 ]; then
     warn "the following must be set by hand in devnet.env before step-native-send.js can run:"
     for m in "${missing[@]}"; do printf '    - %s\n' "$m" >&2; done

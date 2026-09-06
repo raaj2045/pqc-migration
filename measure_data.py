@@ -1,0 +1,293 @@
+#!/usr/bin/env python3
+"""Sweep driver for the migration_volume experiment (Ethereum -> Cosmos).
+
+For each cell (N users x trial x signer key type) it submits N independent
+`sendTransfer` calls on the EVM, relays all N to Cosmos as one batched receive
+transaction, and records cost and latency into migration_metrics_detailed.csv.
+
+    python3 measure_data.py [--n=1,10,50,100] [--trials=3]
+                            [--signers=validator,relayer] [--out=FILE]
+                            [--amount=2000] [--resume]
+
+See experiments/migration_volume/README.md for what each column means.
+
+Measured, not inferred
+----------------------
+`T_Finality_Wait_s` is the real time relay-recv-batch.js spent blocked on
+beacon finality, reported by that script. `T_Unattributed_s` is what is left
+of the wall clock after the four measured phases; it is named for what it is
+(process startup, polling granularity, inter-phase gaps) rather than being
+folded into the finality wait, which would overstate a term the paper quotes.
+
+Deterministic paths
+-------------------
+Every cell has a run label, passed to both scripts, and both write files named
+by it. Nothing selects a file by mtime/ctime, so a leftover file from an
+earlier trial can never be read as this trial's result.
+"""
+import argparse
+import csv
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+EXP = HERE / "experiments" / "migration_volume"
+sys.path.insert(0, str(HERE / "devnet" / "lib"))
+import config  # noqa: E402
+
+DEFAULT_N = [1, 10, 50, 100]
+DEFAULT_TRIALS = 3
+# validator is secp256k1, relayer is ML-DSA-65 (devnet/scripts/init-chain.sh).
+DEFAULT_SIGNERS = ["validator", "relayer"]
+
+# Measured per-packet cost of a receive transaction, from CEILING-FINDINGS.md.
+# Used only for the pre-flight capacity check below; the sweep never relies on
+# it for a reported number.
+BYTES_PER_PACKET = 6_300      # slope, rounded up (6,000-6,212 observed)
+BYTES_INTERCEPT = 5_200       # ML-DSA-65 signer, the larger of the two
+CEILING_SAFETY = 0.90         # refuse to start above 90% of a measured wall
+
+COLUMNS = [
+    "N_Users",
+    "Trial",
+    "Signer_Key_Type",
+    "Signer_Key",
+    "Dest_Key_Type",
+    "Run_Label",
+    "EVM_Gas_Per_User",
+    "EVM_Gas_Total",
+    "Cosmos_Gas_Total",
+    "Cosmos_Gas_Per_Transfer",
+    "Recv_Gas_Per_Transfer",
+    "Update_Client_Gas",
+    "Recv_Packet_Gas",
+    "Recv_Tx_Bytes",
+    "Throughput_TPS",
+    "T_Submit_s",
+    "T_Finality_Wait_s",
+    "T_Proof_and_Relay_s",
+    "T_Unattributed_s",
+    "T_Total_Latency_s",
+]
+
+
+def run(cmd, label):
+    """Run a step, streaming its output. Any non-zero exit aborts the sweep."""
+    print(f"    $ {' '.join(str(c) for c in cmd)}")
+    r = subprocess.run(cmd, cwd=HERE)
+    if r.returncode != 0:
+        raise SystemExit(f"[{label}] failed with exit {r.returncode} — aborting sweep")
+
+
+def require(d, key, where, positive=True):
+    """Read a field that must exist, refusing to substitute a default.
+
+    Silently defaulting a missing field to 0 is how an unparsed gas figure
+    becomes a plausible-looking data point, so every read goes through here.
+    """
+    if key not in d or d[key] is None:
+        raise SystemExit(f"{where}: missing required field {key!r}; got keys {sorted(d)}")
+    v = d[key]
+    if positive and not (isinstance(v, (int, float)) and v > 0):
+        raise SystemExit(f"{where}: field {key!r} is {v!r}, expected a positive number")
+    return v
+
+
+# --- pre-flight -------------------------------------------------------------
+
+def node_limits(cfg):
+    """The two size walls a receive transaction has to clear, read from the
+    node's live config rather than assumed from an earlier measurement.
+
+    `tx broadcast` base64-encodes the transaction into a JSON-RPC body, so the
+    RPC's max_body_bytes caps the raw transaction at 3/4 of its value. Which of
+    the two walls binds depends on node configuration; CEILING-FINDINGS.md
+    measured 124 packets when max_body_bytes was at its 1 MB default.
+    """
+    toml = Path(cfg["CHAIN_HOME"]) / "config" / "config.toml"
+    if not toml.exists():
+        raise SystemExit(f"cannot read node config at {toml}")
+    max_body = max_tx = None
+    for line in toml.read_text().splitlines():
+        line = line.split("#")[0].strip()
+        if line.startswith("max_body_bytes"):
+            max_body = int(line.split("=")[1].strip())
+        elif line.startswith("max_tx_bytes"):
+            max_tx = int(line.split("=")[1].strip())
+    if not max_body or not max_tx:
+        raise SystemExit(f"could not read max_body_bytes/max_tx_bytes from {toml}")
+    return max_body, max_tx
+
+
+def preflight_capacity(cfg, max_n):
+    """Confirm the largest cell fits before spending hours reaching it.
+
+    A cell that fails on size mid-sweep wastes every trial before it, so the
+    check happens once, up front, against the node's live limits.
+    """
+    max_body, max_tx = node_limits(cfg)
+    rpc_raw_cap = max_body * 3 // 4          # base64 inflates 4/3
+    binding, wall = ("RPC max_body_bytes", rpc_raw_cap) if rpc_raw_cap < max_tx \
+        else ("mempool max_tx_bytes", max_tx)
+    ceiling = (wall - BYTES_INTERCEPT) // BYTES_PER_PACKET
+    projected = BYTES_INTERCEPT + BYTES_PER_PACKET * max_n
+
+    print("pre-flight: receive-transaction capacity")
+    print(f"  RPC max_body_bytes  {max_body:>10,}  -> {rpc_raw_cap:>9,} B raw")
+    print(f"  mempool max_tx_bytes{max_tx:>10,}")
+    print(f"  binding wall: {binding} at {wall:,} B -> ~{ceiling} packets/tx")
+    print(f"  largest cell N={max_n}: ~{projected:,} B "
+          f"({projected / wall * 100:.1f}% of the wall)")
+    if projected > wall * CEILING_SAFETY:
+        raise SystemExit(
+            f"N={max_n} projects to {projected:,} B, over {CEILING_SAFETY:.0%} of the "
+            f"{binding} wall ({wall:,} B, ~{ceiling} packets). Chunk the receive or "
+            f"lower --n; see experiments/migration_volume/CEILING-FINDINGS.md.")
+    print(f"  OK: N={max_n} fits with {ceiling - max_n} packet(s) of headroom\n")
+    return ceiling
+
+
+# --- one cell ---------------------------------------------------------------
+
+def run_cell(cfg, out_dir, n, trial, signer_key, amount):
+    label = f"n{n}-t{trial}-{signer_key}"
+    print(f"\n=== N={n} trial={trial} signer={signer_key} (label {label}) ===")
+
+    run(["node", str(EXP / "setup-user-pool.js"), str(n)], f"{label}/setup")
+    run(["node", str(EXP / "submit-migrations.js"), str(n), str(amount),
+         f"--label={label}"], f"{label}/submit")
+
+    # Deterministic paths, both named by the run label. Nothing here globs.
+    send_path = out_dir / f"send-{label}.json"
+    if not send_path.exists():
+        raise SystemExit(f"{label}: submit-migrations.js did not write {send_path}")
+    send = json.loads(send_path.read_text())
+    if send.get("label") != label:
+        raise SystemExit(f"{send_path}: label is {send.get('label')!r}, expected {label!r}")
+    committed = require(send, "committed", str(send_path))
+    if committed != n:
+        raise SystemExit(f"{label}: only {committed}/{n} sendTransfer calls committed")
+
+    run(["node", str(EXP / "relay-recv-batch.js"), str(send_path),
+         f"--count={n}", f"--label={label}", f"--signer-key={signer_key}"],
+        f"{label}/relay")
+
+    recv_path = out_dir / f"recv-{label}.json"
+    if not recv_path.exists():
+        raise SystemExit(f"{label}: relay-recv-batch.js did not write {recv_path}")
+    recv = json.loads(recv_path.read_text())
+    if recv.get("label") != label:
+        raise SystemExit(f"{recv_path}: label is {recv.get('label')!r}, expected {label!r}")
+    if not recv.get("ok"):
+        raise SystemExit(f"{label}: receive transaction failed — {recv.get('rawLog')}")
+    if recv.get("count") != n:
+        raise SystemExit(f"{label}: recv summary covers {recv.get('count')} packets, expected {n}")
+
+    # --- gas ----------------------------------------------------------------
+    # MsgUpdateClient and the N MsgRecvPacket are SEPARATE transactions, so the
+    # receive tx's own gas_used is the packet-delivery cost by itself. The
+    # Cosmos-side total is the sum, not a figure to subtract the update out of.
+    evm_total = int(require(send, "submitGasTotal", str(send_path)))
+    recv_gas = int(require(recv, "gasUsed", str(recv_path)))
+    update_gas = int(require(recv, "updateGas", str(recv_path)))
+    cosmos_total = recv_gas + update_gas
+
+    # --- time ---------------------------------------------------------------
+    # Four measured phases plus an explicit residual. The residual is NOT
+    # relabelled as the finality wait: it is whatever the phases do not span.
+    t_submit = float(require(send, "elapsedSeconds", str(send_path)))
+    t_finality = float(require(recv, "finalityWaitSeconds", str(recv_path), positive=False))
+    t_relay = sum(float(require(recv, k, str(recv_path), positive=False))
+                  for k in ("updateSeconds", "proofSeconds", "txSeconds"))
+    t_start = float(require(send, "firstSubmittedTs", str(send_path)))
+    t_credit = float(require(recv, "creditedTs", str(recv_path)))
+    t_total = t_credit - t_start
+    if t_total <= 0:
+        raise SystemExit(f"{label}: credited ({t_credit}) is not after first submit ({t_start})")
+    t_unattributed = t_total - (t_submit + t_finality + t_relay)
+
+    return {
+        "N_Users": n,
+        "Trial": trial,
+        "Signer_Key_Type": recv["signerAlgo"],
+        "Signer_Key": recv["signerKey"],
+        # Not an axis: receivers are 20-byte bech32 addresses in the payload
+        # whatever key would control them, and a fresh recipient carries no
+        # pubkey on chain until it first signs. See CEILING-FINDINGS.md.
+        "Dest_Key_Type": "none",
+        "Run_Label": label,
+        "EVM_Gas_Per_User": evm_total / n,
+        "EVM_Gas_Total": evm_total,
+        "Cosmos_Gas_Total": cosmos_total,
+        "Cosmos_Gas_Per_Transfer": cosmos_total / n,
+        "Recv_Gas_Per_Transfer": recv_gas / n,
+        "Update_Client_Gas": update_gas,
+        "Recv_Packet_Gas": recv_gas,
+        "Recv_Tx_Bytes": int(require(recv, "txBytes", str(recv_path))),
+        "Throughput_TPS": n / t_total,
+        "T_Submit_s": t_submit,
+        "T_Finality_Wait_s": t_finality,
+        "T_Proof_and_Relay_s": t_relay,
+        "T_Unattributed_s": t_unattributed,
+        "T_Total_Latency_s": t_total,
+    }
+
+
+# --- sweep ------------------------------------------------------------------
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--n", default=",".join(str(x) for x in DEFAULT_N),
+                    help="comma-separated cohort sizes")
+    ap.add_argument("--trials", type=int, default=DEFAULT_TRIALS)
+    ap.add_argument("--signers", default=",".join(DEFAULT_SIGNERS),
+                    help="comma-separated keyring key names to sign the receive "
+                         "tx with; the key-type axis")
+    ap.add_argument("--amount", default="2000", help="tokens migrated per user")
+    ap.add_argument("--out", default="migration_metrics_detailed.csv")
+    ap.add_argument("--resume", action="store_true",
+                    help="append to --out, skipping cells already present")
+    args = ap.parse_args()
+
+    n_users = [int(x) for x in args.n.split(",") if x]
+    signers = [s for s in args.signers.split(",") if s]
+    cfg = config.load()
+    out_dir = Path(cfg["DEVNET_DIR"]) / "migration-volume"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    preflight_capacity(cfg, max(n_users))
+
+    out_path = HERE / args.out
+    done = set()
+    if args.resume and out_path.exists():
+        with open(out_path, newline="") as f:
+            done = {r["Run_Label"] for r in csv.DictReader(f)}
+        print(f"resuming: {len(done)} cell(s) already in {out_path.name}\n")
+
+    write_header = not (args.resume and out_path.exists())
+    total = len(n_users) * args.trials * len(signers)
+    i = 0
+    with open(out_path, "a" if args.resume else "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=COLUMNS)
+        if write_header:
+            w.writeheader()
+        for signer_key in signers:
+            for n in n_users:
+                for trial in range(1, args.trials + 1):
+                    i += 1
+                    label = f"n{n}-t{trial}-{signer_key}"
+                    if label in done:
+                        print(f"[{i}/{total}] {label} — already recorded, skipping")
+                        continue
+                    print(f"[{i}/{total}]", end=" ")
+                    w.writerow(run_cell(cfg, out_dir, n, trial, signer_key, args.amount))
+                    f.flush()
+
+    print(f"\nwrote {out_path}")
+
+
+if __name__ == "__main__":
+    main()

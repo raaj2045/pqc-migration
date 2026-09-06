@@ -8,6 +8,12 @@
 # was rejected on quorum. This script votes immediately after submitting and
 # then polls to confirm, instead of leaving that as a manual follow-up step.
 #
+# Idempotent: queries the chain for the wasm file's checksum before doing
+# anything, and skips cleanly (exit 0) if that code is already stored — same
+# reasoning as init-chain.sh's guard. Avoids burning a full voting period on
+# a proposal that's guaranteed to fail at execution (code already exists),
+# and stops treating "already done" as an error.
+#
 # Usage: store-and-vote-wasm-code.sh [wasm-file]
 #   default wasm-file: devnet/artifacts/cw_ics08_wasm_eth.wasm.gz (Script 3's output)
 set -euo pipefail
@@ -21,6 +27,7 @@ DEPOSIT="${DEPOSIT:-10000000stake}"
 FEES="${FEES:-5000stake}"
 
 require_cmd jq
+require_cmd sha256sum
 require_file "$WASM_FILE" "run devnet/scripts/build-wasm-light-client.sh first, or pass a path explicitly."
 
 DEVNET_DIR="$(resolve_devnet_dir)"
@@ -34,6 +41,18 @@ BIN=("$PQCHAIND_BIN" --home "$CHAIN_HOME" --node "$CHAIN_NODE")
 
 tx() { "${BIN[@]}" tx "$@" --chain-id "$CHAIN_ID" --keyring-backend test --gas auto --gas-adjustment 1.3 --fees "$FEES" -y -o json; }
 qry() { "${BIN[@]}" query "$@" -o json; }
+
+# --- skip if this exact code is already stored -----------------------------
+# The on-chain checksum is sha256 of the *decompressed* wasm bytecode
+# (cosmwasm's wasmvm.CreateChecksum) — the store-code msg accepts the
+# gzip'd file but hashes what's inside it.
+checksum="$(gzip -dc "$WASM_FILE" | sha256sum | cut -d' ' -f1)"
+[ -n "$checksum" ] || die "failed to compute checksum of $WASM_FILE"
+
+if qry ibc-wasm code "$checksum" >/dev/null 2>&1; then
+  log "wasm code already stored on-chain (checksum $checksum), skipping"
+  exit 0
+fi
 
 wait_for_tx() {
   local hash="$1" tries=30
@@ -49,7 +68,7 @@ wait_for_tx() {
 }
 
 # --- store-code (creates a gov proposal) ------------------------------
-log "submitting MsgStoreCode for $WASM_FILE (deposit $DEPOSIT)"
+log "submitting MsgStoreCode for $WASM_FILE (checksum $checksum, deposit $DEPOSIT)"
 store_out="$(tx ibc-wasm store-code "$WASM_FILE" --from "$GOV_KEY" \
   --title "Store cw-ics08-wasm-eth" \
   --summary "Store the Ethereum light client wasm code" \

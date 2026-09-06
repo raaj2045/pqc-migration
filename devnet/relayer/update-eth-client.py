@@ -2,6 +2,11 @@
 """Relayer step: poll the beacon light_client/finality_update and submit it to
 08-wasm-1 as a MsgUpdateClient, keeping the Ethereum light client current.
 
+Usage: update-eth-client.py [<client-id>] [--signer-key=<keyring key name>]
+--signer-key defaults to RELAYER_KEY (devnet.env) — pass a pool account's key
+name to sign (and correctly self-attribute) the update from that account
+instead, e.g. from ack_pool.py's concurrent workers.
+
 Header {
   active_sync_committee: {"Current": SyncCommittee},   # full 512 pubkeys
   consensus_update: LightClientUpdate,                 # = finality_update.data
@@ -19,13 +24,25 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import config  # noqa: E402
 
 CFG = config.require(config.load(), "PQCHAIND_BIN", "CHAIN_HOME", "CHAIN_NODE",
-                     "BEACON_URL", "VALIDATOR", "SENDTX_CMD", "RELAYER_KEY")
+                     "BEACON_URL", "SENDTX_CMD", "RELAYER_KEY")
 BIN = CFG["PQCHAIND_BIN"]
 HOME = CFG["CHAIN_HOME"]
 NODE = CFG["CHAIN_NODE"]
 BEACON = CFG["BEACON_URL"]
-VALIDATOR = CFG["VALIDATOR"]
-CLIENT_ID = sys.argv[1] if len(sys.argv) > 1 else CFG.get("COSMOS_CLIENT_ID", "08-wasm-1")
+
+# --signer-key=<keyring key name> lets a pool worker (ack_pool.py) update the
+# client from its own account instead of always RELAYER_KEY — a concurrent
+# pool needs each worker's tx signed AND self-consistent (the msg's "signer"
+# address must match whichever key actually signs it, or the ante handler
+# rejects it), so the signer ADDRESS below is always resolved from SIGNER_KEY
+# live against the keyring.
+_argv = [a for a in sys.argv[1:] if not a.startswith("--signer-key=")]
+_signer_arg = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--signer-key=")), None)
+SIGNER_KEY = _signer_arg or CFG["RELAYER_KEY"]
+CLIENT_ID = _argv[0] if _argv else CFG.get("COSMOS_CLIENT_ID", "08-wasm-1")
+SIGNER_ADDR = subprocess.check_output(
+    [BIN, "keys", "show", SIGNER_KEY, "-a", "--home", HOME, "--keyring-backend", "test"],
+    text=True).strip()
 
 
 def get(url):
@@ -82,7 +99,7 @@ def main():
             "@type": "/ibc.lightclients.wasm.v1.ClientMessage",
             "data": base64.b64encode(header_bz).decode(),
         },
-        "signer": VALIDATOR,
+        "signer": SIGNER_ADDR,
     }
     path = config.path_in_devnet(CFG, "msg-update-eth-client.json")
     json.dump(msg, open(path, "w"))
@@ -94,7 +111,7 @@ def main():
     import time
     for attempt in range(6):
         out = subprocess.run(
-            [*CFG["SENDTX_CMD"].split(), path, CFG["RELAYER_KEY"], "4000000"],
+            [*CFG["SENDTX_CMD"].split(), path, SIGNER_KEY, "4000000"],
             capture_output=True, text=True,
         )
         result = out.stdout.strip() or out.stderr.strip()[-800:]

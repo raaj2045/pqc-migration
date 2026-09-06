@@ -23,9 +23,7 @@ import argparse
 import json
 import os
 import shutil
-import signal
 import subprocess
-import sys
 import threading
 import time
 from pathlib import Path

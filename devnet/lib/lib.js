@@ -58,6 +58,31 @@ function evm(env) {
 }
 
 // Cosmos node RPC as an http:// URL, derived from CHAIN_NODE (tcp://host:port).
+// The `signer` field on a Cosmos message must carry the address of the key
+// that actually signs the transaction, or the ante handler rejects the tx.
+// Always resolve it from the keyring — a config entry naming an address drifts
+// out of step with the keyring silently, and the failure only shows up after
+// the message has been built and broadcast.
+function signerAddress(env, keyName) {
+  const key = keyName || env.RELAYER_KEY || "validator";
+  return execFileSync(env.PQCHAIND_BIN,
+    ["keys", "show", key, "-a", "--home", env.CHAIN_HOME, "--keyring-backend", "test"],
+    { encoding: "utf8" }).trim();
+}
+
+// Signature algorithm of a keyring key, as a short tag ("secp256k1",
+// "mldsa65", ...), taken from the pubkey's proto type URL.
+function signerAlgo(env, keyName) {
+  const key = keyName || env.RELAYER_KEY || "validator";
+  const out = JSON.parse(execFileSync(env.PQCHAIND_BIN,
+    ["keys", "show", key, "--home", env.CHAIN_HOME, "--keyring-backend", "test",
+      "--output", "json"], { encoding: "utf8" }));
+  const type = JSON.parse(out.pubkey)["@type"];   // /cosmos.crypto.<algo>.PubKey
+  const m = type.match(/^\/cosmos\.crypto\.([^.]+)\.PubKey$/);
+  if (!m) throw new Error(`unrecognised pubkey type for key ${key}: ${type}`);
+  return m[1];
+}
+
 function cosmosRpcUrl() {
   const cfg = config.load();
   return cfg.CHAIN_NODE.replace(/^tcp:/, "http:");
@@ -120,6 +145,7 @@ const T_MSG_UPDATE_CLIENT = `(${T_SP1_PROOF})`;
 
 module.exports = {
   ROOT, config, loadEnv, abi, evm, sendTx, sendRawTx, cosmosCli, cosmosRpc, cosmosRpcUrl,
+  signerAddress, signerAlgo,
   cosmosHeader, cosmosHeight,
   waitCosmosHeight, coder, ethers,
   T_CLIENT_STATE, T_CONSENSUS_STATE, T_KVPAIR, T_MEMBERSHIP_OUTPUT, T_SP1_PROOF,

@@ -6,14 +6,17 @@
 // packet-receipt replay protection.
 const fs = require("fs");
 const { execFileSync } = require("child_process");
-const { loadEnv, evm, ethers } = require("./lib/lib");
+const { loadEnv, evm, ethers, signerAddress } = require("./lib/lib");
 const P = require("./lib/packet");
 
 const REPLAY = process.argv.includes("--replay");
+// The message's `signer` must be the address of the key that actually signs
+// the tx, so it is resolved from the keyring rather than from a config entry.
+const SIGNER_KEY = (process.argv.find((a) => a.startsWith("--signer-key=")) || "")
+  .split("=")[1] || undefined;
 
 const beacon = (env) => env.BEACON_URL;
 const gethRpc = (env) => env.GETH_RPC;
-const validator = (env) => env.VALIDATOR;
 const b64 = (hex) => Buffer.from(hex.replace(/^0x/, ""), "hex").toString("base64");
 const get = (url) => JSON.parse(execFileSync("curl", ["-s", url], { maxBuffer: 64e6 }));
 
@@ -51,7 +54,8 @@ const cli = (env, args) =>
 
   // Make sure the light client holds a consensus state at that slot.
   const [updCmd, ...updArgs] = env.UPDATE_CLIENT_CMD.split(/\s+/);
-  execFileSync(updCmd, [...updArgs, env.COSMOS_CLIENT_ID], { stdio: "inherit" });
+  const updSigner = SIGNER_KEY ? [`--signer-key=${SIGNER_KEY}`] : [];
+  execFileSync(updCmd, [...updArgs, env.COSMOS_CLIENT_ID, ...updSigner], { stdio: "inherit" });
   const states = JSON.parse(cli(env, ["query", "ibc", "client", "consensus-states", env.COSMOS_CLIENT_ID]));
   const have = states.consensus_states.map((e) => Number(e.height.revision_height));
   const proofSlot = Number(hdr.beacon.slot);
@@ -99,13 +103,13 @@ const cli = (env, args) =>
     },
     proof_commitment: Buffer.from(JSON.stringify(membershipProof)).toString("base64"),
     proof_height: { revision_number: "0", revision_height: String(useSlot) },
-    signer: validator(env),
+    signer: signerAddress(env, SIGNER_KEY),
   };
   fs.writeFileSync(env.file("msg-redeem-recv.json"), JSON.stringify(msg, null, 2));
 
   const [txCmd, ...txArgs] = env.SENDTX_CMD.split(/\s+/);
   const out = execFileSync(txCmd,
-    [...txArgs, env.file("msg-redeem-recv.json"), env.RELAYER_KEY, "3000000"],
+    [...txArgs, env.file("msg-redeem-recv.json"), SIGNER_KEY || env.RELAYER_KEY, "3000000"],
     { encoding: "utf8" });
   console.log(out.trim());
   if (!REPLAY) fs.writeFileSync(env.file("redeem-recv.json"), JSON.stringify({ useSlot }, null, 2));

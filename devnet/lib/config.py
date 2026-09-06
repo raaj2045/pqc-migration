@@ -1,7 +1,7 @@
 """Config resolution for the devnet Python scripts.
 
 Mirrors lib/config.js. Precedence, highest first:
-  1. os.environ
+  1. os.environ, except for the shell-owned names in SHELL_OWNED
   2. devnet.env (next to this package, if present)
   3. devnet.env.example defaults
   4. the generated env files inside DEVNET_DIR (ports.env, cosmos.env,
@@ -47,11 +47,20 @@ def _parse(path):
     return out
 
 
+# Names the shell owns. os.environ wins over devnet.env for every other key,
+# but these are set for every process by login/the OS, so an ambient value
+# would silently shadow the devnet.env entry rather than override it on
+# purpose. Anything named here must be set in devnet.env or not at all.
+SHELL_OWNED = frozenset(
+    ("USER", "LOGNAME", "HOME", "PATH", "SHELL", "PWD", "OLDPWD", "TERM", "LANG")
+)
+
+
 def load():
     cfg = _parse(os.path.join(ROOT, "devnet.env.example"))
     cfg.update(_parse(os.path.join(ROOT, "devnet.env")))
     for k in list(cfg):
-        if os.environ.get(k):
+        if k not in SHELL_OWNED and os.environ.get(k):
             cfg[k] = expand(os.environ[k])
 
     devnet_dir = cfg.get("DEVNET_DIR", "")
