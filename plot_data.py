@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
-"""Figures for the migration_volume sweep (Ethereum -> Cosmos).
+"""Three figures for the Ethereum -> Cosmos migration measurements.
 
     python3 plot_data.py [--csv migration_metrics_detailed.csv]
 
-Reads the CSV measure_data.py writes and produces:
+    fig_latency_by_operation.pdf   how long each step of a migration takes
+    fig_time_vs_transactions.pdf   total time against how many transfers move
+                                   at once
+    fig_gas_by_operation.pdf       gas each step costs, 1 transfer vs 10
 
-    migration_latency_ci.pdf            end-to-end latency vs N, per key type
-    migration_throughput.pdf            migrations/second vs N, per key type
-    cosmos_gas_per_transfer.pdf         gas amortization, per key type
-    cosmos_operation_gas_breakdown.pdf  MsgUpdateClient vs MsgRecvPacket gas
-    migration_latency_phases.pdf        where the wall-clock time actually goes
-
-Style matches experiments/validator_scaling_v2/aggregate.py, and the key-type
-colours are the same two the validator-scaling figures use for the same two
-signature schemes.
+Error bars are 95% confidence intervals over the repeats in the CSV. Each
+bar's repeat count is printed under it, so a thin interval from few repeats
+cannot be mistaken for a well-sampled one.
 """
 import argparse
 
@@ -24,25 +21,32 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-# Same hues the validator-scaling figures give these two schemes, so a reader
-# comparing figures across the paper does not have to relearn the mapping. The
-# pair clears the CVD and normal-vision separation floors; marker shape carries
-# the same distinction again, so the figures do not depend on colour.
-KEY_COLORS = {"secp256k1": "#1f77b4", "mldsa65": "#d62728"}
-KEY_LABELS = {"secp256k1": "secp256k1 signer", "mldsa65": "ML-DSA-65 signer"}
-KEY_MARKERS = {"secp256k1": "o", "mldsa65": "s"}
-KEY_ORDER = ["secp256k1", "mldsa65"]
-
-# The four wall-clock phases, in the order they occur. "Unattributed" is a
-# measured residual, not a phase: it is whatever the four measured spans do not
-# account for (process startup, poll granularity, gaps between phases). It gets
-# a neutral grey precisely so it does not read as a component of the protocol.
-PHASES = [
-    ("T_Submit_s", "EVM submission", "#2a78d6"),
-    ("T_Finality_Wait_s", "Ethereum finality wait", "#eb6834"),
-    ("T_Proof_and_Relay_s", "Proof + relay + Cosmos tx", "#1baf7a"),
-    ("T_Unattributed_s", "Unattributed", "#9a9a94"),
+# The steps a migration actually goes through, in order. Fetching the proof is
+# folded into the client update: it is an off-chain read that costs no gas and
+# runs in hundredths of a second, so its own bar would be invisible.
+OPERATIONS = [
+    ("T_Submit_s", "Submit\non Ethereum", "#2a78d6"),
+    ("T_Wait_Finality_s", "Wait for\nEthereum finality", "#eb6834"),
+    ("T_Update_Client_s", "Update\nlight client", "#1baf7a"),
+    ("T_Deliver_s", "Deliver\non Cosmos", "#4a3aa7"),
 ]
+
+# All three are gas PER TRANSFER, so the bars are comparable. The light-client
+# update is charged once per batch, so its per-transfer share is the batch cost
+# divided by the batch size — that division is the whole reason moving
+# transfers together is cheaper, and hiding it would flatten the result.
+GAS_OPERATIONS = [
+    ("Submit_Gas_Per_Tx", "Submit\non Ethereum", "#2a78d6"),
+    ("Update_Gas_Per_Tx", "Update\nlight client", "#1baf7a"),
+    ("Deliver_Gas_Per_Tx", "Deliver\non Cosmos", "#4a3aa7"),
+]
+
+# One colour per batch size, assigned in a fixed order and never recycled.
+SIZE_COLORS = ["#2a78d6", "#eb6834"]
+
+# Filled in from the data before anything is drawn; every figure states which
+# signing key its numbers came from.
+KEY_NOTE = ""
 
 plt.style.use("seaborn-v0_8-whitegrid")
 plt.rcParams.update({
@@ -55,217 +59,170 @@ plt.rcParams.update({
 })
 
 
-def ci95(std, count):
-    """95% CI half-width. Undefined for a single trial, so it is drawn as 0
-    rather than as a NaN gap that silently vanishes from the figure."""
-    return (1.96 * std / np.sqrt(count)).fillna(0.0)
-
-
-def by_key_and_n(df, col):
-    """(mean, ci, count) for `col`, indexed by (Signer_Key_Type, N_Users)."""
-    g = df.groupby(["Signer_Key_Type", "N_Users"])[col].agg(["mean", "std", "count"])
-    return g["mean"], ci95(g["std"], g["count"]), g["count"]
-
-
-def present_keys(df):
-    return [k for k in KEY_ORDER if k in set(df["Signer_Key_Type"])] or \
-        sorted(set(df["Signer_Key_Type"]))
+def mean_ci(values):
+    """Mean and 95% confidence half-width. A single repeat has no interval, so
+    it gets zero rather than a NaN that would silently vanish from the plot."""
+    v = np.asarray(values, dtype=float)
+    if len(v) < 2:
+        return (v.mean() if len(v) else np.nan), 0.0
+    return v.mean(), 1.96 * v.std(ddof=1) / np.sqrt(len(v))
 
 
 def save(fig, name):
-    fig.tight_layout()
-    fig.savefig(name, format="pdf")
+    fig.savefig(name, format="pdf", bbox_inches="tight")
     plt.close(fig)
-    print(f"Generated {name}")
+    print(f"wrote {name}")
 
 
-# --- 1 & 2: one measure against N, one line per key type --------------------
+# --- 1: how long each step takes --------------------------------------------
 
-def line_vs_n(df, col, title, ylabel, out, logy=False):
-    mean, ci, _ = by_key_and_n(df, col)
+def latency_by_operation(df, out, n_users=1):
+    sub = df[df["N_Users"] == n_users]
+    if sub.empty:
+        print(f"skipping {out}: no rows with N_Users == {n_users}")
+        return
+    names, means, cis, colors, counts = [], [], [], [], []
+    for col, label, color in OPERATIONS:
+        m, ci = mean_ci(sub[col])
+        names.append(label)
+        means.append(m)
+        cis.append(ci)
+        colors.append(color)
+        counts.append(len(sub))
+
     fig, ax = plt.subplots(figsize=(7, 4.4))
-    keys = present_keys(df)
-    for k in keys:
-        n = mean.loc[k].index.values
-        ax.errorbar(n, mean.loc[k].values, yerr=ci.loc[k].values,
-                    fmt=KEY_MARKERS.get(k, "o") + "-", color=KEY_COLORS.get(k, "#4a3aa7"),
-                    ecolor=KEY_COLORS.get(k, "#4a3aa7"), elinewidth=1.5, capsize=3,
-                    linewidth=2, markersize=6, label=KEY_LABELS.get(k, k), zorder=3)
-    # Identity never rests on colour alone: each series also carries its own
-    # marker shape (circle vs square), matched to the legend entry.
-    ax.set_title(title + "  (95% CI)")
-    ax.set_xlabel("Concurrent migrations in the cohort (N)")
-    ax.set_ylabel(ylabel)
-    if logy:
-        ax.set_yscale("log")
-    ax.set_xscale("log")
-    ax.set_xticks(sorted(set(df["N_Users"])))
-    ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-    if len(keys) > 1:
-        ax.legend(frameon=False)
-    ax.margins(x=0.12)
+    x = np.arange(len(names))
+    ax.bar(x, means, 0.6, yerr=cis, color=colors, capsize=4,
+           ecolor="#52514e", error_kw={"elinewidth": 1.5}, zorder=3)
+    # The finality wait is two orders above the rest, so a linear axis hides
+    # every other bar. Log keeps all four readable; the printed value on each
+    # bar is what should actually be read off.
+    ax.set_yscale("log")
+    for xi, m, ci in zip(x, means, cis):
+        ax.annotate(f"{m:,.1f}s", (xi, m + ci), textcoords="offset points",
+                    xytext=(0, 5), ha="center", fontsize=9, color="#0b0b0b")
+    ax.set_title(f"Time taken by each step of a migration\n"
+                 f"{n_users} transfer{'s' if n_users != 1 else ''}, {KEY_NOTE}")
+    ax.set_ylabel("Seconds (log scale)")
+    # Repeat count goes in the tick label rather than under the bar, where it
+    # would sit on top of the two-line operation names.
+    ax.set_xticks(x, [f"{nm}\n(n={c})" for nm, c in zip(names, counts)])
+    ax.margins(y=0.25)
     save(fig, out)
 
 
-# --- 3: gas per transfer, the amortization result ---------------------------
+# --- 2: total time against batch size ---------------------------------------
 
-def gas_per_transfer(df, out):
-    mean, ci, _ = by_key_and_n(df, "Cosmos_Gas_Per_Transfer")
+def time_vs_transactions(df, out):
+    sizes = sorted(df["N_Users"].unique())
+    means, cis, counts = [], [], []
+    for n in sizes:
+        m, ci = mean_ci(df[df["N_Users"] == n]["T_Total_s"])
+        means.append(m)
+        cis.append(ci)
+        counts.append(int((df["N_Users"] == n).sum()))
+
     fig, ax = plt.subplots(figsize=(7, 4.4))
-    keys = present_keys(df)
-    for k in keys:
-        n = mean.loc[k].index.values
-        ax.errorbar(n, mean.loc[k].values / 1e3, yerr=ci.loc[k].values / 1e3,
-                    fmt=KEY_MARKERS.get(k, "o") + "-", color=KEY_COLORS.get(k, "#4a3aa7"),
-                    ecolor=KEY_COLORS.get(k, "#4a3aa7"), elinewidth=1.5, capsize=3,
-                    linewidth=2, markersize=6, label=KEY_LABELS.get(k, k), zorder=3)
-    # The claim the figure exists to support: the PQ premium is a
-    # per-transaction constant, so it shrinks as the batch grows.
-    if len(keys) == 2 and all(k in mean.index for k in KEY_ORDER):
-        a, b = mean.loc[KEY_ORDER[0]], mean.loc[KEY_ORDER[1]]
-        for n in a.index.intersection(b.index):
-            pct = (b[n] - a[n]) / a[n] * 100
-            ax.annotate(f"{pct:+.1f}%", (n, b[n] / 1e3), textcoords="offset points",
-                        xytext=(0, 9), ha="center", fontsize=8, color="#52514e")
-    ax.set_title("Cosmos gas per migrated transfer")
-    ax.set_xlabel("Concurrent migrations in the cohort (N)")
-    ax.set_ylabel("Gas per transfer (thousands)")
+    ax.errorbar(sizes, means, yerr=cis, fmt="o-", color="#2a78d6",
+                ecolor="#2a78d6", elinewidth=1.5, capsize=4, linewidth=2,
+                markersize=7, zorder=3)
+    # Labels sit BELOW the line: it runs near the top of the axes, so anything
+    # above it collides with the title.
+    for n, m, c in zip(sizes, means, counts):
+        ax.annotate(f"{m:,.0f}s\n{n / m:.2f}/s\n(n={c})", (n, m),
+                    textcoords="offset points", xytext=(0, -14), ha="center",
+                    va="top", fontsize=8, color="#52514e")
+    ax.set_title(f"Total time to move a batch of transfers\n{KEY_NOTE}")
+    ax.set_xlabel("Transfers moved at once")
+    ax.set_ylabel("Total time (seconds)")
     ax.set_xscale("log")
-    ax.set_xticks(sorted(set(df["N_Users"])))
+    ax.set_xticks(sizes)
     ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-    if len(keys) > 1:
-        ax.legend(frameon=False)
-    ax.margins(x=0.12, y=0.18)
+    ax.set_ylim(0, max(np.array(means) + np.array(cis)) * 1.18)
+    ax.margins(x=0.15)
     save(fig, out)
 
 
-# --- 4: where the Cosmos gas goes -------------------------------------------
+# --- 3: gas each step costs, one transfer against ten -----------------------
 
-def operation_gas_breakdown(df, out):
-    keys = present_keys(df)
-    ns = sorted(set(df["N_Users"]))
-    upd, _, _ = by_key_and_n(df, "Update_Client_Gas")
-    rcv, _, _ = by_key_and_n(df, "Recv_Packet_Gas")
-
+def gas_by_operation(df, out, sizes=(1, 10)):
+    sizes = [n for n in sizes if (df["N_Users"] == n).any()]
+    if not sizes:
+        print(f"skipping {out}: no rows at N_Users in {sizes}")
+        return
     fig, ax = plt.subplots(figsize=(7.5, 4.4))
-    width = 0.8 / len(keys)
-    x = np.arange(len(ns))
-    for i, k in enumerate(keys):
-        off = (i - (len(keys) - 1) / 2) * width
-        u = np.array([upd.get((k, n), np.nan) for n in ns]) / 1e6
-        r = np.array([rcv.get((k, n), np.nan) for n in ns]) / 1e6
-        # A 2px surface gap between stacked segments, per the mark spec:
-        # linewidth on a surface-coloured edge.
-        ax.bar(x + off, u, width * 0.92, color="#4a3aa7",
-               edgecolor="white", linewidth=1.5,
-               label="MsgUpdateClient" if i == 0 else None)
-        ax.bar(x + off, r, width * 0.92, bottom=u, color="#1baf7a",
-               edgecolor="white", linewidth=1.5,
-               label="MsgRecvPacket (all N)" if i == 0 else None)
-    ax.set_title("Cosmos gas by operation, per receive transaction")
-    ax.set_xlabel("Concurrent migrations in the cohort (N)")
-    ax.set_ylabel("Gas (millions)")
-    _key_ticks(ax, x, [(i - (len(keys) - 1) / 2) * width for i in range(len(keys))],
-               keys, ns)
-    ax.legend(frameon=False, loc="upper left")
-    ax.margins(y=0.18)
+    x = np.arange(len(GAS_OPERATIONS))
+    width = 0.8 / len(sizes)
+    for i, n in enumerate(sizes):
+        sub = df[df["N_Users"] == n]
+        off = (i - (len(sizes) - 1) / 2) * width
+        means, cis = zip(*(mean_ci(sub[c]) for c, _, _ in GAS_OPERATIONS))
+        ax.bar(x + off, np.array(means) / 1e3, width * 0.9,
+               yerr=np.array(cis) / 1e3, color=SIZE_COLORS[i % len(SIZE_COLORS)],
+               capsize=3, ecolor="#52514e", error_kw={"elinewidth": 1.2},
+               label=f"{n} transfer{'s' if n != 1 else ''} at once (n={len(sub)})",
+               zorder=3)
+        for xi, m in zip(x + off, means):
+            ax.annotate(f"{m / 1e3:,.0f}k", (xi, m / 1e3), textcoords="offset points",
+                        xytext=(0, 4), ha="center", fontsize=8, color="#0b0b0b")
+    ax.set_title(f"Gas per transfer at each step, one transfer against ten\n{KEY_NOTE}")
+    ax.set_ylabel("Gas per transfer (thousands)")
+    ax.set_xticks(x, [label for _, label, _ in GAS_OPERATIONS])
+    ax.legend(frameon=False)
+    ax.margins(y=0.2)
     save(fig, out)
 
-
-# --- 5: where the wall-clock time goes --------------------------------------
-
-SHORT = {"secp256k1": "secp", "mldsa65": "ML-DSA"}
-
-
-def _key_ticks(ax, x, off_list, keys, ns):
-    """Two rows of x labels: the cohort size per group, the key type per bar."""
-    ax.set_xticks(x, [str(n) for n in ns])
-    ax.set_xticks([xi + off for off in off_list for xi in x], minor=True)
-    ax.set_xticklabels([SHORT.get(k, k) for k in keys for _ in ns],
-                       minor=True, fontsize=7, color="#52514e")
-    ax.tick_params(axis="x", which="minor", length=0, pad=1)
-    ax.tick_params(axis="x", which="major", length=0, pad=14)
-
-
-def latency_phases(df, out):
-    """Two panels on ONE time axis each: the full stack, and the same stack with
-    the finality wait dropped.
-
-    The finality wait is ~50x every other phase on this direction, so in a
-    single panel the other three collapse to a hairline. The right panel is the
-    same data with that one segment removed — not a second y-scale on the same
-    axes, which would misrepresent the comparison.
-    """
-    keys = present_keys(df)
-    ns = sorted(set(df["N_Users"]))
-    means = {c: by_key_and_n(df, c)[0] for c, _, _ in PHASES}
-    rest = [p for p in PHASES if p[0] != "T_Finality_Wait_s"]
-
-    fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.6))
-    width = 0.8 / len(keys)
-    x = np.arange(len(ns))
-    offs = [(i - (len(keys) - 1) / 2) * width for i in range(len(keys))]
-
-    for ax, phases, title in (
-        (axes[0], PHASES, "All measured phases"),
-        (axes[1], rest, "Excluding the finality wait"),
-    ):
-        for i, k in enumerate(keys):
-            off = offs[i]
-            totals = np.array([sum(np.nan_to_num(means[c].get((k, n), np.nan))
-                                   for c, _, _ in phases) for n in ns])
-            bottom = np.zeros(len(ns))
-            for col, label, color in phases:
-                v = np.array([means[col].get((k, n), np.nan) for n in ns])
-                ax.bar(x + off, v, width * 0.92, bottom=bottom, color=color,
-                       edgecolor="white", linewidth=1.5,
-                       label=label if (i == 0 and ax is axes[0]) else None)
-                # Direct value labels: the aqua and grey segments sit under 3:1
-                # against the surface, so the numbers carry the reading.
-                for xi, vi, bi, tot in zip(x + off, v, bottom, totals):
-                    if np.isfinite(vi) and tot > 0 and vi / tot > 0.10:
-                        ax.annotate(f"{vi:.0f}", (xi, bi + vi / 2), ha="center",
-                                    va="center", fontsize=7, color="#0b0b0b")
-                bottom = bottom + np.nan_to_num(v)
-        ax.set_title(title, fontsize=10)
-        ax.set_xlabel("Concurrent migrations in the cohort (N)")
-        _key_ticks(ax, x, offs, keys, ns)
-        ax.margins(y=0.12)
-    axes[0].set_ylabel("Wall-clock time (seconds)")
-    fig.suptitle("End-to-end migration latency, by measured phase", fontsize=12)
-    fig.legend(frameon=False, loc="lower center", ncol=4, fontsize=9,
-               bbox_to_anchor=(0.5, -0.01))
-    fig.tight_layout(rect=(0, 0.07, 1, 0.95))
-    fig.savefig(out, format="pdf")
-    plt.close(fig)
-    print(f"Generated {out}")
+    # The question the figure exists to answer, stated in numbers.
+    if len(sizes) >= 2:
+        a, b = sizes[0], sizes[1]
+        sa, sb = df[df["N_Users"] == a], df[df["N_Users"] == b]
+        print(f"\ngas per transfer, {a} at once vs {b} at once")
+        for col, name, _ in GAS_OPERATIONS:
+            pa, pb = sa[col].mean(), sb[col].mean()
+            nm = name.replace("\n", " ")
+            print(f"  {nm:22} {pa:>10,.0f} -> {pb:>10,.0f}  ({(pb - pa) / pa * 100:+6.1f}%)")
+        ta = sum(sa[c].mean() for c, _, _ in GAS_OPERATIONS)
+        tb = sum(sb[c].mean() for c, _, _ in GAS_OPERATIONS)
+        print(f"  {'TOTAL':22} {ta:>10,.0f} -> {tb:>10,.0f}  ({(tb - ta) / ta * 100:+6.1f}%)")
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--csv", default="migration_metrics_detailed.csv")
+    ap.add_argument("--latency-at", type=int, default=1,
+                    help="batch size the per-step time figure uses")
+    ap.add_argument("--key", default=None,
+                    help="signer key type to plot (default: whichever has most rows)")
     args = ap.parse_args()
 
     df = pd.read_csv(args.csv)
     if df.empty:
         raise SystemExit(f"{args.csv} has no rows")
-    missing = [c for c in ["Signer_Key_Type", "T_Unattributed_s", "T_Finality_Wait_s"]
-               if c not in df.columns]
+    # The light-client update is recorded per batch; every gas bar is shown per
+    # transfer, so derive its share here.
+    if "Update_Client_Gas" in df.columns:
+        df["Update_Gas_Per_Tx"] = df["Update_Client_Gas"] / df["N_Users"]
+    missing = [c for c, _, _ in OPERATIONS + GAS_OPERATIONS if c not in df.columns]
     if missing:
         raise SystemExit(f"{args.csv} is missing {missing} — regenerate it with measure_data.py")
 
-    trials = df.groupby(["Signer_Key_Type", "N_Users"]).size()
-    if (trials < 2).any():
-        print("note: some cells have a single trial; their CI bars are drawn as zero")
+    # Never average across signer key types: the signing key changes the gas a
+    # Cosmos transaction costs, so a mixed mean is a number from no real run.
+    keys = df["Signer_Key_Type"].value_counts()
+    key = args.key or keys.index[0]
+    if key not in set(df["Signer_Key_Type"]):
+        raise SystemExit(f"no rows with Signer_Key_Type == {key!r}; have {list(keys.index)}")
+    if len(keys) > 1:
+        print(f"note: {args.csv} holds {dict(keys)}; plotting {key!r} only "
+              f"(--key to choose)")
+    df = df[df["Signer_Key_Type"] == key]
+    global KEY_NOTE
+    KEY_NOTE = f"signed with {key}"
 
-    line_vs_n(df, "T_Total_Latency_s", "End-to-end migration latency",
-              "First submission to voucher credited (s)", "migration_latency_ci.pdf")
-    line_vs_n(df, "Throughput_TPS", "Effective cohort throughput",
-              "Migrations credited per second", "migration_throughput.pdf")
-    gas_per_transfer(df, "cosmos_gas_per_transfer.pdf")
-    operation_gas_breakdown(df, "cosmos_operation_gas_breakdown.pdf")
-    latency_phases(df, "migration_latency_phases.pdf")
+    latency_by_operation(df, "fig_latency_by_operation.pdf", args.latency_at)
+    time_vs_transactions(df, "fig_time_vs_transactions.pdf")
+    gas_by_operation(df, "fig_gas_by_operation.pdf")
 
 
 if __name__ == "__main__":

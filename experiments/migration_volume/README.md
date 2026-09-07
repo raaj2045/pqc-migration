@@ -38,12 +38,12 @@ phases and recorded end to end:
    transactions**, so their gas is measured separately and summed, never
    subtracted one from the other.
 
-The swept variables are the cohort size **N** and the **signer key type** of
-the account that submits the receive transaction (`secp256k1` vs `ML-DSA-65`).
-A signature is charged once per transaction while packets are charged per
-packet, so the post-quantum signer costs a fixed ~5.2 KB and ~146,000 gas per
-transaction that batching amortizes — from +82 % per transfer at N = 1 to
-+0.8 % at N = 124.
+Two things are varied: how many transfers move at once (**N**), and the
+**signing key type** of the account that submits the delivery transaction
+(`secp256k1` or `ML-DSA-65`). A signature is charged once per transaction while
+packets are charged per packet, so a post-quantum signer adds a fixed ~5.2 KB
+and ~146,000 gas to each transaction. Split across a larger batch, that fixed
+cost per transfer falls from +82 % at one transfer to +0.8 % at 124.
 
 The **destination** key type is not a variable, because it cannot be one:
 receivers appear in the packet payload as 20-byte bech32 addresses whatever key
@@ -57,16 +57,17 @@ Needs a live devnet (Kurtosis Ethereum enclave, Cosmos chain, instantiated
 
 ```bash
 python3 experiments/migration_volume/check_setup.py    # preconditions
-python3 measure_data.py                                # the sweep
-python3 plot_data.py                                   # the figures
+python3 measure_data.py                                # take the measurements
+python3 plot_data.py                                   # draw the figures
 ```
 
-`measure_data.py` defaults to N ∈ {1, 10, 50, 100} × 3 trials × both signer key
-types, and takes `--n`, `--trials`, `--signers`, `--amount`, `--out` and
-`--resume` (which skips cells already in the CSV). It runs a capacity
-pre-flight against the node's live `config.toml` before the first cell and
-refuses to start if the largest N would not fit — a cell that fails on size
-mid-sweep wastes every trial before it.
+`measure_data.py` defaults to N ∈ {1, 10, 50, 100} × 3 repeats × both signing
+key types, and takes `--n`, `--trials`, `--signers`, `--amount`, `--out` and
+`--resume` (which skips runs already in the CSV and rebuilds any that finished
+without being recorded). Before the first run it checks the node's live
+`config.toml` and refuses to start if the largest batch would not fit in one
+delivery transaction — a run that fails on size partway through wastes every
+repeat before it.
 
 Every cell carries a run label (`n<N>-t<trial>-<key>`) that both scripts write
 into their output filenames and into the JSON itself. Nothing is selected by
@@ -84,46 +85,53 @@ node relay-recv-batch.js "$DEVNET_DIR/migration-volume/send-x.json" \
 
 ## Outputs
 
-`migration_metrics_detailed.csv`, one row per cell:
+`migration_metrics_detailed.csv`, one row per run:
 
 | Column | Meaning |
 |---|---|
-| `N_Users`, `Trial`, `Run_Label` | the cell |
-| `Signer_Key_Type`, `Signer_Key` | algorithm and keyring name of the receive-tx signer |
-| `Dest_Key_Type` | always `none` — see above |
-| `EVM_Gas_Total`, `EVM_Gas_Per_User` | phase-1 submission gas |
-| `Cosmos_Gas_Total`, `Cosmos_Gas_Per_Transfer` | update + receive gas, and that per migration |
-| `Recv_Gas_Per_Transfer` | receive gas alone, per migration |
-| `Update_Client_Gas`, `Recv_Packet_Gas` | the two operations, measured separately |
-| `Recv_Tx_Bytes` | on-wire size of the receive transaction |
-| `Credited_Height`, `Credited_Block_Ts` | the Cosmos block that credited the cohort |
-| `Chain_Host_Skew_s` | block header time minus relay-host clock at that moment |
-| `T_Submit_s` | phase 1, measured |
-| `T_Finality_Wait_s` | phase 2, measured — real time blocked on beacon finality |
-| `T_Proof_and_Relay_s` | phase 3, measured (`eth_getProof` + update + tx) |
-| `T_Unattributed_s` | wall clock the four measured spans do not account for |
-| `T_Total_Latency_s` | first submission → the Cosmos block that credited the vouchers |
-| `Throughput_TPS` | `N / T_Total_Latency_s` |
+| `N_Users`, `Trial`, `Run_Label` | which run this row is |
+| `Signer_Key_Type` | algorithm of the key signing the delivery transaction |
+| `Submit_Gas_Total`, `Submit_Gas_Per_Tx` | Ethereum submission gas |
+| `Update_Client_Gas` | light-client update — charged once per batch |
+| `Deliver_Gas_Total`, `Deliver_Gas_Per_Tx` | packet delivery on Cosmos |
+| `Deliver_Tx_Bytes` | on-wire size of the delivery transaction |
+| `T_Submit_s` | submitting on Ethereum |
+| `T_Wait_Finality_s` | waiting for Ethereum finality |
+| `T_Update_Client_s` | updating the light client |
+| `T_Fetch_Proof_s` | fetching the proof (`eth_getProof`) |
+| `T_Deliver_s` | delivering the packets on Cosmos |
+| `T_Other_s` | time the steps above do not cover |
+| `T_Total_s` | first submission to the vouchers being credited |
+| `Transfers_Per_Second` | `N_Users / T_Total_s` |
+| `Credited_Height` | Cosmos block that credited the batch |
 
-`T_Unattributed_s` is named for what it is — process startup, poll
-granularity, gaps between phases. It is deliberately *not* folded into the
-finality wait, which the paper quotes.
+`T_Other_s` is named for what it is — process start-up, how often the finality
+check polls, the gaps between steps. It is deliberately *not* folded into the
+finality wait, which is the number the paper quotes.
 
-**Every span and the total are on the relay host's clock.** The Cosmos block
-header time is a different clock — CometBFT derives it from the median of the
-previous commit's validator timestamps, so it lags the host by seconds (−6.4 s
-observed) — and is carried separately as `Credited_Block_Ts`, with the offset
-in `Chain_Host_Skew_s`. Mixing the two books that skew as negative
-unattributed time. The whole cohort is still credited in one Cosmos block, so
-`Credited_Block_Ts` remains the exact chain-side instant; it just is not
-subtracted from a host timestamp.
+**Every step and the total are timed on the relay host's clock.** The Cosmos
+block header runs on a different clock — CometBFT takes it from the median of
+the previous commit's validator timestamps, so it lags the host by seconds
+(−6.4 s measured) — and is never one end of a subtraction here. Mixing the two
+turns that lag into negative leftover time. The whole batch is still credited
+in one Cosmos block, so that instant is exact — it is simply recorded rather
+than subtracted from a host timestamp.
 
-The driver aborts if the measured phases sum to more than the total, rather
-than recording a negative residual.
+The runner stops if the measured steps sum to more than the total, rather than
+recording a negative leftover.
 
-`plot_data.py` writes `migration_latency_ci.pdf`,
-`migration_throughput.pdf`, `cosmos_gas_per_transfer.pdf`,
-`cosmos_operation_gas_breakdown.pdf` and `migration_latency_phases.pdf`.
+`plot_data.py` draws three figures, each with 95 % confidence intervals and
+the repeat count printed on it:
+
+| Figure | Shows |
+|---|---|
+| `fig_latency_by_operation.pdf` | how long each step of a migration takes |
+| `fig_time_vs_transactions.pdf` | total time against how many transfers move at once |
+| `fig_gas_by_operation.pdf` | gas per transfer at each step, one transfer against ten |
+
+It never averages across signing key types — the signing key changes what a
+Cosmos transaction costs, so a mixed mean would be a number from no real run.
+Pass `--key` to choose; the default is whichever has the most rows.
 
 ## Capacity
 
@@ -168,8 +176,8 @@ window of roughly 58 blocks.
 | `probe-ack-batching.js` | Phase 0 probe — decodes what proof-api builds for a multi-ack tx |
 | `bech32.js` | Minimal bech32, to mint one distinct Cosmos receiver per user |
 
-The sweep driver and plotter live at the repository root: `measure_data.py`
-and `plot_data.py`.
+The measurement runner and the plotter live at the repository root:
+`measure_data.py` and `plot_data.py`.
 
 ## Findings
 

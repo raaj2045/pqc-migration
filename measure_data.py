@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sweep driver for the migration_volume experiment (Ethereum -> Cosmos).
+"""Measurement runner for the migration_volume experiment (Ethereum -> Cosmos).
 
 For each cell (N users x trial x signer key type) it submits N independent
 `sendTransfer` calls on the EVM, relays all N to Cosmos as one batched receive
@@ -52,8 +52,8 @@ DEFAULT_TRIALS = 3
 DEFAULT_SIGNERS = ["validator", "relayer"]
 
 # Measured per-packet cost of a receive transaction, from CEILING-FINDINGS.md.
-# Used only for the pre-flight capacity check below; the sweep never relies on
-# it for a reported number.
+# Used only for the pre-flight capacity check below; no reported number
+# depends on it.
 BYTES_PER_PACKET = 6_300      # slope, rounded up (6,000-6,212 observed)
 BYTES_INTERCEPT = 5_200       # ML-DSA-65 signer, the larger of the two
 CEILING_SAFETY = 0.90         # refuse to start above 90% of a measured wall
@@ -62,35 +62,33 @@ COLUMNS = [
     "N_Users",
     "Trial",
     "Signer_Key_Type",
-    "Signer_Key",
-    "Dest_Key_Type",
     "Run_Label",
-    "EVM_Gas_Per_User",
-    "EVM_Gas_Total",
-    "Cosmos_Gas_Total",
-    "Cosmos_Gas_Per_Transfer",
-    "Recv_Gas_Per_Transfer",
+    # gas, one column per operation that costs any
+    "Submit_Gas_Total",
+    "Submit_Gas_Per_Tx",
     "Update_Client_Gas",
-    "Recv_Packet_Gas",
-    "Recv_Tx_Bytes",
-    "Throughput_TPS",
-    "Credited_Height",
-    "Credited_Block_Ts",
-    "Chain_Host_Skew_s",
+    "Deliver_Gas_Total",
+    "Deliver_Gas_Per_Tx",
+    "Deliver_Tx_Bytes",
+    # time, one column per operation, all on the relay host's clock
     "T_Submit_s",
-    "T_Finality_Wait_s",
-    "T_Proof_and_Relay_s",
-    "T_Unattributed_s",
-    "T_Total_Latency_s",
+    "T_Wait_Finality_s",
+    "T_Update_Client_s",
+    "T_Fetch_Proof_s",
+    "T_Deliver_s",
+    "T_Other_s",
+    "T_Total_s",
+    "Transfers_Per_Second",
+    "Credited_Height",
 ]
 
 
 def run(cmd, label):
-    """Run a step, streaming its output. Any non-zero exit aborts the sweep."""
+    """Run a step, streaming its output. Any non-zero exit stops the run."""
     print(f"    $ {' '.join(str(c) for c in cmd)}")
     r = subprocess.run(cmd, cwd=HERE)
     if r.returncode != 0:
-        raise SystemExit(f"[{label}] failed with exit {r.returncode} — aborting sweep")
+        raise SystemExit(f"[{label}] failed with exit {r.returncode} — stopping")
 
 
 def require(d, key, where, positive=True):
@@ -148,8 +146,8 @@ def node_limits(cfg):
 def preflight_capacity(cfg, max_n):
     """Confirm the largest cell fits before spending hours reaching it.
 
-    A cell that fails on size mid-sweep wastes every trial before it, so the
-    check happens once, up front, against the node's live limits.
+    A run that fails on size partway through wastes every repeat before it, so
+    the check happens once, up front, against the node's live limits.
     """
     max_body, max_tx = node_limits(cfg)
     rpc_raw_cap = max_body * 3 // 4          # base64 inflates 4/3
@@ -263,75 +261,63 @@ def run_cell(cfg, out_dir, n, trial, signer_key, amount, reuse=False):
         send, recv = loaded
 
     # --- gas ----------------------------------------------------------------
-    # MsgUpdateClient and the N MsgRecvPacket are SEPARATE transactions, so the
-    # receive tx's own gas_used is the packet-delivery cost by itself. The
-    # Cosmos-side total is the sum, not a figure to subtract the update out of.
-    evm_total = int(require(send, "submitGasTotal", str(send_path)))
-    recv_gas = int(require(recv, "gasUsed", str(recv_path)))
+    # Updating the light client and delivering the packets are SEPARATE Cosmos
+    # transactions, so each carries its own gas. Nothing is subtracted from
+    # anything.
+    submit_gas = int(require(send, "submitGasTotal", str(send_path)))
+    deliver_gas = int(require(recv, "gasUsed", str(recv_path)))
     update_gas = int(require(recv, "updateGas", str(recv_path)))
-    cosmos_total = recv_gas + update_gas
 
     # --- time ---------------------------------------------------------------
-    # Every span below is on the RELAY HOST'S clock, and so is the total. The
-    # Cosmos block header time is a chain clock: CometBFT sets it from the
-    # median of the previous commit's validator timestamps, so it lags the host
-    # by seconds. Subtracting one from the other silently books that skew as
-    # negative unattributed time, so the two clocks are kept apart and the
-    # offset is recorded as its own column instead.
+    # One column per operation. Every span and the total come from the relay
+    # host's clock; the Cosmos block header runs on a different clock (it lags
+    # by seconds), so it is never one end of a subtraction here.
     t_submit = float(require(send, "elapsedSeconds", str(send_path)))
-    t_finality = float(require(recv, "finalityWaitSeconds", str(recv_path), positive=False))
-    t_relay = sum(float(require(recv, k, str(recv_path), positive=False))
-                  for k in ("updateSeconds", "proofSeconds", "txSeconds"))
-    t_start = float(require(send, "firstSubmittedTs", str(send_path)))
-    t_credit_host = float(require(recv, "creditedWallTs", str(recv_path)))
-    t_credit_chain = float(require(recv, "creditedTs", str(recv_path)))
-    t_total = t_credit_host - t_start
-    if t_total <= 0:
-        raise SystemExit(f"{label}: credited ({t_credit_host}) is not after first submit ({t_start})")
+    t_wait = float(require(recv, "finalityWaitSeconds", str(recv_path), positive=False))
+    t_update = float(require(recv, "updateSeconds", str(recv_path), positive=False))
+    t_proof = float(require(recv, "proofSeconds", str(recv_path), positive=False))
+    t_deliver = float(require(recv, "txSeconds", str(recv_path), positive=False))
 
-    # Four measured phases plus an explicit residual. The residual is NOT
-    # relabelled as the finality wait: it is whatever the phases do not span.
-    t_unattributed = t_total - (t_submit + t_finality + t_relay)
-    # A materially negative residual means the spans overlap or the clocks were
-    # mixed again — either way the decomposition is wrong, so say so rather
-    # than plot a negative bar.
-    if t_unattributed < -1.0:
+    t_start = float(require(send, "firstSubmittedTs", str(send_path)))
+    t_end = float(require(recv, "creditedWallTs", str(recv_path)))
+    t_total = t_end - t_start
+    if t_total <= 0:
+        raise SystemExit(f"{label}: credited ({t_end}) is not after first submit ({t_start})")
+
+    # Whatever the measured operations do not cover: process start-up, how
+    # often the finality check polls, the gaps between steps. Named for what it
+    # is rather than folded into an operation.
+    t_other = t_total - (t_submit + t_wait + t_update + t_proof + t_deliver)
+    if t_other < -1.0:
         raise SystemExit(
-            f"{label}: measured phases sum to {t_submit + t_finality + t_relay:.2f}s, "
-            f"more than the {t_total:.2f}s total — the spans overlap or two clocks "
-            f"were mixed; refusing to record a negative residual")
+            f"{label}: the measured operations sum to "
+            f"{t_submit + t_wait + t_update + t_proof + t_deliver:.2f}s, more than the "
+            f"{t_total:.2f}s total — they overlap or two clocks were mixed")
 
     return {
         "N_Users": n,
         "Trial": trial,
         "Signer_Key_Type": recv["signerAlgo"],
-        "Signer_Key": recv["signerKey"],
-        # Not an axis: receivers are 20-byte bech32 addresses in the payload
-        # whatever key would control them, and a fresh recipient carries no
-        # pubkey on chain until it first signs. See CEILING-FINDINGS.md.
-        "Dest_Key_Type": "none",
         "Run_Label": label,
-        "EVM_Gas_Per_User": evm_total / n,
-        "EVM_Gas_Total": evm_total,
-        "Cosmos_Gas_Total": cosmos_total,
-        "Cosmos_Gas_Per_Transfer": cosmos_total / n,
-        "Recv_Gas_Per_Transfer": recv_gas / n,
+        "Submit_Gas_Total": submit_gas,
+        "Submit_Gas_Per_Tx": submit_gas / n,
         "Update_Client_Gas": update_gas,
-        "Recv_Packet_Gas": recv_gas,
-        "Recv_Tx_Bytes": int(require(recv, "txBytes", str(recv_path))),
-        "Throughput_TPS": n / t_total,
-        "Credited_Height": int(require(recv, "creditedHeight", str(recv_path))),
-        "Credited_Block_Ts": t_credit_chain,
-        "Chain_Host_Skew_s": t_credit_chain - t_credit_host,
+        "Deliver_Gas_Total": deliver_gas,
+        "Deliver_Gas_Per_Tx": deliver_gas / n,
+        "Deliver_Tx_Bytes": int(require(recv, "txBytes", str(recv_path))),
         "T_Submit_s": t_submit,
-        "T_Finality_Wait_s": t_finality,
-        "T_Proof_and_Relay_s": t_relay,
-        "T_Unattributed_s": t_unattributed,
-        "T_Total_Latency_s": t_total,
+        "T_Wait_Finality_s": t_wait,
+        "T_Update_Client_s": t_update,
+        "T_Fetch_Proof_s": t_proof,
+        "T_Deliver_s": t_deliver,
+        "T_Other_s": t_other,
+        "T_Total_s": t_total,
+        "Transfers_Per_Second": n / t_total,
+        "Credited_Height": int(require(recv, "creditedHeight", str(recv_path))),
     }
 
 
-# --- sweep ------------------------------------------------------------------
+# --- run ------------------------------------------------------------------
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
@@ -373,7 +359,7 @@ def main():
             extra = [c for c in header or [] if c not in COLUMNS]
             missing = [c for c in COLUMNS if c not in (header or [])]
             raise SystemExit(
-                f"{out_path} has a {len(header or [])}-column header, but this sweep writes "
+                f"{out_path} has a {len(header or [])}-column header, but this run writes "
                 f"{len(COLUMNS)} columns"
                 + (f"\n  missing: {missing}" if missing else "")
                 + (f"\n  unexpected: {extra}" if extra else "")
