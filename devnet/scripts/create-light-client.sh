@@ -42,6 +42,9 @@
 #   --wasm-file PATH      Default: devnet/artifacts/cw_ics08_wasm_eth.wasm.gz
 #   --from KEY            Keyring key that signs MsgCreateClient. Default:
 #                         RELAYER_KEY from devnet.env, else "validator".
+#   --gas N               Gas limit. Default 8000000, set explicitly because
+#                         --gas auto cannot be used here: simulating this
+#                         message panics inside 08-wasm (see the tx() helper).
 #
 # Every flag is optional: with none given, everything is derived from the
 # devnet's own generated files, so this is safe to wire into
@@ -54,6 +57,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 
 ROUTER="" PUBKEYS_HASH="" CHECKSUM_HEX="" WASM_FILE="" FROM_KEY=""
+GAS="${GAS:-8000000}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --router) ROUTER="$2"; shift 2 ;;
@@ -61,6 +65,7 @@ while [ $# -gt 0 ]; do
     --checksum) CHECKSUM_HEX="$2"; shift 2 ;;
     --wasm-file) WASM_FILE="$2"; shift 2 ;;
     --from) FROM_KEY="$2"; shift 2 ;;
+    --gas) GAS="$2"; shift 2 ;;
     -h|--help) grep '^#' "$0" | sed 's/^#//'; exit 0 ;;
     *) die "unknown flag: $1 (--help for usage)" ;;
   esac
@@ -85,7 +90,14 @@ case "$ROUTER" in 0x*) ;; *) die "router address must be 0x-prefixed: $ROUTER" ;
 WASM_FILE="${WASM_FILE:-$DEVNET_ROOT/artifacts/cw_ics08_wasm_eth.wasm.gz}"
 
 BIN=("$PQCHAIND_BIN" --home "$CHAIN_HOME" --node "$CHAIN_NODE")
-tx() { "${BIN[@]}" tx "$@" --chain-id "$CHAIN_ID" --keyring-backend test --gas auto --gas-adjustment 1.5 -y -o json; }
+# Gas is set EXPLICITLY, never --gas auto. Simulating MsgCreateClient for an
+# 08-wasm client panics: the simulation runs in a query context that carries no
+# block header, and 08-wasm's contract_keeper getEnv() builds the CosmWasm Env
+# from ctx.BlockTime(), which is the zero time there — whose unix value is
+# negative, so wasmvm rejects it with "block (unix) time must never be
+# negative". The chain itself is fine; only the simulated context is empty.
+# Instantiating the client is a few million gas, and block max_gas is -1.
+tx() { "${BIN[@]}" tx "$@" --chain-id "$CHAIN_ID" --keyring-backend test --gas "$GAS" -y -o json; }
 qry() { "${BIN[@]}" query "$@" -o json; }
 
 # --- instantiate-inputs: always re-collect, never reuse ---------------------
