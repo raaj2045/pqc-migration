@@ -7,7 +7,7 @@
 // returns:
 //
 //   (a) one multicall containing N ackPacket calls  -> the ack leg batches,
-//       and the whole flow amortizes end to end; or
+//       and the cost per packet falls end to end; or
 //   (b) a single ackPacket for one packet only      -> the ack leg is
 //       inherently per-packet and must be pooled, not batched.
 //

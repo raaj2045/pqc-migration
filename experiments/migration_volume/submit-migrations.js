@@ -19,8 +19,9 @@
 // large cohort is not serialized on 12s block times. Receipts are collected
 // after all sends are broadcast.
 //
-// --label=NAME fixes the output filename to send-<NAME>.json. A sweep passes
-// its own run label so the harness can address the file it just produced by
+// --label=NAME fixes the output filename to send-<NAME>.json. A measurement
+// run passes its own label so the harness can address the file it just
+// produced by
 // name. Without it the name carries a timestamp, and a caller picking "the
 // newest send-*.json" races any file left behind by an earlier trial.
 //

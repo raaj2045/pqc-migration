@@ -51,7 +51,7 @@ The binding wall is CometBFT's `max_tx_bytes = 4,194,304` (mempool). Block
 **Implied ceiling ≈ 712 packets per transaction** — over 10× geth's 66. The
 geth 128 KB ceiling genuinely does not transfer, as expected.
 
-At every target sweep size the whole cohort fits in **one** transaction:
+At every target batch size the whole cohort fits in **one** transaction:
 
 | N | tx bytes | % of 4 MB cap | recv gas |
 |---|---|---|---|

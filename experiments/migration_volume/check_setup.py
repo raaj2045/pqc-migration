@@ -35,7 +35,7 @@ this direction:
      batch_scaling: not because a real proof would corrupt the headline
      number (it would not — the headline is `credited`, set on the forward
      leg, which SP1 never touches), but because ~10 min/proof on the ack leg
-     would dominate wall-clock time and cap the sweep's scale for no
+     would dominate wall-clock time and cap how large a run can be, for no
      measurement benefit. Running against the real verifier is therefore a
      legitimate, if slow, configuration — so this is a warning, not a
      failure. That is the substantive difference from batch_scaling, where
@@ -252,7 +252,7 @@ def check_verifier_prover_pair(cfg, log) -> dict:
         log("  WARNING: verifier/prover pair is REAL (Groth16, ~10 min/proof).")
         log("    This does NOT corrupt the headline `credited` measurement — SP1 never touches")
         log("    the forward (EVM -> Cosmos) leg. It only makes the ack leg dominate wall-clock")
-        log("    time. Valid but slow; use --verifier=mock to scale the sweep.")
+        log("    time. Valid but slow; use --verifier=mock to run at scale.")
     return {"verifier": kind, "verifier_address": addr, "prover": prover, "proof_api_config": cfg_path}
 
 
