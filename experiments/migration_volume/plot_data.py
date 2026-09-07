@@ -144,24 +144,29 @@ def fig_time_by_step(df, out, batch=1):
 
 # --- 2: total time against batch size ---------------------------------------
 
-def fig_time_by_batch(delivery, out):
-    """Two panels on the same x axis: how long a batch takes, and how many
-    transfers that works out to per second.
+def fig_time_by_batch(delivery, out, wait_s=None, wait_n=0):
+    """Two panels on the same x axis: how long a batch takes, and the rate that
+    gives.
 
-    Total time is the Ethereum finality wait plus delivery, both from the same
-    run. The wait is charged in full because a batch on its own would pay all
-    of it. Submitting is not included -- users do that themselves, before the
-    bridge is involved.
+    The finality wait enters as ONE CONSTANT, not per run. It does not depend on
+    batch size -- it depends on where in Ethereum's epoch cycle the submission
+    lands, which is effectively random over a range of minutes. Charging each
+    batch size the wait its own run happened to draw makes lucky runs look like
+    large batches are faster, which is a property of the draw and not of the
+    batch. The constant comes from the per-step measurements, where the wait is
+    sampled many times.
 
-    Two panels rather than one: the point is that time barely moves while the
-    rate climbs, and a single panel either hides the rate or needs a second y
-    axis, which would invite reading one curve against the other's scale.
+    Delivery time is measured per batch size and is the only part that varies.
+    Submitting is excluded: users do that themselves, before the bridge is
+    involved.
     """
     if delivery is None:
         print(f"skipping {out}: no delivery results")
         return
+    if wait_s is None:
+        print(f"skipping {out}: no finality measurements to take the constant from")
+        return
     d = delivery.copy()
-    d["Total_s"] = d["Gen_Wait_Finality_s"] + d["T_Deliver_s"]
     keys = keys_present(d)
     sizes = sorted(d["Batch_Size"].unique())
 
@@ -169,17 +174,21 @@ def fig_time_by_batch(delivery, out):
     for k in keys:
         kd = d[d["Signer_Key_Type"] == k]
         ns = sorted(kd["Batch_Size"].unique())
-        t = [mean_ci(kd[kd["Batch_Size"] == n]["Total_s"]) for n in ns]
-        means = [m for m, _ in t]
+        t = [mean_ci(kd[kd["Batch_Size"] == n]["T_Deliver_s"]) for n in ns]
+        total = [wait_s + m for m, _ in t]
         cis = [c for _, c in t]
-        rate = [n / m for n, m in zip(ns, means)]
+        rate = [n / m for n, m in zip(ns, total)]
         style = dict(fmt=KEY_MARKERS.get(k, "o") + "-", color=KEY_COLORS.get(k, "#4a3aa7"),
                      ecolor=KEY_COLORS.get(k, "#4a3aa7"), elinewidth=1.5, capsize=4,
                      linewidth=2, markersize=7, zorder=3)
-        axes[0].errorbar(ns, means, yerr=cis, label=KEY_LABELS.get(k, k), **style)
+        axes[0].errorbar(ns, total, yerr=cis, label=KEY_LABELS.get(k, k), **style)
         axes[1].errorbar(ns, rate, **style)
 
-    counts = {n: int((d["Batch_Size"] == n).sum()) for n in sizes}
+    axes[0].axhline(wait_s, color="#9a9a94", linestyle="--", linewidth=1.2, zorder=2)
+    axes[0].annotate(f"finality wait, {wait_s:,.0f}s\n(same at every batch size)",
+                     (sizes[0], wait_s), textcoords="offset points", xytext=(4, -6),
+                     va="top", fontsize=7.5, color="#52514e")
+
     for ax, title, ylab in (
         (axes[0], "Time for one batch", "Seconds"),
         (axes[1], "Transfers per second", "Transfers / second"),
@@ -191,16 +200,16 @@ def fig_time_by_batch(delivery, out):
         ax.set_xticks(sizes)
         ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
         ax.margins(x=0.12)
-    axes[0].set_ylim(bottom=0)
+    axes[0].set_ylim(0, (wait_s + 40) * 1.12)
     axes[1].set_yscale("log")
 
     fig.suptitle("Time to move a batch of transfers, and the rate that gives",
                  fontsize=12)
     handles, labels = axes[0].get_legend_handles_labels()
-    n_note = ", ".join(f"{n}: n={counts[n]}" for n in sizes)
-    fig.legend(handles, labels, loc="lower center", ncol=2, frameon=False,
-               fontsize=9, bbox_to_anchor=(0.5, -0.02),
-               title=f"error bars: 95% CI    repeats — {n_note}")
+    fig.legend(handles, labels, loc="lower center", ncol=2, frameon=False, fontsize=9,
+               bbox_to_anchor=(0.5, -0.02),
+               title=f"error bars: 95% CI on delivery · finality wait held constant "
+                     f"from {wait_n} measurements")
     fig.legends[0].get_title().set_fontsize(7.5)
     fig.tight_layout(rect=(0, 0.09, 1, 0.94))
     fig.savefig(HERE / out, format="pdf", bbox_inches="tight")
@@ -284,7 +293,13 @@ def main():
         ack["Signer_Key_Type"] = np.where(
             ack["Run_Label"].str.contains("relayer"), "mldsa65", "secp256k1")
 
-    fig_time_by_batch(delivery, "fig_time_by_batch.pdf")
+    # One finality wait for every batch size, sampled from the per-step runs.
+    wait_s, wait_n = None, 0
+    if latency_path.exists() and latency_path.stat().st_size:
+        ldf = pd.read_csv(latency_path)
+        per_group = ldf.groupby(["Signer_Key_Type", "Wave"])["T_Wait_Finality_s"].first()
+        wait_s, wait_n = float(per_group.mean()), len(per_group)
+    fig_time_by_batch(delivery, "fig_time_by_batch.pdf", wait_s, wait_n)
     cost_by_batch(delivery, ack, "cost_by_batch.md")
 
 
