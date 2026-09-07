@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""migration_throughput sweep orchestrator.
+"""migration_throughput run orchestrator.
 
 For each (rate, repeat) cell, run loadgen.py once and write a result JSON.
 Resumable: an existing result file is never overwritten, so an interrupted
-sweep continues where it stopped.
+run continues where it stopped.
 
 Hard rules (do not override autonomously):
   - never overwrite an existing result file
-  - 3 consecutive *infrastructure* failures abort the sweep
+  - 3 consecutive *infrastructure* failures abort the run
   - a saturated cell (low success rate, high latency) is DATA, not failure
   - total wall-clock budget; stop after the current cell when exceeded
 
@@ -114,17 +114,17 @@ def main():
                 consecutive_failures += 1
                 print(f"[{i}/{total}] {key}: FAILED — {why}", flush=True)
                 if consecutive_failures >= 3:
-                    print("3 consecutive infrastructure failures — aborting sweep",
+                    print("3 consecutive infrastructure failures — aborting run",
                           flush=True)
                     save_state(st)
                     return
             save_state(st)
 
         # Aggregate after each N finishes, so intermediate results are
-        # readable without waiting for the whole sweep.
+        # readable without waiting for the whole run.
         subprocess.run([sys.executable, str(HERE / "aggregate.py")])
 
-    print(f"sweep complete: {len(st['done'])} cells, {len(st['failed'])} failed")
+    print(f"run complete: {len(st['done'])} cells, {len(st['failed'])} failed")
 
 
 if __name__ == "__main__":

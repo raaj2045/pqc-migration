@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""validator_scaling_v2 sweep orchestrator.
+"""validator_scaling_v2 run orchestrator.
 
 For each (N, rate, scheme) triple in the cartesian product of
   N      ∈ {4, 7, 16}
@@ -22,7 +22,7 @@ across runs.
 
 Hard rules (do not override autonomously):
   - 15 min wall timeout per run
-  - 3 consecutive *crashes* (not saturation) → abort the sweep
+  - 3 consecutive *crashes* (not saturation) → abort the run
   - 5 h total budget → stop after the current run, write what we have
   - never overwrite an existing result file (resumable)
 
@@ -67,7 +67,7 @@ MLDSA_POOL = PRESIGN_DIR / "mldsa.jsonl"
 RPC_URL = "http://localhost:26657"
 
 # --------------------------------------------------------------------------- #
-# Sweep parameters                                                            #
+# Run parameters                                                            #
 # --------------------------------------------------------------------------- #
 NS = [4, 7, 16]
 RATES = [10, 50, 100, 200, 500]
@@ -345,7 +345,7 @@ def run_one(n: int, rate: int, scheme: str) -> dict:
     peak_cpu = max(cpu.peaks.values(), default=0.0)
     log(f"  status={status} {reason} peak_cpu={peak_cpu:.1f}%  {summary}")
 
-    # Annotate the result file with sweep metadata (CPU peak, status).
+    # Annotate the result file with run metadata (CPU peak, status).
     if has_file:
         try:
             doc = json.loads(out_path.read_text())
@@ -375,7 +375,7 @@ def run_one(n: int, rate: int, scheme: str) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# Sweep entrypoint                                                            #
+# Run entrypoint                                                            #
 # --------------------------------------------------------------------------- #
 def regenerate_pool_if_missing():
     """Generate the per-arm presigned pools once if they are not present.
@@ -432,7 +432,7 @@ def main():
 
     # Build the run plan. Order: outer N, middle rate, inner scheme. So we
     # do all 10 cells of N=4 first, then N=7, then N=16. This keeps
-    # contiguous cells of the same N together for easier mid-sweep audits.
+    # contiguous cells of the same N together for easier mid-run audits.
     plan = []
     for n in ns:
         for rate in rates:
@@ -449,7 +449,7 @@ def main():
         except ValueError:
             log(f"--start-from {args.start_from} not in plan; ignoring")
 
-    log(f"sweep plan: {len(plan)} runs")
+    log(f"run plan: {len(plan)} runs")
     started_at = time.time()
     results = []
     consecutive_crashes = 0
@@ -469,7 +469,7 @@ def main():
         rec["scheme"] = scheme
         results.append(rec)
 
-        # Persist sweep state after every cell so a kill -9 still leaves
+        # Persist run state after every cell so a kill -9 still leaves
         # a usable record of what completed.
         (EXP_DIR / "sweep_state.json").write_text(
             json.dumps({"started_at": started_at,
@@ -493,7 +493,7 @@ def main():
     n_skip = sum(1 for r in results if r["status"] == "skipped")
     n_crash = sum(1 for r in results if r["status"] == "crashed")
     n_to = sum(1 for r in results if r["status"] == "timeout")
-    log(f"sweep done: {n_ok} ok, {n_sat} saturated, {n_skip} skipped, "
+    log(f"run done: {n_ok} ok, {n_sat} saturated, {n_skip} skipped, "
         f"{n_crash} crashed, {n_to} timeout — elapsed {elapsed/60:.1f}min")
 
 

@@ -1,4 +1,4 @@
-# Rate sweep (superseded as a headline, retained as a result)
+# Rate run (superseded as a headline, retained as a result)
 
 Offered submission rate 1.0 transfers/s, 5 repeats. **This is not the
 migration-throughput headline result** — it was collected before the

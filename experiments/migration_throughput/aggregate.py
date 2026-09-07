@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dual aggregation for the migration-throughput sweep.
+"""Dual aggregation for the migration-throughput run.
 
 Two metrics from the same runs:
 

@@ -7,7 +7,7 @@ Six PDFs are produced from results.json:
   fig_keygen_comparison.pdf       bar chart of key generation latency
   fig_signing_by_msg_size.pdf     log-log line plot, sign latency vs msg size
   fig_verification_by_msg_size    log-log line plot, verify latency vs msg size
-  fig_batch_verification.pdf      single-panel: amortized per-sig time
+  fig_batch_verification.pdf      single-panel: per-signature time in a batch
   fig_concurrent_signing.pdf      throughput vs goroutines (sub-linear visible)
   fig_memory_allocs.pdf           bytes/op + allocs/op side by side
 
@@ -167,9 +167,9 @@ def plot_concurrent_signing(grouped, out="fig_concurrent_signing.pdf"):
 
 
 def plot_batch_verification(grouped, out="fig_batch_verification.pdf"):
-    """Single-panel: amortized per-signature verify time vs batch size.
-    Total batch time is in results.json; we show only the amortized
-    cost since that is the headline."""
+    """Single-panel: verify time per signature against batch size.
+    Total batch time is in results.json; only the per-signature cost is
+    shown, since that is the headline."""
     fig, ax = plt.subplots(figsize=(5.5, 3.5))
 
     rows_all = grouped.get("BatchVerify", [])

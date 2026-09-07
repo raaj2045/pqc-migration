@@ -1,7 +1,7 @@
 # Real-verifier relay costs
 
 Gas and calldata for bridge relays verified by the **real** `SP1VerifierGroth16`
-and the real `cw-ics08-wasm-eth` BLS light client. The sweep in the parent
+and the real `cw-ics08-wasm-eth` BLS light client. The run in the parent
 directory ran its forward leg against `SP1MockVerifier`; these figures cover the
 verified path.
 

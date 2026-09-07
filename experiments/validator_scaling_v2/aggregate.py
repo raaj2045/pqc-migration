@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate validator_scaling_v2 sweep results into figures + summary.md.
+"""Aggregate validator_scaling_v2 run results into figures + summary.md.
 
 Reads results/N{n}_rate{r}_{scheme}.json files produced by run_sweep.py
 and emits:
@@ -420,7 +420,7 @@ def main():
               "metric uses `max(committed/duration)` across all rates, "
               "which conservatively picks the highest sustained "
               "throughput we actually observed.\n\n"
-              "2. **Sweep classification correction mid-sweep.** The "
+              "2. **Run classification correction mid-run.** The "
               "first attempt aborted at run 8/30 because run_sweep.py "
               "treated `http_errors > 50 % of submissions` as a crash "
               "(triggering the 3-consecutive-crash abort rule). After "
@@ -429,7 +429,7 @@ def main():
               "from sequence-mismatch rejections, not a chain crash). "
               "Three result files (N=4 rate=100 mldsa, N=4 rate=200 "
               "secp, N=4 rate=200 mldsa) were re-stamped post-hoc; the "
-              "underlying tx records were unchanged. The sweep was "
+              "underlying tx records were unchanged. The run was "
               "resumed from N=4 rate=500 and ran to completion.\n\n"
               "3. **mldsa CPU peak does not always exceed secp at the "
               "same target rate.** At rate = 200 / 500 the secp CPU "

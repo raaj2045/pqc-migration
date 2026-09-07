@@ -32,11 +32,11 @@
 // actually happened. Decoding for that selector silently always reports
 // false, which looked like "no chunk ever updates" but was actually just
 // measuring the wrong thing (confirmed empirically: see README.md's
-// "Chunked relay: true vs idealized amortization" section). Reading
+// "Chunked relay: true vs the ideal" section). Reading
 // clientState() at blockNumber-1 vs blockNumber sidesteps the whole
 // question of which call structure carries the update — it just asks
 // "did this chunk's landing block actually change the trusted height",
-// which is the only thing that matters for gas/amortization accounting.
+// which is the only thing that matters for the gas accounting.
 //
 // Usage: node relay-chunk.js <out-dir> [--signer-key=0x...] [--summary=name.json] <cosmos-tx-hash> [...]
 //

@@ -5,7 +5,7 @@ chain end-to-end.
 
 | Sub-directory             | Direction        | Status               | What it measures                                                                                                  |
 |---------------------------|------------------|----------------------|-------------------------------------------------------------------------------------------------------------------|
-| `validator_scaling_v2/`   | Cosmos only      | **Headline** (paper) | 30-cell sweep across N ∈ {4, 7, 16} validators × target tx-rate ∈ {10, 50, 100, 200, 500} × scheme ∈ {secp256k1, mldsa44}. Produces Figs. 9-12 of the paper. |
+| `validator_scaling_v2/`   | Cosmos only      | **Headline** (paper) | 30-cell run across N ∈ {4, 7, 16} validators × target tx-rate ∈ {10, 50, 100, 200, 500} × scheme ∈ {secp256k1, mldsa44}. Produces Figs. 9-12 of the paper. |
 | `migration_volume/`       | **EVM → Cosmos** | **Current** (paper)  | The migration direction the paper is about. Many independent users each escrow an ERC-20 on Ethereum and are credited a voucher on Cosmos. Varies batch size and the signing key type of the delivery transaction. Real BLS + MPT verification on the measured leg. |
 | `migration_throughput/`   | EVM → Cosmos     | **Complete** (paper) | Batching on the live bridge: transfers acknowledged per finality window across N ∈ {1, 5, 10, 20, 40} packets offered per window, 5 repeats each. 1,000 transfers, 0 failures. |
 | `batch_scaling/`          | Cosmos → EVM     | Superseded           | Forward-leg batching against `SP1MockVerifier`: transfer-mechanism scaling (time, throughput, gas) as group size grows across {1, 10, 50, 100, 250, 500}, stopping automatically at the first group size that fails. |
@@ -141,10 +141,10 @@ The README in that directory leads with this status note.
 - **migration_volume output**: `migration_volume/results/`, written by
   `measure_data.py`, `measure_delivery.py` and `measure_ack.py`
 - **Per-cell CPU timeseries**: `validator_scaling_v2/cpu_samples/`
-- **Per-cell sweep logs**: `validator_scaling_v2/logs/`
-- **Sweep state for resume**: `validator_scaling_v2/sweep_state.json`
+- **Per-cell run logs**: `validator_scaling_v2/logs/`
+- **Run state for resume**: `validator_scaling_v2/sweep_state.json`
 - **Aggregator + plotter**: `validator_scaling_v2/aggregate.py`
-- **Sweep orchestrator**: `validator_scaling_v2/run_sweep.py`
+- **Run orchestrator**: `validator_scaling_v2/run_sweep.py`
 - **Per-cell integrity verifier**: `validator_scaling_v2/verify.py`
   (checks 5 per-file invariants across the committed result JSONs)
 - **Pre-signed pools**: not committed (1.1 GB). Regenerate via

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preconditions for the batch-scaling sweep.
+"""Preconditions for the batch-scaling run.
 
 Confirms, before any transfer is submitted:
   1. The Cosmos chain is reachable.
@@ -23,11 +23,11 @@ That last check is the one this experiment depends on for its whole premise:
 grouping transfers is being measured as a property of the transfer mechanism,
 not of proving time (~10 min/proof already measured separately, see
 ../migration_throughput/README.md and ../../devnet/README.md#proving). Running
-this sweep against the real verifier would silently turn every group-size cell
+this run against the real verifier would silently turn every group-size cell
 into a proving-time measurement instead, so this fails loudly rather than
 running with the wrong assumption.
 
-Run standalone to check without starting a sweep:
+Run standalone to check without starting a run:
     python3 check_setup.py
 """
 from __future__ import annotations
@@ -361,7 +361,7 @@ def main():
     except SetupError as e:
         print(f"\nSETUP CHECK FAILED: {e}\n", file=sys.stderr)
         sys.exit(1)
-    print("\nall preconditions satisfied — devnet is ready for the batch-scaling sweep")
+    print("\nall preconditions satisfied — devnet is ready for the batch-scaling run")
 
 
 if __name__ == "__main__":

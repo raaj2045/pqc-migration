@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Integrity verifier for validator_scaling_v2 sweep results.
+"""Integrity verifier for validator_scaling_v2 run results.
 
 Checks every results/N{n}_rate{r}_{scheme}.json for:
   (1) internal numeric consistency (achieved_tps ≈ committed/duration ± 5%,
       committed ≤ submitted, etc.)
-  (2) status label matches the sweep classification rules
+  (2) status label matches the run classification rules
       (ok: committed/submitted ≥ 0.9 AND p99 < 10000;
        saturated: committed/submitted < 0.9 OR p99 ≥ 10000;
        crashed/timeout: only via run-time conditions, not from metric file)
@@ -343,7 +343,7 @@ def main():
         "* During the smoke run earlier in this experiment, validator "
         "logs WERE inspected interactively and showed zero "
         "`sign|verif|invalid sig` matches across all 4 nodes for both "
-        "schemes. That smoke covered the same code path as the sweep.\n\n"
+        "schemes. That smoke covered the same code path as the run.\n\n"
     )
     # Verify the client-side accounting claim for ok-status runs.
     md.append("### Client-side accounting check for status='ok' runs\n\n")
@@ -396,7 +396,7 @@ def main():
               "* status-label cross-checks above use the rules implemented "
               "in `run_sweep.py:run_one`. Three early files (N=4 "
               "rate=100/200 mldsa, N=4 rate=200 secp) were re-stamped from "
-              "'crashed' to 'saturated' mid-sweep when the orchestrator's "
+              "'crashed' to 'saturated' mid-run when the orchestrator's "
               "over-aggressive http_errors>50%=crash rule was corrected. "
               "The status-label match check is against the corrected "
               "rules, so those files now pass cleanly.\n")

@@ -34,15 +34,15 @@ pair actually bound on-chain (see default_relay_concurrency()):
   459s median) even while aggregate throughput improved: chunks were waiting
   on each other, not on work.
 
-Honest accounting, not an idealized one: whether chunks amortize a single
+Honest accounting, not an idealized one: whether chunks share a single
 light-client update depends on this concurrency. Run sequentially, chunk 2
 sees chunk 1's already-updated client and skips re-updating; run
 concurrently, each in-flight chunk builds its request before any other's
 update has landed, so several carry their own update. This module counts
 what actually happened (relay-chunk.js reads the light client's own
 latestHeight across each chunk's block — ground truth, not a guess) rather
-than assuming amortization the dispatch pattern did not deliver. See
-README.md's "Chunked relay: true vs idealized amortization" section.
+than assuming a saving the dispatch pattern did not deliver. See
+README.md's "Chunked relay: true cost against the ideal" section.
 """
 from __future__ import annotations
 
@@ -97,7 +97,7 @@ DEFAULT_RELAY_CONCURRENCY_REAL = 1
 #   - Concurrency is not free even with a mock prover: chunks that fly
 #     together each build their request before any other's light-client update
 #     has landed, so each carries its own MsgUpdateClient instead of
-#     amortizing one (see this module's amortization note). Wider dispatch
+#     sharing one (see this module's note on that). Wider dispatch
 #     buys latency with gas. 8 keeps that cost bounded and, importantly,
 #     honestly counted rather than assumed away.
 #   - It stays inside the per-chunk 1800s subprocess timeout with room to

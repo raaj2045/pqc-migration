@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""batch_scaling sweep orchestrator.
+"""batch_scaling run orchestrator.
 
 For each group size (ascending) x repeat, run loadgen.py once and write a
 result JSON. Resumable: an existing result file is never overwritten, so an
-interrupted sweep continues where it stopped.
+interrupted run continues where it stopped.
 
 Escalation rule (the one thing this orchestrator enforces beyond
 migration_throughput/run_sweep.py's pattern): group sizes are attempted in
 ascending order, and if ANY repeat at a given size fails with a genuine
 breaking error — gas limit exceeded, timeout, revert, or anything else
 relay_pool.py/loadgen.py classifies as a failure rather than success — the
-sweep stops and does NOT attempt larger sizes. That failure is itself the
-result for that point in the sweep: see README.md's "Known limitations" and
+run stops and does NOT attempt larger sizes. That failure is itself the
+result for that point in the run: see README.md's "Known limitations" and
 the EXECUTION note this was built to satisfy.
 
 The wall-clock cost is dominated by real Ethereum finality on the return
@@ -56,14 +56,14 @@ def cell_path(g, rep, ack_pool_size=1):
     # ack and pooled-ack configurations at the same group size (comparing
     # the latency/gas tradeoff across scale) never collide on one result
     # file — the default (1) keeps the original filename unchanged, so
-    # existing small-sweep results and tooling that reads them are unaffected.
+    # existing small-run results and tooling that reads them are unaffected.
     suffix = f"_ack{ack_pool_size}" if ack_pool_size != 1 else ""
     return RESULTS / f"G{g}_rep{rep}{suffix}.json"
 
 
 def run_cell(g, rep, timeout, pool_size, relay_pool_size, chunk_size, ack_pool_size) -> tuple[bool, str]:
     """Returns (ok, why). ok=False covers both infra breakage (no result file)
-    and a genuine recorded sweep failure (loadgen.py exits 1 but still writes
+    and a genuine recorded run failure (loadgen.py exits 1 but still writes
     a result file describing the failure) — the caller distinguishes them.
 
     A timeout here does NOT lose loadgen.py's own progress: it checkpoints
@@ -93,7 +93,7 @@ def run_cell(g, rep, timeout, pool_size, relay_pool_size, chunk_size, ack_pool_s
             r = subprocess.run(cmd, stdout=lf, stderr=subprocess.STDOUT, timeout=timeout)
         except subprocess.TimeoutExpired:
             return False, (f"loadgen.py itself timed out after {timeout}s (see {log_path.name}) — "
-                            f"its own progress checkpoint is intact; re-running this sweep (or "
+                            f"its own progress checkpoint is intact; re-running this run (or "
                             f"loadgen.py directly with the same --out) resumes rather than restarting")
 
     if not out.exists():
@@ -115,7 +115,7 @@ def main():
                     help="hard timeout per cell, seconds. Must exceed the slowest cell's real "
                          "wall-clock time (large group sizes with ack_pool_size=1 can run many "
                          "hours) — a timeout here does not lose progress (loadgen.py checkpoints "
-                         "internally) but does stop the sweep's escalation until re-invoked.")
+                         "internally) but does stop the run's escalation until re-invoked.")
     ap.add_argument("--budget-hours", type=float, default=24.0)
     ap.add_argument("--pool-size", type=int, default=1,
                     help="passed through to loadgen.py --pool-size (Cosmos submission pool)")
@@ -183,13 +183,13 @@ def main():
 
         if cell_failed_at_this_size:
             log(f"group_size={g} had a failing repeat — stopping before any larger "
-                f"group size. This is the sweep's recorded ceiling, not an error to "
+                f"group size. This is the run's recorded ceiling, not an error to "
                 f"retry; see README.md.")
             st["stopped_after"] = g
             save_state(st)
             return
 
-    log(f"sweep complete: {len(st['done'])} cells, {len(st['failed'])} failed")
+    log(f"run complete: {len(st['done'])} cells, {len(st['failed'])} failed")
 
 
 if __name__ == "__main__":

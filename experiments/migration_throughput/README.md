@@ -41,8 +41,8 @@ experiment exists to characterise.
 > finality-bound return leg, which real proving does not change. But the
 > forward-leg numbers do **not** carry over to the real-verifier path, where a
 > single proof costs ~10 minutes of CPU rather than ~25 seconds. Re-running this
-> sweep with real proving would measure prover throughput, not light-client
-> verification, and at ~10 min/proof a 1,000-transfer sweep is not practical.
+> run with real proving would measure prover throughput, not light-client
+> verification, and at ~10 min/proof a 1,000-transfer run is not practical.
 
 The return leg is where the architecture actually shows itself. The ack cannot
 be submitted until Ethereum finality covers the execution block containing it,
@@ -86,19 +86,20 @@ per-packet cost only, and the per-transfer average falls as the window fills.
 
 That is the same fact the throughput ceiling expresses. Transfers-per-window
 is the batching efficiency; the gas asymmetry is its cost shadow. A rate
-sweep that only reports latency cannot see either, because **latency is
+A run that only reports latency cannot see either, because **latency is
 dominated by the finality window and is therefore expected to be flat with
 respect to offered rate**. Flat latency is not the absence of a result — it
 is the evidence that the system batches rather than queues.
 
 The secondary metric exists to test that prediction rather than assume it.
 If latency turns out *not* to be flat, in a way that is not simply the known
-Cosmos mempool ceiling, that is a finding in its own right and the sweep
+Cosmos mempool ceiling, that is a finding in its own right and the run
 should stop until it is understood.
 
 ## Why packets-per-window, and not submission rate
 
-The experiment was originally specified as a submission-rate sweep: raise
+An earlier specification raised the submission rate rather than the packets
+offered per window:
 offered transfers/s until latency degrades. That design was abandoned after
 measurement, for a reason worth recording.
 
@@ -111,11 +112,11 @@ offered load.
 
 **This is a property of the load generator, not of the bridge.** At that load
 the bridge showed no strain whatsoever: 100 % ack success, a single finality
-window, and a 2.5 s spread across packets sharing it. A rate sweep would have
+window, and a 2.5 s spread across packets sharing it. Raising the rate would have
 produced a flat headline curve caused by the harness's signing throughput and
 invited exactly the wrong conclusion.
 
-The retained rate-sweep data is in
+The retained rate data is in
 [`results/rate_sweep/`](results/rate_sweep/). It is a valid result about
 something else — it establishes that **latency is a property of the window,
 not of the packet**, with between-cell variance ~42x the within-cell variance
@@ -183,7 +184,7 @@ harness limit, not to the protocol.** The signature to check is
 `windows_used > 1`: a genuine architectural ceiling would show acks/window
 falling short of N *while still fitting one window*, whereas relay
 serialization shows up as the work spilling into a second window. In this
-sweep the two never diverged, because nothing failed to scale.
+run the two never diverged, because nothing failed to scale.
 
 ### Latency: sublinear, and attributable to the harness
 
@@ -242,7 +243,7 @@ python3 aggregate.py
 ```
 
 Resumable: an existing `results/rateR_repN.json` is never overwritten, so an
-interrupted sweep continues where it stopped.
+interrupted run continues where it stopped.
 
 ## Method
 
@@ -264,7 +265,7 @@ differ by two orders of magnitude:
 Real finality throughout — nothing waits on a shortened clock. At 6 s slots
 and 32-slot epochs, one epoch is 192 s; an ack additionally needs finality to
 advance *past* the block containing it, so an unbatched round trip costs
-roughly 8 minutes. That sets the wall-clock cost of the sweep.
+roughly 8 minutes. That sets the wall-clock cost of the run.
 
 ### CLI caveat
 

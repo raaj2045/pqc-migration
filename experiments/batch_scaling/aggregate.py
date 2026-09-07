@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregation for the batch-scaling sweep.
+"""Aggregation for the batch-scaling run.
 
 For each group size, across its successful repeats:
   - average total time (submission -> every packet acked), with a 95% CI
@@ -27,7 +27,7 @@ recvPacket call frame. That single-account, single-transaction path
 chunks and pools the relay across an EVM account pool (relay_pool.py), which
 records exact per-chunk light-client-update counts (batch_relay's
 numUpdateClientCalls / numChunks — see README.md's "Chunked relay: true vs
-idealized amortization"), a coarser but still exact signal, rather than a
+the ideal"), a coarser but still exact signal, rather than a
 per-call-frame gas split. When neither is available for a cell, this script
 instead fits total forward-leg gas = intercept + slope * group_size by
 ordinary least squares across the group sizes that DO have data, and reports
@@ -108,8 +108,8 @@ def total_batch_gas(run) -> float | None:
     loadgen.py still counts as a single "window" iteration. Summing
     unconditionally (not deduping to "first per window") is what captures
     that TRUE cost instead of an idealized one — see
-    experiments/batch_scaling/README.md's "Chunked relay: true vs idealized
-    amortization" section.
+    experiments/batch_scaling/README.md's "Chunked relay: true cost against
+    the ideal" section.
     """
     br = run.get("batch_relay") or {}
     forward = br.get("totalGas")
@@ -195,7 +195,7 @@ def cell_key(r):
     """(group_size, ack_pool_size): ack pooling changes total_time_s and
     gas_per_transfer materially (it's the whole point of this axis — see
     README.md's "Pooled return-leg acks" and "Chunked relay: true vs
-    idealized amortization" sections), so grouping by group_size alone
+    the ideal" sections), so grouping by group_size alone
     would silently average together two different configurations' results
     if both are ever swept at the same group size.
     """

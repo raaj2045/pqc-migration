@@ -15,7 +15,7 @@ user-account tx-signing algorithm. We sidestep cosmjs's lack of
 ML-DSA-44 support by signing transactions out-of-band with this Go
 tool, then having the loadgen replay them via
 `/broadcast_tx_sync`. This decouples signing throughput from broadcast
-throughput and makes the sweep reproducible at any rate without
+throughput and makes a run reproducible at any rate without
 re-keying.
 
 ## Building

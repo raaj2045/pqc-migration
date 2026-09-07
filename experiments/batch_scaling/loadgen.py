@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One cell of the batch-scaling sweep: submit a group of G transfers, relay
+"""One cell of the batch-scaling run: submit a group of G transfers, relay
 the whole group in one shared light-client update, ack every packet back,
 and record how long the group took and what it cost.
 
@@ -20,8 +20,8 @@ is now the batched one:
            one shared light-client update, same as before chunking existed.
            A larger group may see more than one real update, since chunks
            are dispatched concurrently — see relay_pool.py's module
-           docstring and README.md's "Chunked relay: true vs idealized
-           amortization". Mock-verified: not finality-bound, no real proving.
+           docstring and README.md's "Chunked relay: true cost against the
+           ideal". Mock-verified: not finality-bound, no real proving.
 
   RETURN   (EVM -> Cosmos) each packet's ack is submitted via
            devnet/step-ack.js, real cw-ics08-wasm-eth BLS verification. Acks
@@ -565,7 +565,7 @@ def _log_summary(log, result: "GroupResult"):
         f"({n_return_updates} real light-client update(s) — TRUE count)")
     log(f"  TOTAL gas (all legs): {total_gas}")
     if result.acked > 0:
-        log(f"  TRUE amortized gas/transfer: {total_gas / result.acked:.0f}")
+        log(f"  TRUE gas per transfer: {total_gas / result.acked:.0f}")
 
 
 def main():

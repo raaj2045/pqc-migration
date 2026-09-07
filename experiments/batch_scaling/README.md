@@ -37,7 +37,7 @@ the same thing in both experiments.
 3. **Light-client-update gas, separate from per-transfer gas**, on both legs
    where the split can be obtained — exact on the return leg always; exact on
    the forward leg when the EVM RPC exposes `debug_traceTransaction` for the
-   call trace, otherwise a regression estimate across the sweep. See
+   call trace, otherwise a regression estimate across the run. See
    `aggregate.py`'s module docstring for the methodology.
 4. **Whether anything failed or reverted**, per packet and per group.
 
@@ -130,10 +130,10 @@ node setup-evm-pool.js 5 10   # 5 accounts, 10 ETH each
 python3 loadgen.py --group-size 250 --pool-size 10 --relay-pool-size 5 --repeat 0 --out /tmp/validate.json
 ```
 
-### Chunked relay: true vs idealized amortization
+### Chunked relay: true cost against the ideal
 
-Dispatching chunks concurrently trades away the amortization a single
-sequential relay gets almost for free: relaying one chunk, waiting for it to
+Dispatching chunks concurrently gives up a saving a single sequential relay
+gets almost for free: relaying one chunk, waiting for it to
 land, then relaying the next would let every chunk after the first see the
 client already updated and skip re-updating — one real update for the whole
 group. Concurrent dispatch means every chunk's proof-api request is built
@@ -185,7 +185,7 @@ forward leg:  5 chunks, 0/5 needed a light-client update (already-current
 return leg:   250/250 acked, 1 nominal "window" but ~7 real MsgUpdateClient
               calls (ack phase spanned ~35 min, several real finality epochs)
 status: ok — 250/250 acked
-TRUE amortized gas/transfer: 319,263 (all legs, real update counts)
+TRUE gas per transfer: 319,263 (all legs, real update counts)
 ```
 
 Whether the forward leg needs any updates at all depends on how much Cosmos
@@ -237,7 +237,7 @@ doesn't match whoever actually signed it.
 
 **Validated at group=250** (pool=10 submit, relay-pool=5, ack-pool=10): 923s
 total time vs. 2,109s sequential-ack — wall-clock roughly as expected. TRUE
-amortized gas/transfer came out to 485,091, *worse* than the 319,263
+gas per transfer came out to 485,091, *worse* than the 319,263
 sequential-ack baseline, not better — real light-client updates went from 7
 (sequential) to 10 (10 independent accounts racing the same staleness
 check), and the pool's ML-DSA-65 signing keys carry a real ~2.1x gas cost
@@ -280,7 +280,7 @@ statistic — can be recomputed or plotted later without re-running.
 Two levels, both automatic — nothing extra to pass on a rerun:
 
 - **Cell-level** (already existed): `run_sweep.py` never overwrites an
-  existing `results/G{g}_rep{r}[_ack{N}].json` — an interrupted sweep
+  existing `results/G{g}_rep{r}[_ack{N}].json` — an interrupted run
   resumes at the next un-run cell when re-invoked.
 - **Within a cell**: at large group sizes the ack phase alone can run for
   hours (sequentially — see the group=250 finding above), so losing an
@@ -315,7 +315,7 @@ Two levels, both automatic — nothing extra to pass on a rerun:
   `VERIFIER()` matches `SP1_VERIFIER_MOCK` from `deploy.env`
 
 If the real `SP1VerifierGroth16` is bound instead, it fails with an explicit
-message rather than silently running a 10-minutes-per-proof sweep under the
+message rather than silently running a 10-minutes-per-proof run under the
 assumption that it's free. Run standalone:
 
 ```bash
@@ -324,7 +324,7 @@ python3 check_setup.py
 
 `run_sweep.py` runs it once up front; `loadgen.py` also runs it by default
 (pass `--skip-setup-check` to skip, which `run_sweep.py` does for its own
-per-cell invocations since the sweep-level check already covered it).
+per-cell invocations since the run-level check already covered it).
 
 ## Running
 
@@ -338,7 +338,7 @@ Resumable: an existing `results/G{g}_rep{r}.json` is never overwritten.
 **Escalation stops at the first failing group size.** Sizes are attempted in
 ascending order; if any repeat at a size fails with a genuine breaking error —
 gas limit exceeded, timeout, revert, a mismatched ack count, or anything else
-`relay_pool.py`/`loadgen.py` classifies as a failure — the sweep stops and
+`relay_pool.py`/`loadgen.py` classifies as a failure — the run stops and
 does not attempt larger sizes. That failure is itself the result: `results/`
 and `results/summary.md` record it, they are not silently pruned.
 
