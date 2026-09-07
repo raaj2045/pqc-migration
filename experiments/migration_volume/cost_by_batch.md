@@ -8,9 +8,9 @@ n is the number of runs behind it.
 
 | Transfers at once | Deliver on Cosmos | Acknowledge on Ethereum |
 |---:|---:|---:|
-| 10 | 153,551 ± 231 (n=3) | — |
-| 25 | 150,652 ± 161 (n=3) | — |
-| 50 | 151,623 ± 3,573 (n=6) | 44,508 ± 0 (n=1) |
+| 10 | 153,551 ± 231 (n=3) | 108,919 ± 1,667 (n=3) |
+| 25 | 150,652 ± 161 (n=3) | 101,543 ± 10 (n=3) |
+| 50 | 151,623 ± 3,573 (n=6) | 99,840 ± 15 (n=2) |
 | 100 | 146,361 ± 40 (n=3) | over the 56-ack limit |
 | 500 | 145,982 ± 92 (n=3) | over the 56-ack limit |
 | 1000 | 145,949 ± 62 (n=3) | over the 56-ack limit |
@@ -19,9 +19,9 @@ n is the number of runs behind it.
 
 | Transfers at once | Deliver on Cosmos | Acknowledge on Ethereum |
 |---:|---:|---:|
-| 10 | 168,018 ± 600 (n=3) | — |
-| 25 | 156,511 ± 456 (n=3) | — |
-| 50 | 152,791 ± 253 (n=3) | — |
+| 10 | 168,018 ± 600 (n=3) | 108,267 ± 1,647 (n=3) |
+| 25 | 156,511 ± 456 (n=3) | 102,021 ± 664 (n=3) |
+| 50 | 152,791 ± 253 (n=3) | 102,564 ± 37 (n=3) |
 | 100 | 150,752 ± 212 (n=3) | over the 56-ack limit |
 | 500 | 149,294 ± 53 (n=3) | over the 56-ack limit |
 | 1000 | 149,326 ± 39 (n=3) | over the 56-ack limit |

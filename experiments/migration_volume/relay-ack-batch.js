@@ -29,6 +29,7 @@ const path = require("path");
 const { loadEnv, evm, ethers, config, sendRawTx } = require("../../devnet/lib/lib");
 const { captureRevert } = require("../../devnet/lib/revert");
 const proofapi = require("../../devnet/lib/proofapi");
+const P = require("../../devnet/lib/packet");
 
 const arg = (name, dflt) => {
   const a = process.argv.find((x) => x.startsWith(`--${name}=`));
@@ -55,19 +56,44 @@ const arg = (name, dflt) => {
   config.require_(env, "CHAIN_ID", "ETH_CLIENT_ID", "COSMOS_CLIENT_ID",
     "PROOF_API_ADDR", "ICS26_ROUTER", "SP1_ICS07");
 
-  // Refuse to acknowledge the same delivery twice. Packets already
-  // acknowledged do not revert -- the calls simply do nothing -- so a second
-  // run reports a far lower gas figure that looks like a real measurement and
-  // overwrites the real one. --force is there for a deliberate re-measurement.
-  const outDirEarly = path.join(env.DEVNET_DIR, "migration-volume");
-  const existing = path.join(outDirEarly, `ack-${label}.json`);
-  if (!dryRun && !process.argv.includes("--force") && fs.existsSync(existing)) {
-    throw new Error(`${label} is already acknowledged (${existing}). ` +
-      `Re-acknowledging measures nothing: the packets are closed, the calls ` +
-      `no-op, and the gas figure would be wrong. Pass --force to overwrite.`);
-  }
   const { provider, router, lc } = evm(env);
   const chainId = (await provider.getNetwork()).chainId.toString();
+
+  // Refuse to acknowledge the same delivery twice. Packets already
+  // acknowledged do not revert -- the calls simply do nothing -- so a second
+  // run reports roughly half the gas, which looks like a real measurement and
+  // overwrites the real one.
+  //
+  // The check asks the CHAIN, not the local results: ICS26Router clears a
+  // packet's commitment when the acknowledgement lands, so a cleared
+  // commitment means this batch is closed. Keying off a local ack-*.json
+  // instead would disarm the moment that file is moved or deleted.
+  const outDirEarly = path.join(env.DEVNET_DIR, "migration-volume");
+  if (!dryRun && !process.argv.includes("--force")) {
+    const recvPath = path.join(outDirEarly, `recv-${label}.json`);
+    if (fs.existsSync(recvPath)) {
+      const recvDoc = JSON.parse(fs.readFileSync(recvPath, "utf8"));
+      const seqs = recvDoc.sequences || [];
+      const sendGlob = fs.readdirSync(outDirEarly)
+        .filter((f) => f.startsWith("send-") && f.endsWith(".json"));
+      let sourceClient = null;
+      for (const f of sendGlob) {
+        const doc = JSON.parse(fs.readFileSync(path.join(outDirEarly, f), "utf8"));
+        if ((doc.packets || []).some((pk) => seqs.includes(pk.sequence))) {
+          sourceClient = doc.sourceClient; break;
+        }
+      }
+      if (sourceClient && seqs.length) {
+        const key = ethers.keccak256(P.packetCommitmentKey(sourceClient, BigInt(seqs[0])));
+        const onchain = await router.getCommitment(key);
+        if (/^0x0*$/.test(onchain)) {
+          throw new Error(`${label} is already acknowledged: ICS26Router has cleared the ` +
+            `commitment for sequence ${seqs[0]}. Re-acknowledging measures nothing -- the ` +
+            `calls no-op and the gas figure would be wrong. Pass --force to overwrite.`);
+        }
+      }
+    }
+  }
 
   // Which verifier the client is bound to decides what these numbers mean, so
   // read it from the contract rather than from configuration.
