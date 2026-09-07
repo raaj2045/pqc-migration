@@ -40,6 +40,7 @@ import csv
 import json
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -65,6 +66,12 @@ COLUMNS = [
 ]
 
 
+def run(cmd, label):
+    r = subprocess.run(cmd, cwd=REPO)
+    if r.returncode != 0:
+        raise SystemExit(f"[{label}] failed with exit {r.returncode}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -72,6 +79,13 @@ def main():
                     help="comma-separated delivery labels; default is every "
                          "delivery not yet acknowledged")
     ap.add_argument("--out", default="ack_by_batch.csv")
+    ap.add_argument("--concurrency", type=int, default=1,
+                    help="acks to relay at once. Each needs its own Ethereum "
+                         "sender account (two in-flight transactions from one "
+                         "account race for the same nonce), taken from "
+                         "--sender-pool")
+    ap.add_argument("--sender-pool", default="evm-ack-pool.json",
+                    help="EVM account pool used when --concurrency > 1")
     ap.add_argument("--dry-run", action="store_true",
                     help="ask proof-api what it would build, but broadcast nothing")
     args = ap.parse_args()
@@ -93,36 +107,50 @@ def main():
     out_path = Path(args.out) if Path(args.out).is_absolute() else RESULTS / args.out
     rows, skipped = [], []
 
+    # Decide what to relay before doing any of it, so the work can be handed to
+    # several senders at once.
+    todo = []
+    for label in labels:
+        recv = json.loads((work / f"recv-{label}.json").read_text())
+        if not recv.get("ok") or not recv.get("txhash"):
+            skipped.append((label, "delivery did not succeed"))
+        elif recv.get("chunks", 1) != 1:
+            # Several ack sources; relaying one would half-close the batch.
+            skipped.append((label, f"delivery used {recv['chunks']} transactions"))
+        else:
+            todo.append((label, recv))
+
+    if args.concurrency > 1:
+        run(["node", str(HERE / "setup-user-pool.js"), str(args.concurrency),
+             f"--pool-file={args.sender_pool}"], "sender-pool")
+
+    def relay(job):
+        i, (label, recv) = job
+        n = recv["count"]
+        cmd = ["node", str(HERE / "relay-ack-batch.js"), recv["txhash"],
+               f"--label={label}", f"--expect={n}"]
+        if args.concurrency > 1:
+            cmd += [f"--sender-pool={args.sender_pool}",
+                    f"--sender-index={i % args.concurrency}"]
+        if args.dry_run:
+            cmd.append("--dry-run")
+        r = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True)
+        return label, n, r
+
+    with ThreadPoolExecutor(max_workers=max(1, args.concurrency)) as ex:
+        results = list(ex.map(relay, enumerate(todo)))
+
     with open(out_path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=COLUMNS)
         w.writeheader()
-        for label in labels:
-            recv_path = work / f"recv-{label}.json"
-            recv = json.loads(recv_path.read_text())
-            if not recv.get("ok") or not recv.get("txhash"):
-                skipped.append((label, "delivery did not succeed"))
-                continue
-            # A delivery split across several transactions has several ack
-            # sources; this relays one transaction, so leave those alone rather
-            # than silently acknowledging part of a batch.
-            if recv.get("chunks", 1) != 1:
-                skipped.append((label, f"delivery used {recv['chunks']} transactions"))
-                continue
-
-            n = recv["count"]
-            cmd = ["node", str(HERE / "relay-ack-batch.js"), recv["txhash"],
-                   f"--label={label}", f"--expect={n}"]
-            if args.dry_run:
-                cmd.append("--dry-run")
+        for label, n, r in results:
             print(f"=== {label}: {n} packet(s) ===")
-            r = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True)
             print(r.stdout, end="")
             if r.returncode != 0:
                 msg = (r.stderr or r.stdout).strip().splitlines()
                 why = msg[-1] if msg else "unknown"
                 # A batch too large to acknowledge is a measurement, not a
-                # crash: it is where this leg's ceiling is. Record it and carry
-                # on rather than abandoning the deliveries that do fit.
+                # crash: it is where this leg's ceiling is.
                 if "does not fit" in why:
                     skipped.append((label, why))
                     continue
@@ -132,7 +160,7 @@ def main():
             if args.dry_run:
                 continue
             gas = ack["gasUsed"]
-            row = {
+            w.writerow({
                 "Batch_Size": n,
                 "Run_Label": label,
                 "Verifier_Mode": ack["verifierMode"],
@@ -146,12 +174,14 @@ def main():
                 "T_Submit_s": ack.get("submitSeconds"),
                 "Recv_Tx": ack["recvTx"],
                 "Ack_Tx": ack.get("txHash"),
-            }
-            w.writerow(row)
+            })
             f.flush()
-            rows.append(row)
+            rows.append({"Batch_Size": n, "Ack_Gas_Per_Packet": gas / n,
+                         "Relay_Bytes_Per_Packet": ack["relayBytes"] / n,
+                         "Ack_Chunks": ack.get("chunks", 1),
+                         "T_Prove_s": ack["proveSeconds"],
+                         "Verifier_Mode": ack["verifierMode"]})
 
-    print()
     for label, why in skipped:
         print(f"  skipped {label}: {why}")
     if not rows:

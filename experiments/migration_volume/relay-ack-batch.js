@@ -22,6 +22,7 @@
 //
 // Usage: node relay-ack-batch.js <cosmos-recv-txhash> --label=NAME [--expect=N]
 //                                [--dry-run] [--tx-max-size=B] [--chunk-margin=F]
+//                                [--sender-pool=FILE --sender-index=N]
 // Writes $DEVNET_DIR/migration-volume/ack-<label>.json
 const fs = require("fs");
 const path = require("path");
@@ -39,6 +40,12 @@ const arg = (name, dflt) => {
   const label = arg("label", null);
   const expect = parseInt(arg("expect", "0"), 10);
   const dryRun = process.argv.includes("--dry-run");
+  // Acks can run concurrently, but only from DIFFERENT Ethereum accounts: two
+  // in-flight transactions from one account race for the same nonce. Relaying
+  // is permissionless (ackPacket behaves identically from any sender), so a
+  // pool of ordinary funded accounts is enough.
+  const senderPool = arg("sender-pool", null);
+  const senderIndex = parseInt(arg("sender-index", "0"), 10);
   if (!recvTx || !label) {
     console.error("usage: node relay-ack-batch.js <cosmos-recv-txhash> --label=NAME [--expect=N] [--dry-run]");
     process.exit(2);
@@ -60,6 +67,15 @@ const arg = (name, dflt) => {
     if (verifier.toLowerCase() === mock) verifierMode = "mock";
     else if (verifier.toLowerCase() === real) verifierMode = "real";
   } catch { /* older client without the accessor */ }
+
+  let sender = router.runner;                       // the deployer by default
+  if (senderPool) {
+    const poolPath = path.join(env.DEVNET_DIR, senderPool);
+    const pool = JSON.parse(fs.readFileSync(poolPath, "utf8"));
+    const entry = pool[senderIndex];
+    if (!entry) throw new Error(`${poolPath} has ${pool.length} account(s), need index ${senderIndex}`);
+    sender = new ethers.Wallet(entry.privateKey, provider);
+  }
 
   console.log(`ack "${label}": relaying ${recvTx.slice(0, 16)}… Cosmos -> EVM`);
   console.log(`  verifier: ${verifierMode} (${verifier})`);
@@ -121,10 +137,10 @@ const arg = (name, dflt) => {
   // calldata inside it, so the size is measured by signing a candidate rather
   // than scaling the calldata length. Nothing is broadcast to measure it.
   const feeData = await provider.getFeeData();
-  const nonce = await provider.getTransactionCount(await router.runner.getAddress(), "pending");
+  const nonce = await provider.getTransactionCount(await sender.getAddress(), "pending");
   const netId = (await provider.getNetwork()).chainId;
   const signedSize = async (payload) => {
-    const raw = await router.runner.signTransaction({
+    const raw = await sender.signTransaction({
       to: relay.address, data: payload, nonce, chainId: netId, type: 2,
       gasLimit: 30_000_000n,
       maxFeePerGas: feeData.maxFeePerGas ?? 10n ** 9n,
@@ -171,6 +187,7 @@ const arg = (name, dflt) => {
     topLevel: selectors[topSel] || topSel,
     innerCallCount: inner.length, counts, ackCount,
     txMaxSize, signedBytes: wholeSize, chunks: 1,
+    sender: await sender.getAddress(),
   };
 
   if (!dryRun) {
@@ -182,20 +199,20 @@ const arg = (name, dflt) => {
       const payload = data;
       let r;
       try {
-        r = await sendRawTx(router.runner, relay.address, payload, { gasLimit });
+        r = await sendRawTx(sender, relay.address, payload, { gasLimit });
       } catch (e) {
         // A receipt alone says status=0 and nothing else. Re-execute the same
         // call against the block it failed in and decode the revert data.
         const rc = e.receipt;
         const why = rc ? await captureRevert(provider,
-          { from: await router.runner.getAddress(), to: relay.address, data: payload },
+          { from: await sender.getAddress(), to: relay.address, data: payload },
           rc.blockNumber) : null;
         throw new Error(`ack chunk ${gi} (${groups[gi] ? groups[gi].length : ackCount} acks) failed: ` +
           `${why ? why.text : (e.shortMessage || e.message)}`);
       }
       if (r.status !== 1) {
         const why = await captureRevert(provider,
-          { from: await router.runner.getAddress(), to: relay.address, data: payload },
+          { from: await sender.getAddress(), to: relay.address, data: payload },
           r.blockNumber);
         throw new Error(`ack chunk ${gi} (${groups[gi] ? groups[gi].length : ackCount} acks) ` +
           `reverted at block ${r.blockNumber}: ${why.text}`);
