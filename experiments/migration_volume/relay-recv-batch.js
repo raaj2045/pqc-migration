@@ -42,6 +42,7 @@
 // Usage: node relay-recv-batch.js <send-file> --count=N [--offset=K]
 //                                 [--no-update] [--gas=N] [--label=name]
 //                                 [--signer-key=NAME]
+//                                 [--finality-timeout=SECONDS]  (default 3600)
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
@@ -98,18 +99,32 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
   // labels, so it has to be the real thing.
   const maxSendBlock = Math.max(...batch.map((p) => p.blockNumber));
   const beacon = env.BEACON_URL.replace(/\/$/, "");
+  // Bounded by a DEADLINE, not a poll count. Beacon finality advances one
+  // epoch (32 slots) at a time, so covering a send block can need up to three
+  // advances — ~19 min at 12 s slots — and a poll-count cap tuned for a
+  // typical wait aborts the run on an atypical one.
+  const finalityTimeout = parseInt(arg("finality-timeout", "3600"), 10) * 1000;
   const t_finality0 = Date.now();
-  let hdr, finalityPolls = 0;
-  for (let i = 0; i < 80; i++) {
+  let hdr, finalityPolls = 0, lastExec = null;
+  while (Date.now() - t_finality0 < finalityTimeout) {
     const fin = get(`${beacon}/eth/v1/beacon/light_client/finality_update`).data;
     finalityPolls++;
     const execNum = Number(fin.finalized_header.execution.block_number);
     if (execNum >= maxSendBlock) { hdr = fin.finalized_header; break; }
-    console.log(`  waiting for finality to cover block ${maxSendBlock} (at ${execNum})`);
+    if (execNum !== lastExec) {
+      const epochs = Math.ceil((maxSendBlock - execNum) / 32);
+      console.log(`  waiting for finality to cover block ${maxSendBlock} (at ${execNum}) ` +
+        `— ~${epochs} epoch advance(s), up to ${(epochs * 32 * 12 / 60).toFixed(1)} min`);
+      lastExec = execNum;
+    }
     execFileSync("sleep", ["12"]);
   }
   const finalityWaitSeconds = (Date.now() - t_finality0) / 1000;
-  if (!hdr) throw new Error("finality never advanced past the send block");
+  if (!hdr) {
+    throw new Error(`finality did not reach block ${maxSendBlock} within ` +
+      `${(finalityTimeout / 60000).toFixed(0)} min (last seen ${lastExec}); ` +
+      `raise --finality-timeout=SECONDS`);
+  }
   const proofSlot = Number(hdr.beacon.slot);
   console.log(`  finality wait: ${finalityWaitSeconds.toFixed(1)}s over ${finalityPolls} poll(s), ` +
     `covering send block ${maxSendBlock} at slot ${proofSlot}`);

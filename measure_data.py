@@ -344,21 +344,46 @@ def main():
 
     out_path = HERE / args.out
     done = set()
-    if args.resume and out_path.exists():
+    has_header = False
+    if args.resume and out_path.exists() and out_path.stat().st_size:
+        has_header = True
         with open(out_path, newline="") as f:
-            done = {r["Run_Label"] for r in csv.DictReader(f)}
+            reader = csv.reader(f)
+            header = next(reader, None)
+        # Appending rows of one shape under a header of another silently
+        # produces a file where every column is misread. A resumed run must
+        # find exactly the schema it is about to write.
+        if header != COLUMNS:
+            extra = [c for c in header or [] if c not in COLUMNS]
+            missing = [c for c in COLUMNS if c not in (header or [])]
+            raise SystemExit(
+                f"{out_path} has a {len(header or [])}-column header, but this sweep writes "
+                f"{len(COLUMNS)} columns"
+                + (f"\n  missing: {missing}" if missing else "")
+                + (f"\n  unexpected: {extra}" if extra else "")
+                + f"\nMove it aside and re-run with --resume (completed cells are "
+                  f"reconstructed from the artifacts in {cfg['DEVNET_DIR']}/migration-volume), "
+                  f"or drop --resume to start a fresh file.")
+        with open(out_path, newline="") as f:
+            done = {r["Run_Label"] for r in csv.DictReader(f) if r.get("Run_Label")}
         print(f"resuming: {len(done)} cell(s) already in {out_path.name}\n")
 
-    write_header = not (args.resume and out_path.exists())
+    write_header = not has_header
     total = len(n_users) * args.trials * len(signers)
     i = 0
     with open(out_path, "a" if args.resume else "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=COLUMNS)
         if write_header:
             w.writeheader()
-        for signer_key in signers:
-            for n in n_users:
-                for trial in range(1, args.trials + 1):
+        # Signer key type is the INNERMOST loop, so the two arms interleave.
+        # Running one arm to completion and then the other confounds key type
+        # with anything that drifts over a multi-hour run — most concretely the
+        # router's storage trie, which deepens as packets accumulate and moves
+        # per-packet proof size (CEILING-FINDINGS.md §5). Interleaving spreads
+        # that drift across both arms instead of loading it onto the second.
+        for n in n_users:
+            for trial in range(1, args.trials + 1):
+                for signer_key in signers:
                     i += 1
                     label = f"n{n}-t{trial}-{signer_key}"
                     if label in done:
