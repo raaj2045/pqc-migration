@@ -145,11 +145,17 @@ def fig_time_by_step(df, out, batch=1):
 # --- 2: total time against batch size ---------------------------------------
 
 def fig_time_by_batch(delivery, out):
-    """Total time for one batch: the Ethereum finality wait plus delivery.
+    """Two panels on the same x axis: how long a batch takes, and how many
+    transfers that works out to per second.
 
-    Both come from the same run. The wait is charged in full because a batch on
-    its own would pay all of it. Submitting on Ethereum is not included -- users
-    do that themselves, before the bridge is involved.
+    Total time is the Ethereum finality wait plus delivery, both from the same
+    run. The wait is charged in full because a batch on its own would pay all
+    of it. Submitting is not included -- users do that themselves, before the
+    bridge is involved.
+
+    Two panels rather than one: the point is that time barely moves while the
+    rate climbs, and a single panel either hides the rate or needs a second y
+    axis, which would invite reading one curve against the other's scale.
     """
     if delivery is None:
         print(f"skipping {out}: no delivery results")
@@ -157,39 +163,49 @@ def fig_time_by_batch(delivery, out):
     d = delivery.copy()
     d["Total_s"] = d["Gen_Wait_Finality_s"] + d["T_Deliver_s"]
     keys = keys_present(d)
+    sizes = sorted(d["Batch_Size"].unique())
 
-    fig, ax = plt.subplots(figsize=(7.5, 4.6))
-    top = 0
+    fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.2))
     for k in keys:
         kd = d[d["Signer_Key_Type"] == k]
-        sizes = sorted(kd["Batch_Size"].unique())
-        means, cis, counts = [], [], []
-        for n in sizes:
-            m, ci = mean_ci(kd[kd["Batch_Size"] == n]["Total_s"])
-            means.append(m); cis.append(ci)
-            counts.append(int((kd["Batch_Size"] == n).sum()))
-        ax.errorbar(sizes, means, yerr=cis, fmt=KEY_MARKERS.get(k, "o") + "-",
-                    color=KEY_COLORS.get(k, "#4a3aa7"), ecolor=KEY_COLORS.get(k, "#4a3aa7"),
-                    elinewidth=1.5, capsize=4, linewidth=2, markersize=7,
-                    label=KEY_LABELS.get(k, k), zorder=3)
-        # Labels below the line: it sits near the top of the axes.
-        for n, m, c in zip(sizes, means, counts):
-            ax.annotate(f"{m:,.0f}s\n{n / m:.2f}/s\n(n={c})", (n, m),
-                        textcoords="offset points", xytext=(0, -14), ha="center",
-                        va="top", fontsize=7.5, color="#52514e")
-        top = max(top, max(np.array(means) + np.array(cis)))
+        ns = sorted(kd["Batch_Size"].unique())
+        t = [mean_ci(kd[kd["Batch_Size"] == n]["Total_s"]) for n in ns]
+        means = [m for m, _ in t]
+        cis = [c for _, c in t]
+        rate = [n / m for n, m in zip(ns, means)]
+        style = dict(fmt=KEY_MARKERS.get(k, "o") + "-", color=KEY_COLORS.get(k, "#4a3aa7"),
+                     ecolor=KEY_COLORS.get(k, "#4a3aa7"), elinewidth=1.5, capsize=4,
+                     linewidth=2, markersize=7, zorder=3)
+        axes[0].errorbar(ns, means, yerr=cis, label=KEY_LABELS.get(k, k), **style)
+        axes[1].errorbar(ns, rate, **style)
 
-    ax.set_title("Total time to move a batch of transfers\n"
-                 "Ethereum finality wait plus delivery; rate shown per point")
-    ax.set_xlabel("Transfers moved at once")
-    ax.set_ylabel("Total time (seconds)")
-    ax.set_xscale("log")
-    ax.set_xticks(sorted(d["Batch_Size"].unique()))
-    ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-    ax.set_ylim(0, top * 1.30)
-    legend(ax)
-    ax.margins(x=0.15)
-    save(fig, out)
+    counts = {n: int((d["Batch_Size"] == n).sum()) for n in sizes}
+    for ax, title, ylab in (
+        (axes[0], "Time for one batch", "Seconds"),
+        (axes[1], "Transfers per second", "Transfers / second"),
+    ):
+        ax.set_title(title, fontsize=10)
+        ax.set_ylabel(ylab)
+        ax.set_xlabel("Transfers moved at once")
+        ax.set_xscale("log")
+        ax.set_xticks(sizes)
+        ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+        ax.margins(x=0.12)
+    axes[0].set_ylim(bottom=0)
+    axes[1].set_yscale("log")
+
+    fig.suptitle("Time to move a batch of transfers, and the rate that gives",
+                 fontsize=12)
+    handles, labels = axes[0].get_legend_handles_labels()
+    n_note = ", ".join(f"{n}: n={counts[n]}" for n in sizes)
+    fig.legend(handles, labels, loc="lower center", ncol=2, frameon=False,
+               fontsize=9, bbox_to_anchor=(0.5, -0.02),
+               title=f"error bars: 95% CI    repeats — {n_note}")
+    fig.legends[0].get_title().set_fontsize(7.5)
+    fig.tight_layout(rect=(0, 0.09, 1, 0.94))
+    fig.savefig(HERE / out, format="pdf", bbox_inches="tight")
+    plt.close(fig)
+    print(f"wrote {out}")
 
 
 # --- 3: gas per transfer on each leg ----------------------------------------
