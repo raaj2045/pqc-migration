@@ -27,7 +27,7 @@
 // --signer-key=NAME signs BOTH the MsgUpdateClient and the receive tx with
 // that keyring key instead of RELAYER_KEY. This is the key-type axis: a
 // signature is charged once per transaction, so an ML-DSA-65 signer adds a
-// fixed ~5.2 KB / ~146k gas per tx that batching amortizes (see
+// fixed ~5.2 KB / ~146k gas per tx that a larger batch splits down (see
 // CEILING-FINDINGS.md). The DESTINATION key type is not an axis — receivers
 // appear in the payload as 20-byte bech32 addresses whatever key would
 // control them, and a fresh recipient holds no pubkey on chain at all.

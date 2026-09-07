@@ -17,7 +17,8 @@ What it measures
 proof-api batches natively: one Cosmos delivery transaction becomes a multicall
 of N `ackPacket` calls, with the client update fused in rather than sent
 separately. So this yields gas per ack against batch size — the same
-amortization question as the forward leg, asked on the other chain.
+question as the forward leg -- does cost per packet fall as more move
+together -- asked on the other chain.
 
 The two directions do not have the same headroom. Delivery is walled by
 CometBFT's 4 MB `max_tx_bytes`, around 590 packets; acknowledgement is walled

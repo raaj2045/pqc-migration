@@ -62,7 +62,7 @@ entire cost is a 5,169-byte constant, and at the ceiling that constant is
 addresses regardless of algorithm, and a fresh recipient account carries no
 pubkey on chain until it first signs. There is no destination-key-type axis to
 measure here. What was measured is the **signer (relayer) key type**, which is
-the only place a signature enters a receive transaction. The sweep records it
+the only place a signature enters a receive transaction. The measurements record it
 as `Signer_Key_Type` for that reason, and `Dest_Key_Type` as `none`.
 
 ## Gas vs N (real broadcasts)
@@ -81,13 +81,13 @@ ML-DSA-65  gas = 196,233 + 141,728·n
 
 Per-packet gas slopes are equal to within 16 gas (0.01%). ML-DSA-65's entire
 gas cost is a **~146,000 gas fixed premium per transaction** for verifying one
-PQ signature. Amortized across a full batch it falls from +82% at N=1 to
+PQ signature. Split across a full batch it falls from +82% at N=1 to
 **+0.8% at N=124**.
 
-This is the same amortization story as the byte ceiling, and it is the useful
+This is the same story as the byte ceiling, and it is the useful
 result for the paper: **post-quantum signature overhead on this path is a
-per-transaction constant, not a per-packet tax, so batching amortizes it to
-near-zero on both size and gas.**
+per-transaction constant, not a per-packet tax, so moving transfers together
+splits it down to near-zero on both size and gas.**
 
 ## How far Phase 0 was off
 
@@ -105,9 +105,9 @@ not**, because it was derived against the wrong limit. Phase 0's stated caveat
 it anticipated CosmWasm gas or execution time, and the actual constraint was an
 RPC transport limit two layers above the state machine.
 
-## Implications for the sweep
+## Implications for the measurements
 
-- **The whole cohort relays in one Cosmos tx only up to N=124.** The sweep runs
+- **The whole cohort relays in one Cosmos tx only up to N=124.** The runs cover
   N ∈ {1, 10, 50, 100}, all of which fit; `measure_data.py`'s pre-flight
   re-derives the ceiling from the node's live `config.toml` and refuses to
   start above 90% of the binding wall.
@@ -208,7 +208,7 @@ block 130 back  -> "historical state ... not available"
 The first 800-packet wave became permanently unprovable after sitting 274 blocks.
 Since finality lag is ~70 blocks, the usable window between "finalized" and
 "pruned" is roughly 58 blocks (~12 min). **This is a tighter operational
-constraint than any byte ceiling** and the sweep harness must relay promptly
+constraint than any byte ceiling** and the harness must relay promptly
 after finality rather than batching work up. `build-recv-msgs.js` now selects
 the *newest* usable consensus state rather than the oldest, to stay inside it.
 
@@ -226,7 +226,7 @@ this path is infrastructure-bound, not crypto-bound. Three separate
 infrastructure limits bind before post-quantum signature size matters at all —
 RPC body size (124 packets, deployment config), mempool `max_tx_bytes` (675,
 protocol), and geth state pruning (a ~12-minute window). ML-DSA-65's cost is a
-per-transaction constant that batching amortizes to ≤0.15% of capacity and
+per-transaction constant that moving transfers together splits down to ≤0.15% of capacity and
 +0.8% of gas.
 
 ---
