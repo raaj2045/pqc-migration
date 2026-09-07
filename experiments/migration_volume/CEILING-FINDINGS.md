@@ -228,3 +228,68 @@ RPC body size (124 packets, deployment config), mempool `max_tx_bytes` (675,
 protocol), and geth state pruning (a ~12-minute window). ML-DSA-65's cost is a
 per-transaction constant that batching amortizes to ≤0.15% of capacity and
 +0.8% of gas.
+
+---
+
+# Addendum: the return leg has a much lower, and unsplittable, ceiling
+
+Measured 2026-09-07 against the rebuilt devnet, mock verifier.
+
+The acknowledgement travels Cosmos → Ethereum, so it is walled by geth's
+`txMaxSize` (131,072 B) rather than CometBFT's `max_tx_bytes` (4,194,304 B).
+That alone is a 32× smaller budget. Measured on the signed transaction:
+
+| acks | signed tx bytes | fits under 131,072? |
+|---|---|---|
+| 50 | 105,397 | yes |
+| 100 | 209,397 | no |
+
+≈ **2,094 B per ack**, so the ceiling is **~56 acks per Ethereum transaction**
+at a 0.9 margin, ~62 at the raw limit.
+
+## The ceiling cannot be worked around by chunking
+
+Splitting proof-api's multicall into several smaller multicalls **does not
+work**. The first transaction succeeds; the second fails with
+
+```
+SP1ICS07Tendermint.KeyValuePairNotInCache(
+  ["0x696263", "0x30382d7761736d2d3403000000000000152b"], "0x8460e21f…")
+```
+
+proof-api fuses ONE `update_client_and_membership` proof over every packet in
+the request, and `SP1ICS07Tendermint` verifies those key/value pairs once and
+caches them **for the duration of the transaction**. Acks in a later
+transaction refer to pairs verified in a transaction that has already ended.
+Proving and acknowledging must share one transaction.
+
+This is the structural difference from the forward leg. There, every
+`MsgRecvPacket` carries its own membership proof, so a batch splits freely
+across transactions — 1,000 packets deliver as 590 + 410 with no penalty
+(145,949 gas/transfer against 145,982 for 500 in one transaction). Here the
+batch is atomic.
+
+## Consequence: the ack leg bounds the whole pipeline
+
+The ack batch is whatever one Cosmos delivery produced, so a delivery larger
+than ~56 packets **can never be acknowledged**. Delivering 590 in one Cosmos
+transaction is possible and cheap, and then the packets are stuck open.
+
+**The effective end-to-end batch size is therefore ~56, set by the return leg,
+not the ~590 the forward leg allows.** Reporting the forward-leg ceiling alone
+would overstate the usable batch size by an order of magnitude.
+
+Confirmed by real broadcast: 45 acks in one transaction, 2,417,517 gas; 50
+acks, 5,126,339–5,129,087 gas. A 100-ack request is refused before broadcast.
+
+## Where the limits now stand
+
+| Leg | Wall | Ceiling | Splittable? |
+|---|---|---|---|
+| Deliver (EVM → Cosmos) | CometBFT `max_tx_bytes` 4 MB | ~590 packets | **yes** |
+| Deliver, stock RPC | CometBFT `max_body_bytes` 1 MB | 124 packets | yes |
+| Acknowledge (Cosmos → EVM) | geth `txMaxSize` 128 KB | **~56 acks** | **no** |
+| Proof fetch | geth `TriesInMemory` 128 | ~12-minute window | n/a |
+
+All four are infrastructure limits. None is a function of the signature
+algorithm.

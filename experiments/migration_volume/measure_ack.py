@@ -14,11 +14,17 @@ By default it picks up every delivery that has not been acknowledged yet.
 
 What it measures
 ----------------
-proof-api batches natively: one Cosmos delivery transaction becomes one
-Ethereum transaction carrying N `ackPacket` calls inside a multicall, with the
-client update fused in rather than sent separately. So this yields gas per ack
-against batch size — the same amortization question as the forward leg, asked
-on the other chain.
+proof-api batches natively: one Cosmos delivery transaction becomes a multicall
+of N `ackPacket` calls, with the client update fused in rather than sent
+separately. So this yields gas per ack against batch size — the same
+amortization question as the forward leg, asked on the other chain.
+
+The two directions do not have the same headroom. Delivery is walled by
+CometBFT's 4 MB `max_tx_bytes`, around 590 packets; acknowledgement is walled
+by geth's 128 KB `txMaxSize`, around 56 acks at the measured ~2,080 bytes each
+— over thirty times smaller. A large delivery therefore needs several
+Ethereum transactions to answer it, and relay-ack-batch.js splits the multicall
+to fit.
 
 What it does not measure
 ------------------------
@@ -51,6 +57,7 @@ COLUMNS = [
     "Ack_Gas_Per_Packet",
     "Relay_Bytes",
     "Relay_Bytes_Per_Packet",
+    "Ack_Chunks",
     "T_Prove_s",
     "T_Submit_s",
     "Recv_Tx",
@@ -108,9 +115,18 @@ def main():
             if args.dry_run:
                 cmd.append("--dry-run")
             print(f"=== {label}: {n} packet(s) ===")
-            r = subprocess.run(cmd, cwd=REPO)
+            r = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True)
+            print(r.stdout, end="")
             if r.returncode != 0:
-                raise SystemExit(f"[{label}] ack relay failed with exit {r.returncode}")
+                msg = (r.stderr or r.stdout).strip().splitlines()
+                why = msg[-1] if msg else "unknown"
+                # A batch too large to acknowledge is a measurement, not a
+                # crash: it is where this leg's ceiling is. Record it and carry
+                # on rather than abandoning the deliveries that do fit.
+                if "does not fit" in why:
+                    skipped.append((label, why))
+                    continue
+                raise SystemExit(f"[{label}] ack relay failed: {why}")
 
             ack = json.loads((work / f"ack-{label}.json").read_text())
             if args.dry_run:
@@ -125,6 +141,7 @@ def main():
                 "Ack_Gas_Per_Packet": gas / n,
                 "Relay_Bytes": ack["relayBytes"],
                 "Relay_Bytes_Per_Packet": ack["relayBytes"] / n,
+                "Ack_Chunks": ack.get("chunks", 1),
                 "T_Prove_s": ack["proveSeconds"],
                 "T_Submit_s": ack.get("submitSeconds"),
                 "Recv_Tx": ack["recvTx"],
@@ -134,6 +151,7 @@ def main():
             f.flush()
             rows.append(row)
 
+    print()
     for label, why in skipped:
         print(f"  skipped {label}: {why}")
     if not rows:
@@ -146,10 +164,10 @@ def main():
         print(f"NOTE: verifier mode {modes} — with the mock verifier the proof "
               f"check is a no-op, so these are mechanism costs, not proving costs.")
     sizes = sorted({r["Batch_Size"] for r in rows})
-    print(f"\n{'batch':>6} {'n':>3} {'ack gas/packet':>15} {'bytes/packet':>13} {'prove s':>8}")
+    print(f"\n{'batch':>6} {'n':>3} {'txs':>4} {'ack gas/packet':>15} {'bytes/packet':>13} {'prove s':>8}")
     for s in sizes:
         v = [r for r in rows if r["Batch_Size"] == s]
-        print(f"{s:>6} {len(v):>3} "
+        print(f"{s:>6} {len(v):>3} {v[0]['Ack_Chunks']:>4} "
               f"{sum(r['Ack_Gas_Per_Packet'] for r in v) / len(v):>15,.0f} "
               f"{sum(r['Relay_Bytes_Per_Packet'] for r in v) / len(v):>13,.0f} "
               f"{sum(r['T_Prove_s'] for r in v) / len(v):>8.1f}")

@@ -21,11 +21,12 @@
 // The binding is recorded in the summary so a run can never be misread.
 //
 // Usage: node relay-ack-batch.js <cosmos-recv-txhash> --label=NAME [--expect=N]
-//                                [--dry-run]
+//                                [--dry-run] [--tx-max-size=B] [--chunk-margin=F]
 // Writes $DEVNET_DIR/migration-volume/ack-<label>.json
 const fs = require("fs");
 const path = require("path");
 const { loadEnv, evm, ethers, config, sendRawTx } = require("../../devnet/lib/lib");
+const { captureRevert } = require("../../devnet/lib/revert");
 const proofapi = require("../../devnet/lib/proofapi");
 
 const arg = (name, dflt) => {
@@ -105,28 +106,120 @@ const arg = (name, dflt) => {
       `the ack leg did not batch this delivery as assumed`);
   }
 
+  // --- split to fit geth's per-transaction size limit ----------------------
+  // The forward leg is walled by CometBFT's 4 MB max_tx_bytes; this direction
+  // is walled by geth's txMaxSize, 128 KB — over 30x smaller, so the ack leg
+  // runs out of room roughly an order of magnitude sooner than the delivery it
+  // is answering. proof-api returns the whole multicall regardless, so the
+  // split happens here: each group is re-encoded as its own multicall, which
+  // is valid because every ackPacket carries its own fused proof.
+  const txMaxSize = parseInt(arg("tx-max-size", "131072"), 10);
+  const margin = parseFloat(arg("chunk-margin", "0.90"));
+  const budget = Math.floor(txMaxSize * margin);
+
+  // geth's limit applies to the SIGNED, RLP-encoded transaction, not to the
+  // calldata inside it, so the size is measured by signing a candidate rather
+  // than scaling the calldata length. Nothing is broadcast to measure it.
+  const feeData = await provider.getFeeData();
+  const nonce = await provider.getTransactionCount(await router.runner.getAddress(), "pending");
+  const netId = (await provider.getNetwork()).chainId;
+  const signedSize = async (payload) => {
+    const raw = await router.runner.signTransaction({
+      to: relay.address, data: payload, nonce, chainId: netId, type: 2,
+      gasLimit: 30_000_000n,
+      maxFeePerGas: feeData.maxFeePerGas ?? 10n ** 9n,
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? 10n ** 9n,
+    });
+    return (raw.length - 2) / 2;
+  };
+  const wholeSize = await signedSize(data);
+
+  // THE MULTICALL CANNOT BE SPLIT. proof-api fuses one
+  // update_client_and_membership proof over every packet in the request;
+  // SP1ICS07Tendermint verifies those key/value pairs once and caches them FOR
+  // THE DURATION OF THE TRANSACTION. Re-encoding a subset as its own multicall
+  // therefore fails on the second transaction with
+  //
+  //   SP1ICS07Tendermint.KeyValuePairNotInCache(...)
+  //
+  // because the pairs its acks refer to were verified in a transaction that
+  // has already ended. Proving and acknowledging must share one transaction.
+  //
+  // So this is a HARD ceiling, unlike the forward leg's: there, every
+  // MsgRecvPacket carries its own proof and a batch splits freely across
+  // transactions. Here the only way to acknowledge more packets is to have
+  // DELIVERED them in smaller Cosmos transactions, because the ack batch is
+  // whatever one delivery produced.
+  if (wholeSize > budget) {
+    const perAck = ackCount ? wholeSize / ackCount : wholeSize;
+    const fits = Math.max(1, Math.floor(budget / perAck));
+    throw new Error(
+      `ack for ${ackCount} packet(s) does not fit: signed transaction is ` +
+      `${wholeSize.toLocaleString()} B against geth's txMaxSize ` +
+      `${txMaxSize.toLocaleString()} B (${budget.toLocaleString()} B usable at ` +
+      `margin ${margin}). At ~${Math.round(perAck).toLocaleString()} B per ack ` +
+      `the ceiling is ~${fits} acks per transaction, and the multicall CANNOT be ` +
+      `split — the membership proof is cached only within its own transaction. ` +
+      `Deliver in batches of <= ~${fits} if the packets must be acknowledged.`);
+  }
+  console.log(`  signed tx ${wholeSize.toLocaleString()} B of ${budget.toLocaleString()} B usable`);
+  const groups = [null];   // always exactly one transaction
+
   const summary = {
     label, recvTx, verifierMode, verifier,
     relayBytes: relay.tx.length, proveSeconds,
     topLevel: selectors[topSel] || topSel,
     innerCallCount: inner.length, counts, ackCount,
+    txMaxSize, signedBytes: wholeSize, chunks: 1,
   };
 
   if (!dryRun) {
     const block = await provider.getBlock("latest");
     const gasLimit = block.gasLimit - block.gasLimit / 20n;
     const t1 = Date.now();
-    const r = await sendRawTx(router.runner, relay.address, data, { gasLimit });
+    const parts = [];
+    for (let gi = 0; gi < groups.length; gi++) {
+      const payload = data;
+      let r;
+      try {
+        r = await sendRawTx(router.runner, relay.address, payload, { gasLimit });
+      } catch (e) {
+        // A receipt alone says status=0 and nothing else. Re-execute the same
+        // call against the block it failed in and decode the revert data.
+        const rc = e.receipt;
+        const why = rc ? await captureRevert(provider,
+          { from: await router.runner.getAddress(), to: relay.address, data: payload },
+          rc.blockNumber) : null;
+        throw new Error(`ack chunk ${gi} (${groups[gi] ? groups[gi].length : ackCount} acks) failed: ` +
+          `${why ? why.text : (e.shortMessage || e.message)}`);
+      }
+      if (r.status !== 1) {
+        const why = await captureRevert(provider,
+          { from: await router.runner.getAddress(), to: relay.address, data: payload },
+          r.blockNumber);
+        throw new Error(`ack chunk ${gi} (${groups[gi] ? groups[gi].length : ackCount} acks) ` +
+          `reverted at block ${r.blockNumber}: ${why.text}`);
+      }
+      parts.push({
+        chunk: gi,
+        acks: groups[gi] === null ? ackCount : groups[gi].length,
+        txHash: r.hash, status: r.status,
+        gasUsed: Number(r.gasUsed), blockNumber: r.blockNumber,
+        bytes: (payload.length - 2) / 2,
+      });
+
+    }
     summary.submitSeconds = (Date.now() - t1) / 1000;
-    summary.txHash = r.hash;
-    summary.status = r.status;
-    summary.gasUsed = Number(r.gasUsed);
-    summary.blockNumber = r.blockNumber;
+    summary.parts = parts;
+    summary.txHash = parts[parts.length - 1].txHash;
+    summary.status = 1;
+    summary.gasUsed = parts.reduce((a, p) => a + p.gasUsed, 0);
+    summary.submittedBytes = parts.reduce((a, p) => a + p.bytes, 0);
+    summary.blockNumber = parts[parts.length - 1].blockNumber;
     summary.ackedTs = Date.now() / 1000;
-    console.log(`  submitted -> status ${r.status}, gas ${r.gasUsed} ` +
-      `(${ackCount ? Math.round(Number(r.gasUsed) / ackCount).toLocaleString() : "?"} per ack), ` +
-      `block ${r.blockNumber}`);
-    if (r.status !== 1) throw new Error("ack relay reverted");
+    console.log(`  submitted -> gas ${summary.gasUsed.toLocaleString()} ` +
+      `(${ackCount ? Math.round(summary.gasUsed / ackCount).toLocaleString() : "?"} per ack) ` +
+      `over ${parts.length} transaction(s)`);
   }
 
   const outDir = path.join(env.DEVNET_DIR, "migration-volume");
