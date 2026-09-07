@@ -48,6 +48,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
+RESULTS = HERE / "results"
 sys.path.insert(0, str(REPO / "devnet" / "lib"))
 import config  # noqa: E402
 
@@ -106,7 +107,8 @@ def main():
                     help="transfers each EVM account submits when building the pool")
     ap.add_argument("--pool-file", default="evm-delivery-pool.json",
                     help="EVM account pool file, kept apart from measure_data.py's")
-    ap.add_argument("--out", default="delivery_metrics.csv")
+    ap.add_argument("--out", default="delivery_metrics.csv",
+                    help="written under results/ unless given an absolute path")
     ap.add_argument("--generation", default=None,
                     help="reuse an existing generation label instead of submitting "
                          "a new one (must still be inside the packet timeout)")
@@ -153,7 +155,8 @@ def main():
     print(f"  finality {shared['finalityWaitSeconds']:.1f}s, "
           f"update {shared['updateGas']} gas, slot {shared['useSlot']}")
 
-    out_path = REPO / args.out
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    out_path = Path(args.out) if Path(args.out).is_absolute() else RESULTS / args.out
     rows = []
     offset = 0
     with open(out_path, "w", newline="") as f:
