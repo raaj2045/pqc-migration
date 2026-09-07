@@ -175,12 +175,19 @@ def preflight_capacity(cfg, max_n):
 
 # --- one cell ---------------------------------------------------------------
 
-def load_cell(out_dir, label, n):
+def load_cell(out_dir, label, n, cfg=None):
     """Read a cell's two artifacts, or return None if it has not run.
 
     Both are addressed by label, never by mtime, and each is checked to carry
     the label it was asked for — so a file left behind by a different cell is
     rejected rather than silently adopted.
+
+    When `cfg` is given the artifacts must also name the client IDs currently
+    configured. A Kurtosis Ethereum enclave does not survive a host restart, so
+    a rebuild redeploys the contracts and issues new client IDs — and labels
+    alone would happily match a cell measured against the PREVIOUS devnet,
+    whose router storage trie was a different depth. That is a silent
+    cross-devnet splice, so it is refused here.
     """
     send_path = out_dir / f"send-{label}.json"
     recv_path = out_dir / f"recv-{label}.json"
@@ -202,6 +209,15 @@ def load_cell(out_dir, label, n):
     if not got or not got <= sent:
         raise SystemExit(f"{label}: recv sequences {sorted(got)[:5]}... are not a subset "
                          f"of the send file's committed sequences — mismatched artifacts")
+    if cfg:
+        for key, field in (("ETH_CLIENT_ID", "sourceClient"), ("COSMOS_CLIENT_ID", "destClient")):
+            want, have = cfg.get(key), send.get(field)
+            if want and have and want != have:
+                raise SystemExit(
+                    f"{label}: artifact names {field}={have!r} but this devnet has "
+                    f"{key}={want!r} — it was measured against a different devnet. "
+                    f"Move {out_dir} aside and re-measure; splicing runs across a "
+                    f"contract redeploy changes per-packet proof size.")
     return send, recv
 
 
@@ -212,7 +228,7 @@ def run_cell(cfg, out_dir, n, trial, signer_key, amount, reuse=False):
     # A cell costs a full finality wait, so a complete-but-unrecorded one is
     # salvaged rather than re-run. --resume only; a default run always
     # re-measures.
-    cached = load_cell(out_dir, label, n) if reuse else None
+    cached = load_cell(out_dir, label, n, cfg) if reuse else None
     if cached:
         print(f"    reusing existing artifacts for {label} (both files complete)")
         send, recv = cached
@@ -241,7 +257,7 @@ def run_cell(cfg, out_dir, n, trial, signer_key, amount, reuse=False):
         recv_path = out_dir / f"recv-{label}.json"
         if not recv_path.exists():
             raise SystemExit(f"{label}: relay-recv-batch.js did not write {recv_path}")
-        loaded = load_cell(out_dir, label, n)
+        loaded = load_cell(out_dir, label, n, cfg)
         if not loaded:
             raise SystemExit(f"{label}: artifacts incomplete after a successful run")
         send, recv = loaded
