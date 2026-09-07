@@ -45,6 +45,14 @@ GAS_OPERATIONS = [
 # One colour per batch size, assigned in a fixed order and never recycled.
 SIZE_COLORS = ["#2a78d6", "#eb6834"]
 
+# Signing key types. Same two hues the validator-scaling figures give these
+# schemes, so a reader comparing figures across the paper does not relearn the
+# mapping; marker shape repeats the distinction so nothing rests on colour.
+KEY_ORDER = ["secp256k1", "mldsa65"]
+KEY_COLORS = {"secp256k1": "#1f77b4", "mldsa65": "#d62728"}
+KEY_LABELS = {"secp256k1": "secp256k1 signer", "mldsa65": "ML-DSA-65 signer"}
+KEY_MARKERS = {"secp256k1": "o", "mldsa65": "s"}
+
 # Filled in from the data before anything is drawn; every figure states which
 # signing key its numbers came from.
 KEY_NOTE = ""
@@ -94,69 +102,101 @@ def step_samples(sub, col):
 
 
 def latency_by_operation(df, out, n_users=1):
+    """One bar per step. When both signing key types are present they sit side
+    by side, which is what makes the legend worth having: the interesting
+    result is that the two are indistinguishable on time."""
     sub = df[df["N_Users"] == n_users]
     if sub.empty:
         print(f"skipping {out}: no rows with N_Users == {n_users}")
         return
-    names, means, cis, colors, counts = [], [], [], [], []
-    for col, label, color in OPERATIONS:
-        samples = step_samples(sub, col)
-        m, ci = mean_ci(samples)
-        names.append(label)
-        means.append(m)
-        cis.append(ci)
-        colors.append(color)
-        counts.append(len(samples))
+    keys = [k for k in KEY_ORDER if k in set(sub["Signer_Key_Type"])] or \
+        sorted(set(sub["Signer_Key_Type"]))
 
-    fig, ax = plt.subplots(figsize=(7, 4.4))
-    x = np.arange(len(names))
-    ax.bar(x, means, 0.6, yerr=cis, color=colors, capsize=4,
-           ecolor="#52514e", error_kw={"elinewidth": 1.5}, zorder=3)
-    # The finality wait is two orders above the rest, so a linear axis hides
-    # every other bar. Log keeps all four readable; the printed value on each
-    # bar is what should actually be read off.
+    fig, ax = plt.subplots(figsize=(7.5, 4.6))
+    x = np.arange(len(OPERATIONS))
+    width = 0.8 / len(keys)
+    counts = {}
+    for i, k in enumerate(keys):
+        kd = sub[sub["Signer_Key_Type"] == k]
+        off = (i - (len(keys) - 1) / 2) * width
+        means, cis, ns = [], [], []
+        for col, _, _ in OPERATIONS:
+            samples = step_samples(kd, col)
+            m, ci = mean_ci(samples)
+            means.append(m)
+            cis.append(ci)
+            ns.append(len(samples))
+        counts[k] = ns
+        ax.bar(x + off, means, width * 0.9, yerr=cis, capsize=3,
+               color=KEY_COLORS.get(k, "#4a3aa7"), ecolor="#52514e",
+               error_kw={"elinewidth": 1.3},
+               label=KEY_LABELS.get(k, k), zorder=3)
+        for xi, m, ci in zip(x + off, means, cis):
+            ax.annotate(f"{m:,.1f}", (xi, m + ci), textcoords="offset points",
+                        xytext=(0, 4), ha="center", fontsize=7.5, color="#0b0b0b")
+
+    # The finality wait is ~100x every other step, so a linear axis flattens
+    # the rest to nothing. Read the printed value, not the bar height.
     ax.set_yscale("log")
-    for xi, m, ci in zip(x, means, cis):
-        ax.annotate(f"{m:,.1f}s", (xi, m + ci), textcoords="offset points",
-                    xytext=(0, 5), ha="center", fontsize=9, color="#0b0b0b")
-    ax.set_title(f"Time taken by each step of a migration\n"
-                 f"{n_users} transfer{'s' if n_users != 1 else ''}, {KEY_NOTE}")
+    ax.set_title(f"Time taken by each step of a migration "
+                 f"({n_users} transfer{'s' if n_users != 1 else ''})")
     ax.set_ylabel("Seconds (log scale)")
-    # Repeat count goes in the tick label rather than under the bar, where it
-    # would sit on top of the two-line operation names.
-    ax.set_xticks(x, [f"{nm}\n(n={c})" for nm, c in zip(names, counts)])
-    ax.margins(y=0.25)
+    # Repeat counts go under each step. They differ by step on purpose: waiting
+    # for finality and updating the client happen once per group of migrations
+    # running together, so their repeats are groups, not migrations.
+    # One count per key type, in legend order — they differ (the arms have
+    # different numbers of repeats), and showing only the first would misstate
+    # the other.
+    def n_label(j):
+        ns = [counts[k][j] for k in keys]
+        return "/".join(str(v) for v in dict.fromkeys(ns)) if len(set(ns)) > 1 else str(ns[0])
+    ax.set_xticks(x, [f"{lbl}\n(n={n_label(j)})"
+                      for j, (_, lbl, _) in enumerate(OPERATIONS)])
+    leg = ax.legend(loc="upper right", frameon=True, framealpha=0.95,
+                    edgecolor="#d8d8d4", title="error bars: 95% CI")
+    leg.get_title().set_fontsize(8)
+    ax.margins(y=0.3)
     save(fig, out)
 
 
 # --- 2: total time against batch size ---------------------------------------
 
 def time_vs_transactions(df, out):
-    sizes = sorted(df["N_Users"].unique())
-    means, cis, counts = [], [], []
-    for n in sizes:
-        m, ci = mean_ci(df[df["N_Users"] == n]["T_Total_s"])
-        means.append(m)
-        cis.append(ci)
-        counts.append(int((df["N_Users"] == n).sum()))
+    keys = [k for k in KEY_ORDER if k in set(df["Signer_Key_Type"])] or \
+        sorted(set(df["Signer_Key_Type"]))
+    fig, ax = plt.subplots(figsize=(7.5, 4.6))
+    top = 0
+    for k in keys:
+        kd = df[df["Signer_Key_Type"] == k]
+        sizes = sorted(kd["N_Users"].unique())
+        means, cis, counts = [], [], []
+        for n in sizes:
+            m, ci = mean_ci(kd[kd["N_Users"] == n]["T_Total_s"])
+            means.append(m)
+            cis.append(ci)
+            counts.append(int((kd["N_Users"] == n).sum()))
+        ax.errorbar(sizes, means, yerr=cis, fmt=KEY_MARKERS.get(k, "o") + "-",
+                    color=KEY_COLORS.get(k, "#4a3aa7"), ecolor=KEY_COLORS.get(k, "#4a3aa7"),
+                    elinewidth=1.5, capsize=4, linewidth=2, markersize=7,
+                    label=KEY_LABELS.get(k, k), zorder=3)
+        # Labels sit BELOW the line: it runs near the top of the axes, so
+        # anything above it collides with the legend.
+        for n, m, c in zip(sizes, means, counts):
+            ax.annotate(f"{m:,.0f}s\n{n / m:.2f}/s\n(n={c})", (n, m),
+                        textcoords="offset points", xytext=(0, -14), ha="center",
+                        va="top", fontsize=7.5, color="#52514e")
+        top = max(top, max(np.array(means) + np.array(cis)))
 
-    fig, ax = plt.subplots(figsize=(7, 4.4))
-    ax.errorbar(sizes, means, yerr=cis, fmt="o-", color="#2a78d6",
-                ecolor="#2a78d6", elinewidth=1.5, capsize=4, linewidth=2,
-                markersize=7, zorder=3)
-    # Labels sit BELOW the line: it runs near the top of the axes, so anything
-    # above it collides with the title.
-    for n, m, c in zip(sizes, means, counts):
-        ax.annotate(f"{m:,.0f}s\n{n / m:.2f}/s\n(n={c})", (n, m),
-                    textcoords="offset points", xytext=(0, -14), ha="center",
-                    va="top", fontsize=8, color="#52514e")
-    ax.set_title(f"Total time to move a batch of transfers\n{KEY_NOTE}")
+    ax.set_title("Total time to move a batch of transfers")
     ax.set_xlabel("Transfers moved at once")
     ax.set_ylabel("Total time (seconds)")
     ax.set_xscale("log")
-    ax.set_xticks(sizes)
+    ax.set_xticks(sorted(df["N_Users"].unique()))
     ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-    ax.set_ylim(0, max(np.array(means) + np.array(cis)) * 1.18)
+    ax.set_ylim(0, top * 1.30)
+    leg = ax.legend(loc="upper right", frameon=True, framealpha=0.95,
+                    edgecolor="#d8d8d4", title="error bars: 95% CI")
+    leg.get_title().set_fontsize(8)
     ax.margins(x=0.15)
     save(fig, out)
 
@@ -261,15 +301,15 @@ def main():
     if key not in set(df["Signer_Key_Type"]):
         raise SystemExit(f"no rows with Signer_Key_Type == {key!r}; have {list(keys.index)}")
     if len(keys) > 1:
-        print(f"note: {csv_path.name} holds {dict(keys)}; plotting {key!r} only "
-              f"(--key to choose)")
-    df = df[df["Signer_Key_Type"] == key]
+        print(f"note: {csv_path.name} holds {dict(keys)}; figures show both, "
+              f"the gas table uses {key!r} (--key to choose)")
     global KEY_NOTE
     KEY_NOTE = f"signed with {key}"
+    gas_df = df[df["Signer_Key_Type"] == key]
 
     latency_by_operation(df, "fig_latency_by_operation.pdf", args.latency_at)
     time_vs_transactions(df, "fig_time_vs_transactions.pdf")
-    gas_table(df, "gas_1_vs_10.md")
+    gas_table(gas_df, "gas_1_vs_10.md")
 
 
 if __name__ == "__main__":
