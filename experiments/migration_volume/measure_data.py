@@ -3,9 +3,9 @@
 
 For each cell (N users x trial x signer key type) it submits N independent
 `sendTransfer` calls on the EVM, relays all N to Cosmos as one batched receive
-transaction, and records cost and latency into migration_metrics_detailed.csv.
+transaction, and records cost and latency into results/latency_by_step.csv.
 
-    python3 measure_data.py [--n=1,10,50,100] [--trials=3]
+    python3 experiments/migration_volume/measure_data.py [--n=1,10,50,100] [--trials=3]
                             [--signers=validator,relayer] [--concurrency=1]
                             [--out=FILE] [--amount=2000] [--resume]
 
@@ -22,7 +22,7 @@ Shared steps are recorded against the wave, and the plotter counts their
 repeats per wave rather than per row — otherwise one finality measurement
 copied across K rows would be read as K independent samples.
 
-See experiments/migration_volume/README.md for what each column means.
+See README.md for what each column means.
 
 Measured, not inferred
 ----------------------
@@ -56,9 +56,11 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-EXP = HERE / "experiments" / "migration_volume"
-sys.path.insert(0, str(HERE / "devnet" / "lib"))
+HERE = Path(__file__).resolve().parent          # experiments/migration_volume
+REPO = HERE.parent.parent
+EXP = HERE                                       # the node scripts live beside this one
+RESULTS = HERE / "results"
+sys.path.insert(0, str(REPO / "devnet" / "lib"))
 import config  # noqa: E402
 
 DEFAULT_N = [1, 10, 50, 100]
@@ -104,7 +106,7 @@ COLUMNS = [
 def run(cmd, label):
     """Run a step, streaming its output. Any non-zero exit stops the run."""
     print(f"    $ {' '.join(str(c) for c in cmd)}")
-    r = subprocess.run(cmd, cwd=HERE)
+    r = subprocess.run(cmd, cwd=REPO)
     if r.returncode != 0:
         raise SystemExit(f"[{label}] failed with exit {r.returncode} — stopping")
 
@@ -446,7 +448,8 @@ def main():
                     help="comma-separated keyring key names to sign the receive "
                          "tx with; the key-type axis")
     ap.add_argument("--amount", default="2000", help="tokens migrated per user")
-    ap.add_argument("--out", default="migration_metrics_detailed.csv")
+    ap.add_argument("--out", default="latency_by_step.csv",
+                    help="written under results/ unless given an absolute path")
     ap.add_argument("--concurrency", type=int, default=1,
                     help="how many migrations run at the same time. Above 1 the "
                          "repeats of a batch size run together, sharing one "
@@ -469,7 +472,8 @@ def main():
 
     preflight_capacity(cfg, max(n_users))
 
-    out_path = HERE / args.out
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    out_path = Path(args.out) if Path(args.out).is_absolute() else RESULTS / args.out
     done = set()
     has_header = False
     if args.resume and out_path.exists() and out_path.stat().st_size:

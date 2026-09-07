@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Three figures for the Ethereum -> Cosmos migration measurements.
 
-    python3 plot_data.py [--csv migration_metrics_detailed.csv]
+    python3 experiments/migration_volume/plot_data.py [--csv results/latency_by_step.csv]
 
     fig_latency_by_operation.pdf   how long each step of a migration takes
     fig_time_vs_transactions.pdf   total time against how many transfers move
@@ -13,6 +13,7 @@ bar's repeat count is printed under it, so a thin interval from few repeats
 cannot be mistaken for a well-sampled one.
 """
 import argparse
+from pathlib import Path
 
 import matplotlib
 
@@ -69,6 +70,7 @@ def mean_ci(values):
 
 
 def save(fig, name):
+    name = Path(__file__).resolve().parent / name
     fig.savefig(name, format="pdf", bbox_inches="tight")
     plt.close(fig)
     print(f"wrote {name}")
@@ -219,6 +221,7 @@ def gas_table(df, out, sizes=(1, 10)):
         "",
     ]
     text = "\n".join(lines)
+    out = Path(__file__).resolve().parent / out
     with open(out, "w") as f:
         f.write(text)
     print(f"wrote {out}\n")
@@ -228,23 +231,28 @@ def gas_table(df, out, sizes=(1, 10)):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--csv", default="migration_metrics_detailed.csv")
+    ap.add_argument("--csv", default="results/latency_by_step.csv",
+                    help="relative paths resolve against this directory")
     ap.add_argument("--latency-at", type=int, default=1,
                     help="batch size the per-step time figure uses")
     ap.add_argument("--key", default=None,
                     help="signer key type to plot (default: whichever has most rows)")
     args = ap.parse_args()
 
-    df = pd.read_csv(args.csv)
+    here = Path(__file__).resolve().parent
+    csv_path = Path(args.csv) if Path(args.csv).is_absolute() else here / args.csv
+    if not csv_path.exists():
+        raise SystemExit(f"no measurements at {csv_path}")
+    df = pd.read_csv(csv_path)
     if df.empty:
-        raise SystemExit(f"{args.csv} has no rows")
+        raise SystemExit(f"{csv_path} has no rows")
     # The light-client update is recorded per batch; every gas bar is shown per
     # transfer, so derive its share here.
     if "Update_Client_Gas" in df.columns:
         df["Update_Gas_Per_Tx"] = df["Update_Client_Gas"] / df["N_Users"]
     missing = [c for c, _, _ in OPERATIONS + GAS_OPERATIONS if c not in df.columns]
     if missing:
-        raise SystemExit(f"{args.csv} is missing {missing} — regenerate it with measure_data.py")
+        raise SystemExit(f"{csv_path} is missing {missing} — regenerate it with measure_data.py")
 
     # Never average across signer key types: the signing key changes the gas a
     # Cosmos transaction costs, so a mixed mean is a number from no real run.
@@ -253,7 +261,7 @@ def main():
     if key not in set(df["Signer_Key_Type"]):
         raise SystemExit(f"no rows with Signer_Key_Type == {key!r}; have {list(keys.index)}")
     if len(keys) > 1:
-        print(f"note: {args.csv} holds {dict(keys)}; plotting {key!r} only "
+        print(f"note: {csv_path.name} holds {dict(keys)}; plotting {key!r} only "
               f"(--key to choose)")
     df = df[df["Signer_Key_Type"] == key]
     global KEY_NOTE

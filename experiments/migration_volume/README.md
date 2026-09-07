@@ -55,11 +55,23 @@ until it first signs. `Dest_Key_Type` is recorded as `none` for this reason.
 Needs a live devnet (Kurtosis Ethereum enclave, Cosmos chain, instantiated
 `cw-ics08-wasm-eth` client) — see [`../../devnet/README.md`](../../devnet/README.md).
 
+All of it lives in this directory; run from the repository root.
+
 ```bash
-python3 experiments/migration_volume/check_setup.py    # preconditions
-python3 measure_data.py                                # take the measurements
-python3 plot_data.py                                   # draw the figures
+python3 experiments/migration_volume/check_setup.py      # preconditions
+python3 experiments/migration_volume/measure_data.py     # per-step time
+python3 experiments/migration_volume/measure_delivery.py # cost by batch size
+python3 experiments/migration_volume/plot_data.py        # figures + table
 ```
+
+| Path | Holds |
+|---|---|
+| `measure_data.py` | end-to-end runs: per-step time, one real finality wait each |
+| `measure_delivery.py` | delivery cost by batch size, one finality wait shared by the whole run |
+| `plot_data.py` | the two figures and the gas table |
+| `results/` | raw CSVs and JSON (git-ignored — regenerate against your own devnet) |
+| `results/run-a/` | data from an earlier devnet, kept for reference, not comparable |
+| `fig_*.pdf`, `gas_1_vs_10.md` | the outputs the paper uses |
 
 `measure_data.py` defaults to N ∈ {1, 10, 50, 100} × 3 repeats × both signing
 key types, and takes `--n`, `--trials`, `--signers`, `--amount`, `--out` and
@@ -83,7 +95,7 @@ them together instead:
 ```bash
 python3 experiments/migration_volume/setup-signer-pool.py --size 10 --key-type secp256k1
 python3 experiments/migration_volume/setup-signer-pool.py --size 10 --key-type mldsa65
-python3 measure_data.py --trials=100 --concurrency=10
+python3 experiments/migration_volume/measure_data.py --trials=100 --concurrency=10
 ```
 
 Waiting for finality and updating the light client happen **once per wave** and
@@ -121,7 +133,7 @@ deepens. Gas and bytes are summed across the chunks.
 
 ## Outputs
 
-`migration_metrics_detailed.csv`, one row per run:
+`results/latency_by_step.csv`, one row per migration:
 
 | Column | Meaning |
 |---|---|
@@ -212,8 +224,10 @@ window of roughly 58 blocks.
 | `probe-ack-batching.js` | Phase 0 probe — decodes what proof-api builds for a multi-ack tx |
 | `bech32.js` | Minimal bech32, to mint one distinct Cosmos receiver per user |
 
-The measurement runner and the plotter live at the repository root:
-`measure_data.py` and `plot_data.py`.
+| `measure_data.py` | End-to-end runs; writes `results/latency_by_step.csv` |
+| `measure_delivery.py` | Delivery cost by batch size, sharing one finality wait |
+| `plot_data.py` | Draws the figures and writes the gas table |
+| `setup-signer-pool.py` | Cosmos accounts to sign delivery transactions, one per concurrent flow |
 
 ## Findings
 

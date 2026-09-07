@@ -1,3 +1,0 @@
-N_Users,Trial,Signer_Key_Type,Run_Label,Wave,Flow,Concurrency,Submit_Gas_Total,Submit_Gas_Per_Tx,Update_Client_Gas,Deliver_Gas_Total,Deliver_Gas_Per_Tx,Deliver_Tx_Bytes,T_Submit_s,T_Wait_Finality_s,T_Update_Client_s,T_Fetch_Proof_s,T_Deliver_s,T_Other_s,T_Total_s,Transfers_Per_Second,Credited_Height
-1,1,secp256k1,n1-t1-validator-w0f0,0,0,2,166001,166001.0,780109,185480,185480.0,4036,8.126,408.319,4.638,0.006,2.383,199.00600016403206,622.478000164032,0.00160648247767228,15860
-1,2,secp256k1,n1-t2-validator-w0f1,0,1,2,166001,166001.0,780109,181080,181080.0,4205,8.123,408.319,4.638,0.006,2.379,199.0040001010895,622.4690001010895,0.0016065057052441153,15860

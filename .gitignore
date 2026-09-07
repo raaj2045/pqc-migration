@@ -82,8 +82,8 @@ protocgen.log
 /protoc-*.zip
 /proof-api.pid
 
-# Sweep output and figures: regenerable from a live devnet via
-# measure_data.py / plot_data.py, and meaningless without one.
+# Stray measurement output at the repository root. Everything now lives under
+# the experiment that produced it; these patterns only catch leftovers.
 /migration_metrics*.csv
 /*.pdf
 
