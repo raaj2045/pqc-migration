@@ -141,48 +141,52 @@ def main():
     with ThreadPoolExecutor(max_workers=max(1, args.concurrency)) as ex:
         results = list(ex.map(relay, enumerate(todo)))
 
+    for label, n, r in results:
+        print(f"=== {label}: {n} packet(s) ===")
+        print(r.stdout, end="")
+        if r.returncode != 0:
+            msg = (r.stderr or r.stdout).strip().splitlines()
+            why = msg[-1] if msg else "unknown"
+            # A batch too large to acknowledge is a measurement, not a crash:
+            # it is where this leg's limit is.
+            if "does not fit" in why or "already acknowledged" in why:
+                skipped.append((label, why))
+                continue
+            raise SystemExit(f"[{label}] ack relay failed: {why}")
+
+    if args.dry_run:
+        print("\ndry run: nothing broadcast, no results written")
+        return
+
+    # Rebuild from EVERY acknowledgement on disk, not only the ones this run
+    # relayed. Runs are incremental -- an already-acknowledged delivery is
+    # skipped -- so writing just this run's rows would drop everything measured
+    # before it.
     with open(out_path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=COLUMNS)
         w.writeheader()
-        for label, n, r in results:
-            print(f"=== {label}: {n} packet(s) ===")
-            print(r.stdout, end="")
-            if r.returncode != 0:
-                msg = (r.stderr or r.stdout).strip().splitlines()
-                why = msg[-1] if msg else "unknown"
-                # A batch too large to acknowledge is a measurement, not a
-                # crash: it is where this leg's ceiling is.
-                if "does not fit" in why:
-                    skipped.append((label, why))
-                    continue
-                raise SystemExit(f"[{label}] ack relay failed: {why}")
-
-            ack = json.loads((work / f"ack-{label}.json").read_text())
-            if args.dry_run:
+        for ack_path in sorted(work.glob("ack-*.json")):
+            if ack_path.name.startswith("ack-dryrun-"):
                 continue
-            gas = ack["gasUsed"]
-            w.writerow({
-                "Batch_Size": n,
-                "Run_Label": label,
-                "Verifier_Mode": ack["verifierMode"],
-                "Ack_Count": ack["ackCount"],
-                "Ack_Gas_Total": gas,
-                "Ack_Gas_Per_Packet": gas / n,
+            ack = json.loads(ack_path.read_text())
+            if "gasUsed" not in ack:
+                continue
+            n, gas = ack["ackCount"], ack["gasUsed"]
+            row = {
+                "Batch_Size": n, "Run_Label": ack["label"],
+                "Verifier_Mode": ack["verifierMode"], "Ack_Count": n,
+                "Ack_Gas_Total": gas, "Ack_Gas_Per_Packet": gas / n,
                 "Relay_Bytes": ack["relayBytes"],
                 "Relay_Bytes_Per_Packet": ack["relayBytes"] / n,
                 "Ack_Chunks": ack.get("chunks", 1),
                 "T_Prove_s": ack["proveSeconds"],
                 "T_Submit_s": ack.get("submitSeconds"),
-                "Recv_Tx": ack["recvTx"],
-                "Ack_Tx": ack.get("txHash"),
-            })
-            f.flush()
-            rows.append({"Batch_Size": n, "Ack_Gas_Per_Packet": gas / n,
-                         "Relay_Bytes_Per_Packet": ack["relayBytes"] / n,
-                         "Ack_Chunks": ack.get("chunks", 1),
-                         "T_Prove_s": ack["proveSeconds"],
-                         "Verifier_Mode": ack["verifierMode"]})
+                "Recv_Tx": ack["recvTx"], "Ack_Tx": ack.get("txHash"),
+            }
+            w.writerow(row)
+            rows.append(row)
 
+    print()
     for label, why in skipped:
         print(f"  skipped {label}: {why}")
     if not rows:

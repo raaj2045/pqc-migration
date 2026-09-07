@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
-"""Three figures for the Ethereum -> Cosmos migration measurements.
+"""Figures and tables for the Ethereum -> Cosmos migration measurements.
 
-    python3 experiments/migration_volume/plot_data.py [--csv results/latency_by_step.csv]
+    python3 experiments/migration_volume/plot_data.py
 
-    fig_latency_by_operation.pdf   how long each step of a migration takes
-    fig_time_vs_transactions.pdf   total time against how many transfers move
-                                   at once
-    gas_1_vs_10.md                 table: gas each step costs, 1 transfer vs 10
+Reads everything under results/ and writes:
 
-Error bars are 95% confidence intervals over the repeats in the CSV. Each
-bar's repeat count is printed under it, so a thin interval from few repeats
-cannot be mistaken for a well-sampled one.
+    fig_time_by_step.pdf     how long each step of a migration takes
+    fig_time_by_batch.pdf    total time against how many transfers move at once
+    cost_by_batch.md         gas per transfer on each leg, by batch size
+
+Error bars and the ± in the table are 95% confidence intervals. Repeat counts
+are printed on every figure and in every table row, because they differ between
+steps: waiting for Ethereum finality and updating the light client happen once
+for a whole group of migrations, so their repeats are groups, not migrations.
 """
 import argparse
+import csv
+import glob
 from pathlib import Path
 
 import matplotlib
@@ -22,248 +26,224 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-# The steps a migration actually goes through, in order. Fetching the proof is
-# folded into the client update: it is an off-chain read that costs no gas and
-# runs in hundredths of a second, so its own bar would be invisible.
-OPERATIONS = [
+HERE = Path(__file__).resolve().parent
+RESULTS = HERE / "results"
+
+# The steps a migration goes through, in order. Fetching the proof is left out:
+# it is an off-chain read costing no gas and hundredths of a second, so its bar
+# would be invisible.
+STEPS = [
     ("T_Submit_s", "Submit\non Ethereum", "#2a78d6"),
     ("T_Wait_Finality_s", "Wait for\nEthereum finality", "#eb6834"),
     ("T_Update_Client_s", "Update\nlight client", "#1baf7a"),
     ("T_Deliver_s", "Deliver\non Cosmos", "#4a3aa7"),
 ]
 
-# All three are gas PER TRANSFER, so the bars are comparable. The light-client
-# update is charged once per batch, so its per-transfer share is the batch cost
-# divided by the batch size — that division is the whole reason moving
-# transfers together is cheaper, and hiding it would flatten the result.
-GAS_OPERATIONS = [
-    ("Submit_Gas_Per_Tx", "Submit\non Ethereum", "#2a78d6"),
-    ("Update_Gas_Per_Tx", "Update\nlight client", "#1baf7a"),
-    ("Deliver_Gas_Per_Tx", "Deliver\non Cosmos", "#4a3aa7"),
-]
+# Steps that happen once for a whole group of migrations rather than once per
+# migration. Their repeats are groups: counting rows would treat one
+# measurement copied across a group as that many independent samples.
+SHARED_STEPS = {"T_Wait_Finality_s", "T_Update_Client_s"}
 
-# One colour per batch size, assigned in a fixed order and never recycled.
-SIZE_COLORS = ["#2a78d6", "#eb6834"]
-
-# Signing key types. Same two hues the validator-scaling figures give these
-# schemes, so a reader comparing figures across the paper does not relearn the
-# mapping; marker shape repeats the distinction so nothing rests on colour.
+# Signing key types, in a fixed order, with the same two colours the
+# validator-scaling figures give these schemes. Marker shape repeats the
+# distinction so nothing depends on colour alone.
 KEY_ORDER = ["secp256k1", "mldsa65"]
 KEY_COLORS = {"secp256k1": "#1f77b4", "mldsa65": "#d62728"}
 KEY_LABELS = {"secp256k1": "secp256k1 signer", "mldsa65": "ML-DSA-65 signer"}
 KEY_MARKERS = {"secp256k1": "o", "mldsa65": "s"}
 
-# Filled in from the data before anything is drawn; every figure states which
-# signing key its numbers came from.
-KEY_NOTE = ""
-
 plt.style.use("seaborn-v0_8-whitegrid")
 plt.rcParams.update({
-    "font.family": "serif",
-    "font.size": 11,
-    "axes.titlesize": 12,
-    "axes.labelsize": 11,
-    "legend.fontsize": 9,
-    "figure.dpi": 150,
+    "font.family": "serif", "font.size": 11, "axes.titlesize": 12,
+    "axes.labelsize": 11, "legend.fontsize": 9, "figure.dpi": 150,
 })
 
 
 def mean_ci(values):
-    """Mean and 95% confidence half-width. A single repeat has no interval, so
-    it gets zero rather than a NaN that would silently vanish from the plot."""
-    v = np.asarray(values, dtype=float)
+    """Mean and 95% confidence half-width. One sample has no interval, so it
+    gets zero rather than a gap that would vanish silently from a figure."""
+    v = np.asarray(list(values), dtype=float)
+    if len(v) == 0:
+        return float("nan"), 0.0
     if len(v) < 2:
-        return (v.mean() if len(v) else np.nan), 0.0
+        return v.mean(), 0.0
     return v.mean(), 1.96 * v.std(ddof=1) / np.sqrt(len(v))
 
 
+def keys_present(df):
+    return [k for k in KEY_ORDER if k in set(df["Signer_Key_Type"])] or \
+        sorted(set(df["Signer_Key_Type"]))
+
+
+def read_many(pattern):
+    """Concatenate every results CSV matching a glob, or None if there are none."""
+    files = sorted(glob.glob(str(RESULTS / pattern)))
+    frames = [pd.read_csv(f) for f in files if Path(f).stat().st_size]
+    return pd.concat(frames, ignore_index=True) if frames else None
+
+
 def save(fig, name):
-    name = Path(__file__).resolve().parent / name
-    fig.savefig(name, format="pdf", bbox_inches="tight")
+    out = HERE / name
+    fig.savefig(out, format="pdf", bbox_inches="tight")
     plt.close(fig)
     print(f"wrote {name}")
 
 
+def legend(ax, title="error bars: 95% CI"):
+    leg = ax.legend(loc="upper right", frameon=True, framealpha=0.95,
+                    edgecolor="#d8d8d4", title=title)
+    leg.get_title().set_fontsize(8)
+
+
 # --- 1: how long each step takes --------------------------------------------
 
-# Steps that happen once for a whole wave of migrations running together, not
-# once per migration. Their repeats are waves, not rows: counting the rows
-# would treat one measurement copied across a wave as that many independent
-# samples and report an interval far tighter than the data supports.
-SHARED_STEPS = {"T_Wait_Finality_s", "T_Update_Client_s"}
-
-
-def step_samples(sub, col):
-    """The independent samples of `col`: one per wave for a shared step, one
-    per migration for everything else."""
-    if col in SHARED_STEPS and "Wave" in sub.columns:
-        return sub.groupby(["Wave", "Signer_Key_Type", "N_Users"])[col].first()
-    return sub[col]
-
-
-def latency_by_operation(df, out, n_users=1):
-    """One bar per step. When both signing key types are present they sit side
-    by side, which is what makes the legend worth having: the interesting
-    result is that the two are indistinguishable on time."""
-    sub = df[df["N_Users"] == n_users]
+def fig_time_by_step(df, out, batch=1):
+    sub = df[df["N_Users"] == batch]
     if sub.empty:
-        print(f"skipping {out}: no rows with N_Users == {n_users}")
+        print(f"skipping {out}: no rows at batch size {batch}")
         return
-    keys = [k for k in KEY_ORDER if k in set(sub["Signer_Key_Type"])] or \
-        sorted(set(sub["Signer_Key_Type"]))
-
+    keys = keys_present(sub)
     fig, ax = plt.subplots(figsize=(7.5, 4.6))
-    x = np.arange(len(OPERATIONS))
+    x = np.arange(len(STEPS))
     width = 0.8 / len(keys)
     counts = {}
+
     for i, k in enumerate(keys):
         kd = sub[sub["Signer_Key_Type"] == k]
         off = (i - (len(keys) - 1) / 2) * width
         means, cis, ns = [], [], []
-        for col, _, _ in OPERATIONS:
-            samples = step_samples(kd, col)
+        for col, _, _ in STEPS:
+            # A shared step is sampled once per group, not once per migration.
+            samples = (kd.groupby("Wave")[col].first() if col in SHARED_STEPS
+                       and "Wave" in kd.columns else kd[col])
             m, ci = mean_ci(samples)
-            means.append(m)
-            cis.append(ci)
-            ns.append(len(samples))
+            means.append(m); cis.append(ci); ns.append(len(samples))
         counts[k] = ns
         ax.bar(x + off, means, width * 0.9, yerr=cis, capsize=3,
                color=KEY_COLORS.get(k, "#4a3aa7"), ecolor="#52514e",
-               error_kw={"elinewidth": 1.3},
-               label=KEY_LABELS.get(k, k), zorder=3)
+               error_kw={"elinewidth": 1.3}, label=KEY_LABELS.get(k, k), zorder=3)
         for xi, m, ci in zip(x + off, means, cis):
             ax.annotate(f"{m:,.1f}", (xi, m + ci), textcoords="offset points",
                         xytext=(0, 4), ha="center", fontsize=7.5, color="#0b0b0b")
 
-    # The finality wait is ~100x every other step, so a linear axis flattens
-    # the rest to nothing. Read the printed value, not the bar height.
+    # The finality wait is around a hundred times every other step, so a linear
+    # axis flattens the rest to nothing. Read the printed value, not the height.
     ax.set_yscale("log")
     ax.set_title(f"Time taken by each step of a migration "
-                 f"({n_users} transfer{'s' if n_users != 1 else ''})")
+                 f"({batch} transfer{'s' if batch != 1 else ''})")
     ax.set_ylabel("Seconds (log scale)")
-    # Repeat counts go under each step. They differ by step on purpose: waiting
-    # for finality and updating the client happen once per group of migrations
-    # running together, so their repeats are groups, not migrations.
-    # One count per key type, in legend order — they differ (the arms have
-    # different numbers of repeats), and showing only the first would misstate
-    # the other.
-    def n_label(j):
+
+    def n_for(j):
         ns = [counts[k][j] for k in keys]
-        return "/".join(str(v) for v in dict.fromkeys(ns)) if len(set(ns)) > 1 else str(ns[0])
-    ax.set_xticks(x, [f"{lbl}\n(n={n_label(j)})"
-                      for j, (_, lbl, _) in enumerate(OPERATIONS)])
-    leg = ax.legend(loc="upper right", frameon=True, framealpha=0.95,
-                    edgecolor="#d8d8d4", title="error bars: 95% CI")
-    leg.get_title().set_fontsize(8)
+        return "/".join(str(v) for v in dict.fromkeys(ns))
+    ax.set_xticks(x, [f"{lbl}\n(n={n_for(j)})" for j, (_, lbl, _) in enumerate(STEPS)])
+    legend(ax)
     ax.margins(y=0.3)
     save(fig, out)
 
 
 # --- 2: total time against batch size ---------------------------------------
 
-def time_vs_transactions(df, out):
-    keys = [k for k in KEY_ORDER if k in set(df["Signer_Key_Type"])] or \
-        sorted(set(df["Signer_Key_Type"]))
+def fig_time_by_batch(delivery, out):
+    """Total time for one batch: the Ethereum finality wait plus delivery.
+
+    Both come from the same run. The wait is charged in full because a batch on
+    its own would pay all of it. Submitting on Ethereum is not included -- users
+    do that themselves, before the bridge is involved.
+    """
+    if delivery is None:
+        print(f"skipping {out}: no delivery results")
+        return
+    d = delivery.copy()
+    d["Total_s"] = d["Gen_Wait_Finality_s"] + d["T_Deliver_s"]
+    keys = keys_present(d)
+
     fig, ax = plt.subplots(figsize=(7.5, 4.6))
     top = 0
     for k in keys:
-        kd = df[df["Signer_Key_Type"] == k]
-        sizes = sorted(kd["N_Users"].unique())
+        kd = d[d["Signer_Key_Type"] == k]
+        sizes = sorted(kd["Batch_Size"].unique())
         means, cis, counts = [], [], []
         for n in sizes:
-            m, ci = mean_ci(kd[kd["N_Users"] == n]["T_Total_s"])
-            means.append(m)
-            cis.append(ci)
-            counts.append(int((kd["N_Users"] == n).sum()))
+            m, ci = mean_ci(kd[kd["Batch_Size"] == n]["Total_s"])
+            means.append(m); cis.append(ci)
+            counts.append(int((kd["Batch_Size"] == n).sum()))
         ax.errorbar(sizes, means, yerr=cis, fmt=KEY_MARKERS.get(k, "o") + "-",
                     color=KEY_COLORS.get(k, "#4a3aa7"), ecolor=KEY_COLORS.get(k, "#4a3aa7"),
                     elinewidth=1.5, capsize=4, linewidth=2, markersize=7,
                     label=KEY_LABELS.get(k, k), zorder=3)
-        # Labels sit BELOW the line: it runs near the top of the axes, so
-        # anything above it collides with the legend.
+        # Labels below the line: it sits near the top of the axes.
         for n, m, c in zip(sizes, means, counts):
             ax.annotate(f"{m:,.0f}s\n{n / m:.2f}/s\n(n={c})", (n, m),
                         textcoords="offset points", xytext=(0, -14), ha="center",
                         va="top", fontsize=7.5, color="#52514e")
         top = max(top, max(np.array(means) + np.array(cis)))
 
-    ax.set_title("Total time to move a batch of transfers")
+    ax.set_title("Total time to move a batch of transfers\n"
+                 "Ethereum finality wait plus delivery; rate shown per point")
     ax.set_xlabel("Transfers moved at once")
     ax.set_ylabel("Total time (seconds)")
     ax.set_xscale("log")
-    ax.set_xticks(sorted(df["N_Users"].unique()))
+    ax.set_xticks(sorted(d["Batch_Size"].unique()))
     ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax.set_ylim(0, top * 1.30)
-    leg = ax.legend(loc="upper right", frameon=True, framealpha=0.95,
-                    edgecolor="#d8d8d4", title="error bars: 95% CI")
-    leg.get_title().set_fontsize(8)
+    legend(ax)
     ax.margins(x=0.15)
     save(fig, out)
 
 
-# --- 3: gas each step costs, one transfer against ten -----------------------
+# --- 3: gas per transfer on each leg ----------------------------------------
 
-def gas_table(df, out, sizes=(1, 10)):
-    """A table, not a chart. Three bars per group with one axis carries less
-    than the numbers do, and the interesting quantity here is the ratio between
-    two columns rather than the shape of a series.
-
-    Note what this does and does not say. Batch size is how many MIGRATIONS
-    move together, not how busy the chain is: a single migration still shares
-    its blocks with whatever other traffic is running. What changes between the
-    columns is only how many transfers split the costs that are charged once
-    per transaction.
-    """
-    sizes = [n for n in sizes if (df["N_Users"] == n).any()]
-    if len(sizes) < 2:
-        print(f"skipping {out}: need rows at two batch sizes, have {sizes}")
+def cost_by_batch(delivery, ack, out, ceiling=56):
+    """A table, not a chart: the interesting quantity is the ratio between
+    columns, which numbers carry better than bar heights."""
+    if delivery is None:
+        print(f"skipping {out}: no delivery results")
         return
-    a, b = sizes[0], sizes[1]
-    sa, sb = df[df["N_Users"] == a], df[df["N_Users"] == b]
-
-    rows = []
-    for col, name, _ in GAS_OPERATIONS:
-        ma, ca = mean_ci(sa[col])
-        mb, cb = mean_ci(sb[col])
-        rows.append((name.replace("\n", " "), ma, ca, mb, cb,
-                     (mb - ma) / ma * 100 if ma else float("nan")))
-    ta = sum(r[1] for r in rows)
-    tb = sum(r[3] for r in rows)
-    rows.append(("Total per transfer", ta, float("nan"), tb, float("nan"),
-                 (tb - ta) / ta * 100 if ta else float("nan")))
-
-    def cell(m, ci):
-        return f"{m:,.0f}" + ("" if ci != ci else f" ± {ci:,.0f}")
-
     lines = [
-        f"# Gas per transfer: {a} transfer at once against {b}",
+        "# Gas per transfer, by how many move at once",
         "",
-        f"Signed with {KEY_NOTE.replace('signed with ', '')}. "
-        f"n={len(sa)} and n={len(sb)} repeats; ± is a 95% confidence interval.",
+        "Delivery is Ethereum -> Cosmos, acknowledgement is Cosmos -> Ethereum.",
+        "Each figure is gas for ONE transfer; ± is a 95% confidence interval and",
+        "n is the number of runs behind it.",
         "",
-        f"| Step | {a} at once | {b} at once | Change |",
-        "|---|---:|---:|---:|",
     ]
-    for name, ma, ca, mb, cb, pct in rows:
-        bold = "**" if name.startswith("Total") else ""
-        lines.append(f"| {bold}{name}{bold} | {bold}{cell(ma, ca)}{bold} | "
-                     f"{bold}{cell(mb, cb)}{bold} | {bold}{pct:+.1f}%{bold} |")
+    for k in keys_present(delivery):
+        kd = delivery[delivery["Signer_Key_Type"] == k]
+        ka = ack[ack["Signer_Key_Type"] == k] if ack is not None else None
+        lines += [f"## {KEY_LABELS.get(k, k)}", "",
+                  "| Transfers at once | Deliver on Cosmos | Acknowledge on Ethereum |",
+                  "|---:|---:|---:|"]
+        for n in sorted(kd["Batch_Size"].unique()):
+            dm, dc = mean_ci(kd[kd["Batch_Size"] == n]["Deliver_Gas_Per_Tx"])
+            dn = int((kd["Batch_Size"] == n).sum())
+            cell_d = f"{dm:,.0f} ± {dc:,.0f} (n={dn})"
+            cell_a = "—"
+            if ka is not None and (ka["Batch_Size"] == n).any():
+                am, ac = mean_ci(ka[ka["Batch_Size"] == n]["Ack_Gas_Per_Packet"])
+                an = int((ka["Batch_Size"] == n).sum())
+                cell_a = f"{am:,.0f} ± {ac:,.0f} (n={an})"
+            elif n > ceiling:
+                cell_a = f"over the {ceiling}-ack limit"
+            lines.append(f"| {n} | {cell_d} | {cell_a} |")
+        lines.append("")
+
     lines += [
+        "## Reading it",
         "",
-        f"Submitting on Ethereum does not change: each user sends their own",
-        f"transaction either way. The light-client update is charged once per",
-        f"batch, so {b} transfers split one bill. Delivery carries a fixed cost",
-        f"per Cosmos transaction on top of a per-packet cost, and that fixed part",
-        f"is split the same way.",
+        f"Cost per transfer falls as more move together, because the costs charged",
+        f"once per transaction — the light-client update, the per-transaction",
+        f"overhead and the signature — are divided among more transfers. Both legs",
+        f"flatten well before the {ceiling}-acknowledgement limit, so that limit",
+        f"costs nothing in gas; it only caps how many transfers one batch may hold.",
         "",
-        f"Batch size here is how many migrations move together, not how busy the",
-        f"chain is — a single migration still shares its blocks with other traffic.",
+        "An acknowledgement batch is whatever one delivery produced, and the",
+        f"multicall carrying it cannot be split, so delivering more than ~{ceiling}",
+        "transfers at once leaves them impossible to acknowledge.",
         "",
     ]
     text = "\n".join(lines)
-    out = Path(__file__).resolve().parent / out
-    with open(out, "w") as f:
-        f.write(text)
+    (HERE / out).write_text(text)
     print(f"wrote {out}\n")
     print(text)
 
@@ -271,45 +251,25 @@ def gas_table(df, out, sizes=(1, 10)):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--csv", default="results/latency_by_step.csv",
-                    help="relative paths resolve against this directory")
-    ap.add_argument("--latency-at", type=int, default=1,
-                    help="batch size the per-step time figure uses")
-    ap.add_argument("--key", default=None,
-                    help="signer key type to plot (default: whichever has most rows)")
+    ap.add_argument("--batch", type=int, default=1,
+                    help="batch size the per-step figure uses")
     args = ap.parse_args()
 
-    here = Path(__file__).resolve().parent
-    csv_path = Path(args.csv) if Path(args.csv).is_absolute() else here / args.csv
-    if not csv_path.exists():
-        raise SystemExit(f"no measurements at {csv_path}")
-    df = pd.read_csv(csv_path)
-    if df.empty:
-        raise SystemExit(f"{csv_path} has no rows")
-    # The light-client update is recorded per batch; every gas bar is shown per
-    # transfer, so derive its share here.
-    if "Update_Client_Gas" in df.columns:
-        df["Update_Gas_Per_Tx"] = df["Update_Client_Gas"] / df["N_Users"]
-    missing = [c for c, _, _ in OPERATIONS + GAS_OPERATIONS if c not in df.columns]
-    if missing:
-        raise SystemExit(f"{csv_path} is missing {missing} — regenerate it with measure_data.py")
+    latency_path = RESULTS / "latency_by_step.csv"
+    if latency_path.exists() and latency_path.stat().st_size:
+        fig_time_by_step(pd.read_csv(latency_path), "fig_time_by_step.pdf", args.batch)
+    else:
+        print(f"skipping fig_time_by_step.pdf: no {latency_path.name}")
 
-    # Never average across signer key types: the signing key changes the gas a
-    # Cosmos transaction costs, so a mixed mean is a number from no real run.
-    keys = df["Signer_Key_Type"].value_counts()
-    key = args.key or keys.index[0]
-    if key not in set(df["Signer_Key_Type"]):
-        raise SystemExit(f"no rows with Signer_Key_Type == {key!r}; have {list(keys.index)}")
-    if len(keys) > 1:
-        print(f"note: {csv_path.name} holds {dict(keys)}; figures show both, "
-              f"the gas table uses {key!r} (--key to choose)")
-    global KEY_NOTE
-    KEY_NOTE = f"signed with {key}"
-    gas_df = df[df["Signer_Key_Type"] == key]
+    delivery = read_many("delivery_*.csv")
+    ack = read_many("ack_*.csv")
+    if ack is not None:
+        # The ack results record the signing key by name, not by algorithm.
+        ack["Signer_Key_Type"] = np.where(
+            ack["Run_Label"].str.contains("relayer"), "mldsa65", "secp256k1")
 
-    latency_by_operation(df, "fig_latency_by_operation.pdf", args.latency_at)
-    time_vs_transactions(df, "fig_time_vs_transactions.pdf")
-    gas_table(gas_df, "gas_1_vs_10.md")
+    fig_time_by_batch(delivery, "fig_time_by_batch.pdf")
+    cost_by_batch(delivery, ack, "cost_by_batch.md")
 
 
 if __name__ == "__main__":

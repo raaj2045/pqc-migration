@@ -54,6 +54,18 @@ const arg = (name, dflt) => {
   const env = loadEnv();
   config.require_(env, "CHAIN_ID", "ETH_CLIENT_ID", "COSMOS_CLIENT_ID",
     "PROOF_API_ADDR", "ICS26_ROUTER", "SP1_ICS07");
+
+  // Refuse to acknowledge the same delivery twice. Packets already
+  // acknowledged do not revert -- the calls simply do nothing -- so a second
+  // run reports a far lower gas figure that looks like a real measurement and
+  // overwrites the real one. --force is there for a deliberate re-measurement.
+  const outDirEarly = path.join(env.DEVNET_DIR, "migration-volume");
+  const existing = path.join(outDirEarly, `ack-${label}.json`);
+  if (!dryRun && !process.argv.includes("--force") && fs.existsSync(existing)) {
+    throw new Error(`${label} is already acknowledged (${existing}). ` +
+      `Re-acknowledging measures nothing: the packets are closed, the calls ` +
+      `no-op, and the gas figure would be wrong. Pass --force to overwrite.`);
+  }
   const { provider, router, lc } = evm(env);
   const chainId = (await provider.getNetwork()).chainId.toString();
 
