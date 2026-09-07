@@ -11,7 +11,7 @@ devnet with the mock SP1 verifier.
 | Delivery transaction size | CometBFT `max_tx_bytes`, 4 MB | ~675 transfers | yes |
 | Delivery over stock RPC | CometBFT `max_body_bytes`, 1 MB | 124 transfers | yes |
 | Acknowledgement size | geth `txMaxSize`, 128 KB | **~56 transfers** | **no** |
-| Proof availability | geth `TriesInMemory`, 128 blocks | ~12-minute window | n/a |
+| Proof availability | geth `TriesInMemory`, 128 blocks | ~5-minute window | n/a |
 
 **The binding limit is ~56.** An acknowledgement batch is whatever one delivery
 produced, and it cannot be split, so a delivery larger than ~56 transfers can
@@ -80,7 +80,8 @@ against 145,982 for 500 in a single transaction.
 
 geth runs `--gcmode=full` with `TriesInMemory = 128`, so `eth_getProof` works
 only within ~128 blocks of head. Finality lags ~70 blocks, leaving a usable
-window of roughly 58 blocks — about 12 minutes. Packets left unrelayed past it
+window of roughly 58 blocks — about 5 minutes at this devnet's 6-second slots
+(12 at mainnet's 12-second slots). Packets left unrelayed past it
 become permanently unprovable and must be re-sent.
 
 Proofs do not expire once built, only the ability to fetch them, so a large run

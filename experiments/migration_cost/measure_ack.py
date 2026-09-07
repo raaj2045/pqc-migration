@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Measure the return leg: acknowledgements travelling Cosmos -> Ethereum.
 
-    python3 experiments/migration_volume/measure_ack.py [--labels=a,b,c]
+    python3 experiments/migration_cost/measure_ack.py [--labels=a,b,c]
                                                         [--out=ack_by_batch.csv]
 
 Every delivery this experiment has already made left a `recv-<label>.json`
@@ -92,7 +92,7 @@ def main():
     args = ap.parse_args()
 
     cfg = config.require(config.load(), "DEVNET_DIR", "PROOF_API_ADDR")
-    work = Path(cfg["DEVNET_DIR"]) / "migration-volume"
+    work = Path(cfg["DEVNET_DIR"]) / "migration-cost"
 
     if args.labels:
         labels = [x for x in args.labels.split(",") if x]

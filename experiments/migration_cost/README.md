@@ -1,17 +1,19 @@
-# migration_volume
+# migration_cost
 
 Measures what it costs and how long it takes for many independent users to
 migrate a token from **Ethereum to Cosmos** at the same time, and whether using
 post-quantum signatures changes either.
 
 Each user escrows an Ethereum-native ERC-20 (`TestERC20`) on Ethereum and is
-credited a voucher on Cosmos. The measured leg carries real BLS and
+minted a matching `ibc/<hash>` token on Cosmos — an ICS-20 voucher. The ERC-20
+is locked, never burned, so total supply is unchanged and the IBC token is a
+claim on what is held. The measured leg carries real BLS and
 Merkle-Patricia verification; only the acknowledgement uses proof-api.
 
 `../batch_scaling/` measures the opposite direction and is superseded. The two
 are not symmetric — confusing them invalidates the result:
 
-| | migration_volume (**Ethereum → Cosmos**) | batch_scaling (Cosmos → Ethereum) |
+| | migration_cost (**Ethereum → Cosmos**) | batch_scaling (Cosmos → Ethereum) |
 |---|---|---|
 | Measured leg | forward, real BLS + MPT | forward, mock SP1 |
 | Waits on finality | forward leg | return leg |
@@ -20,22 +22,35 @@ are not symmetric — confusing them invalidates the result:
 
 ## How a migration works
 
-1. **Submit.** Each user signs and pays for their own
+1. **Escrow (Ethereum).** Each user signs and pays for their own
    `ICS20Transfer.sendTransfer`. The tokens go into escrow and `ICS26Router`
    writes a commitment into Ethereum storage. ~166,000 gas each.
-2. **Wait for Ethereum finality.** ~540 s, and the same whether one transfer
+2. **Wait for finality (Ethereum).** ~540 s, and the same whether one transfer
    moves or a thousand — it is Ethereum's epoch clock, not a property of the
    batch. This is ~95 % of the wall clock.
-3. **Update the light client.** `MsgUpdateClient` makes `cw-ics08-wasm-eth`
-   BLS-verify the sync committee and store Ethereum's state root. ~780,000 gas,
-   charged once per batch.
-4. **Fetch one proof.** A single `eth_getProof` returns proofs for every
-   transfer in the batch. Free, and subject to a ~12-minute window (see
-   [LIMITS.md](LIMITS.md)).
-5. **Deliver.** N `MsgRecvPacket` in one Cosmos transaction; the contract
-   verifies each proof and mints the vouchers. ~146,000 gas per transfer.
-6. **Acknowledge.** proof-api returns one multicall of N `ackPacket` calls,
-   closing the packets on Ethereum. ~101,000 gas per transfer.
+3. **CosmWasm verification (Cosmos).** `MsgUpdateClient` makes the
+   `cw-ics08-wasm-eth` light client — a CosmWasm contract — BLS-verify
+   Ethereum's sync committee and store its state root. ~780,000 gas, charged
+   once per batch.
+4. **Mint IBC token (Cosmos).** N `MsgRecvPacket` in one Cosmos transaction:
+   the contract verifies each proof, mints an `ibc/<hash>` token — an ICS-20
+   *voucher* — to each receiver, and **writes the acknowledgement** — one
+   transaction, not two. That acknowledgement is what
+   the next two steps carry home. ~146,000 gas per transfer. The
+   Merkle-Patricia proofs it carries come from a single `eth_getProof`, an
+   off-chain read costing no gas but usable only within a ~5-minute window
+   (see [LIMITS.md](LIMITS.md)).
+5. **SP1 proof generation (off-chain).** proof-api produces one SP1 Groth16
+   proof of the acknowledgement, covering the whole batch. ~627 s — the second
+   big wait, on a par with Ethereum finality. It runs on neither chain, so it
+   costs no gas.
+6. **SP1 verification (Ethereum).** The `SP1ICS07Tendermint` light client — a
+   Solidity contract — verifies that proof, and `ICS26Router` clears the packet
+   commitments, closing them out. ~101,000 gas per transfer.
+
+The two light clients mirror each other: `cw-ics08-wasm-eth` verifies Ethereum
+on Cosmos, `SP1ICS07Tendermint` verifies Cosmos on Ethereum. Neither trusts a
+relayer or a committee — each checks the other chain's consensus itself.
 
 Users each keep their own Ethereum account and their own Cosmos receiver.
 `ICS20Transfer` supports multicall, so all N transfers *could* share one
@@ -63,22 +78,25 @@ Needs a live devnet — see [`../../devnet/README.md`](../../devnet/README.md).
 Run from the repository root.
 
 ```bash
-python3 experiments/migration_volume/check_setup.py       # preconditions
+python3 experiments/migration_cost/check_setup.py       # preconditions
 
 # Cosmos accounts to sign with, one per concurrent flow
-python3 experiments/migration_volume/setup-signer-pool.py --size 10 --key-type secp256k1
-python3 experiments/migration_volume/setup-signer-pool.py --size 10 --key-type mldsa65
+python3 experiments/migration_cost/setup-signer-pool.py --size 10 --key-type secp256k1
+python3 experiments/migration_cost/setup-signer-pool.py --size 10 --key-type mldsa65
 
 # time per step: full migrations, one finality wait each
-python3 experiments/migration_volume/measure_data.py --n=1 --trials=50 --concurrency=10
+python3 experiments/migration_cost/measure_data.py --n=1 --trials=50 --concurrency=10
 
 # cost by batch size: one finality wait shared by the whole run
-python3 experiments/migration_volume/measure_delivery.py --sizes=10,25,50 --repeats=3
+python3 experiments/migration_cost/measure_delivery.py --sizes=10,25,50 --repeats=3
 
 # the return leg, over deliveries already made
-python3 experiments/migration_volume/measure_ack.py --concurrency=9
+python3 experiments/migration_cost/measure_ack.py --concurrency=9
 
-python3 experiments/migration_volume/plot_data.py         # figures and table
+# transfers per second, as more relayers work at once
+python3 experiments/migration_cost/measure_throughput.py --repeats=15
+
+python3 experiments/migration_cost/plot_data.py         # figures and table
 ```
 
 **Running several migrations at once.** `--concurrency=K` runs K together.
@@ -107,18 +125,47 @@ Raw data goes to `results/` (not tracked — regenerate against your own devnet)
 | `results/latency_by_step.csv` | one row per migration: time and gas per step |
 | `results/delivery_*.csv` | one row per delivery: gas, bytes, chunking, by batch size |
 | `results/ack_by_batch.csv` | one row per acknowledgement |
+| `results/throughput_*.csv` | one row per round: relayers, transfers, seconds, rate |
 
 `plot_data.py` reads all of them and writes:
 
 | Output | Shows |
 |---|---|
 | `fig_time_by_step.pdf` | time each step takes, both key types |
-| `fig_time_by_batch.pdf` | total time against batch size |
+| `fig_throughput_by_workers.pdf` | transfers credited per second, as more relayers work at once |
 | `cost_by_batch.md` | gas per transfer on both legs, by batch size |
 
-Error bars are 95 % confidence intervals, and every figure and table row prints
-its repeat count. Counts differ between steps because waiting for finality and
-updating the client happen once per group.
+The figure covers the whole round trip. Proving is the **real** SP1 Groth16
+measurement, ~627 s, taken from
+`../migration_throughput/results/real-verifier/`; the mock verifier's proof
+check is a no-op and is not a cost worth plotting. Proving is on a par with the
+Ethereum finality wait, so the two of them together are almost the entire round
+trip: 1,195 s, against 561 s to the point the vouchers are credited.
+
+Fetching the Merkle-Patricia proof is not shown. It is an off-chain read taking
+hundredths of a second and costing no gas.
+
+**What the throughput figure calculates.** Each round has N relayers deliver 50
+transfers each, at the same time. The rate is
+
+    (N relayers x 50 transfers) / seconds for all of them to finish
+
+Timed from launching the relayers to the last one landing its Cosmos
+transaction: fetching proofs, building and signing messages, broadcasting, and
+waiting for the Cosmos block. It excludes the Ethereum finality wait, which is
+paid once before any of it and is a fixed delay rather than a limit on the rate,
+and it excludes the return leg, whose proof takes about ten minutes. Both are in
+`fig_time_by_step.pdf`.
+
+The two signing keys sit on top of each other at every relayer count, which is
+the result: the key does not change the rate.
+
+Error bars are 95 % confidence intervals. How many runs sit behind each step
+differs, because waiting for finality and verifying the light client happen
+once for a whole group of migrations, not once each: submitting, delivering
+and acknowledging rest on 60 runs with the ordinary key and 50 with the
+post-quantum one, while the finality wait and the light-client verification
+rest on 6 and 5 groups. Table rows print their own counts.
 
 **Timing uses one clock.** Every step and every total is measured on the relay
 host. The Cosmos block header runs on a different clock — CometBFT takes it from
@@ -133,7 +180,7 @@ steps do not cover: process start-up, polling granularity, gaps between steps.
 | Delivery size | CometBFT `max_tx_bytes` 4 MB | ~675 transfers |
 | Delivery over stock RPC | CometBFT `max_body_bytes` 1 MB | 124 transfers |
 | **Acknowledgement size** | **geth `txMaxSize` 128 KB** | **~56 transfers** |
-| Proof availability | geth `TriesInMemory` 128 | ~12-minute window |
+| Proof availability | geth `TriesInMemory` 128 | ~5-minute window |
 
 **~56 is the one that binds.** An acknowledgement batch is whatever one
 delivery produced and cannot be split, so delivering more than ~56 transfers at
@@ -151,6 +198,7 @@ None of these depend on the signature algorithm. Full measurements in
 | `measure_data.py` | Full migrations; writes `results/latency_by_step.csv` |
 | `measure_delivery.py` | Delivery cost by batch size, one shared finality wait |
 | `measure_ack.py` | The return leg, over deliveries already made |
+| `measure_throughput.py` | Transfers per second, as more relayers work at once |
 | `plot_data.py` | Figures and the cost table |
 | `setup-signer-pool.py` | Cosmos signing accounts, one per concurrent flow |
 | `setup-user-pool.js` | Ethereum accounts: ETH, `TestERC20`, allowance |
@@ -159,6 +207,4 @@ None of these depend on the signature algorithm. Full measurements in
 | `relay-ack-batch.js` | One acknowledgement batch back to Ethereum |
 | `build-recv-msgs.js` | Builds `MsgRecvPacket` without broadcasting |
 | `find_recv_ceiling.py` | Finds the delivery ceiling per signing key type |
-| `run_ceiling_4mb.py`, `bisect_confirm.py` | Ceiling confirmation at the 4 MB wall |
-| `probe-ack-batching.js` | Decodes what proof-api builds for a multi-ack request |
 | `bech32.js` | Minimal bech32, one distinct Cosmos receiver per user |

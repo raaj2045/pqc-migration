@@ -224,7 +224,7 @@ def main():
         print(f"{time.strftime('%H:%M:%S')} {m}", flush=True)
 
     # --- build the message array once ------------------------------------
-    msg_path = Path(cfg["DEVNET_DIR"]) / "migration-volume" / "ceiling-msgs.json"
+    msg_path = Path(cfg["DEVNET_DIR"]) / "migration-cost" / "ceiling-msgs.json"
     msg_path.parent.mkdir(parents=True, exist_ok=True)
     log(f"building {args.max} MsgRecvPacket (offset {args.offset})...")
     r = subprocess.run(
@@ -288,7 +288,7 @@ def main():
         offset2 = args.offset + args.max
         log(f"=== gas vs N ({first_key}), fresh packets from offset {offset2} ===")
         for n in gas_points:
-            p = Path(cfg["DEVNET_DIR"]) / "migration-volume" / f"gas-msgs-{n}.json"
+            p = Path(cfg["DEVNET_DIR"]) / "migration-cost" / f"gas-msgs-{n}.json"
             rb = subprocess.run(
                 ["node", str(HERE / "build-recv-msgs.js"), args.send_file,
                  f"--count={n}", f"--offset={offset2}", f"--out={p}", "--no-update"],

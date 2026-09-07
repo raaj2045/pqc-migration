@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Measurement runner for the migration_volume experiment (Ethereum -> Cosmos).
+"""Measurement runner for the migration_cost experiment (Ethereum -> Cosmos).
 
 For each cell (N users x trial x signer key type) it submits N independent
 `sendTransfer` calls on the EVM, relays all N to Cosmos as one batched receive
 transaction, and records cost and latency into results/latency_by_step.csv.
 
-    python3 experiments/migration_volume/measure_data.py [--n=1,10,50,100] [--trials=3]
+    python3 experiments/migration_cost/measure_data.py [--n=1,10,50,100] [--trials=3]
                             [--signers=validator,relayer] [--concurrency=1]
                             [--out=FILE] [--amount=2000] [--resume]
 
@@ -56,7 +56,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent          # experiments/migration_volume
+HERE = Path(__file__).resolve().parent          # experiments/migration_cost
 REPO = HERE.parent.parent
 EXP = HERE                                       # the node scripts live beside this one
 RESULTS = HERE / "results"
@@ -186,7 +186,7 @@ def preflight_capacity(cfg, max_n):
         raise SystemExit(
             f"N={max_n} projects to {projected:,} B, over {CEILING_SAFETY:.0%} of the "
             f"{binding} wall ({wall:,} B, ~{ceiling} packets). Chunk the receive or "
-            f"lower --n; see experiments/migration_volume/LIMITS.md.")
+            f"lower --n; see experiments/migration_cost/LIMITS.md.")
     print(f"  OK: N={max_n} fits with {ceiling - max_n} packet(s) of headroom\n")
     return ceiling
 
@@ -467,7 +467,7 @@ def main():
     n_users = [int(x) for x in args.n.split(",") if x]
     signers = [s for s in args.signers.split(",") if s]
     cfg = config.load()
-    out_dir = Path(cfg["DEVNET_DIR"]) / "migration-volume"
+    out_dir = Path(cfg["DEVNET_DIR"]) / "migration-cost"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     preflight_capacity(cfg, max(n_users))
@@ -493,7 +493,7 @@ def main():
                 + (f"\n  missing: {missing}" if missing else "")
                 + (f"\n  unexpected: {extra}" if extra else "")
                 + f"\nMove it aside and re-run with --resume (completed cells are "
-                  f"reconstructed from the artifacts in {cfg['DEVNET_DIR']}/migration-volume), "
+                  f"reconstructed from the artifacts in {cfg['DEVNET_DIR']}/migration-cost), "
                   f"or drop --resume to start a fresh file.")
         with open(out_path, newline="") as f:
             done = {r["Run_Label"] for r in csv.DictReader(f) if r.get("Run_Label")}

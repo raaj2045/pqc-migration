@@ -2,7 +2,7 @@
 """Measure delivery cost and time across batch sizes, without re-paying the
 Ethereum finality wait for every repeat.
 
-    python3 experiments/migration_volume/measure_delivery.py \
+    python3 experiments/migration_cost/measure_delivery.py \
         --sizes=50,100,500,1000 --repeats=3 --signer=validator
 
 Why this exists
@@ -116,7 +116,7 @@ def main():
 
     sizes = [int(x) for x in args.sizes.split(",") if x]
     cfg = config.load()
-    out_dir = Path(cfg["DEVNET_DIR"]) / "migration-volume"
+    out_dir = Path(cfg["DEVNET_DIR"]) / "migration-cost"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Every delivery consumes its packets, so the generation must hold the sum
@@ -147,9 +147,12 @@ def main():
                          f"need {total_packets}")
 
     # --- the shared prelude, paid once ------------------------------------
+    # Wait on the LAST packet, not the first: finality covering the earliest
+    # block says nothing about the latest, and those packets would then be
+    # unprovable.
     print(f"\n=== waiting for finality and updating the client (once) ===")
     run(["node", str(HERE / "relay-recv-batch.js"), str(send_path),
-         "--count=1", f"--label={gen}", f"--signer-key={args.signer}",
+         "--count=1", f"--offset={total_packets - 1}", f"--label={gen}", f"--signer-key={args.signer}",
          "--phase=prepare"], "prepare")
     shared = json.loads((out_dir / f"prepare-{gen}.json").read_text())
     print(f"  finality {shared['finalityWaitSeconds']:.1f}s, "

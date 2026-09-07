@@ -91,7 +91,7 @@ function txSizeLimit(env) {
 // The per-packet cost is mostly Merkle-Patricia proof data and moves as the
 // router's storage trie deepens, so a hard-coded packet count goes stale.
 function encodedSize(env, msgs, signerKeyName, gas) {
-  const tmp = path.join(env.DEVNET_DIR, "migration-volume", `.sizeprobe-${process.pid}.json`);
+  const tmp = path.join(env.DEVNET_DIR, "migration-cost", `.sizeprobe-${process.pid}.json`);
   fs.writeFileSync(tmp, JSON.stringify({
     body: { messages: msgs, memo: "", timeout_height: "0",
             extension_options: [], non_critical_extension_options: [] },
@@ -269,7 +269,7 @@ function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log, jsonByt
   }
   const updateSeconds = (Date.now() - t_update0) / 1000;
 
-  const outDir_ = path.join(env.DEVNET_DIR, "migration-volume");
+  const outDir_ = path.join(env.DEVNET_DIR, "migration-cost");
   fs.mkdirSync(outDir_, { recursive: true });
   const have = heights();
   const execBlockOf = (slot) =>
@@ -337,7 +337,7 @@ function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log, jsonByt
     // geth runs --gcmode=full with TriesInMemory=128, so state older than
     // ~128 blocks is gone. Relaying has to happen inside the window between
     // finality covering the send block (~70 blocks back) and that pruning
-    // point — roughly 58 blocks, about 12 minutes.
+    // point — roughly 58 blocks, about 5 minutes at 6-second slots.
     const msg = proofResp.error.message || JSON.stringify(proofResp.error);
     if (/historical state|not available/i.test(msg)) {
       throw new Error(`eth_getProof: block ${useBlock} has been pruned by geth (${msg}). ` +

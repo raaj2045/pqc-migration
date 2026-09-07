@@ -32,14 +32,14 @@
 // Usage: node submit-migrations.js [count] [amount-each] [--per-user=K]
 //                                  [--label=NAME] [--pool-offset=K]
 //                                  [--pool-file=NAME]
-// Writes $DEVNET_DIR/migration-volume/send-<label>.json
+// Writes $DEVNET_DIR/migration-cost/send-<label>.json
 const fs = require("fs");
 const path = require("path");
 const { loadEnv, evm, ethers, config, abi } = require("../../devnet/lib/lib");
 const P = require("../../devnet/lib/packet");
 const bech32 = require("./bech32");
 
-const OUT_SUBDIR = "migration-volume";
+const OUT_SUBDIR = "migration-cost";
 
 // One Cosmos receiver per user, deterministic from the EVM address so a run
 // is reproducible and a credited balance can be traced back to its user.

@@ -29,7 +29,7 @@ n is the number of runs behind it.
 ## Reading it
 
 Cost per transfer falls as more move together, because the costs charged
-once per transaction — the light-client update, the per-transaction
+once per transaction — the CosmWasm verification, the per-transaction
 overhead and the signature — are divided among more transfers. Both legs
 flatten well before the 56-acknowledgement limit, so that limit
 costs nothing in gas; it only caps how many transfers one batch may hold.

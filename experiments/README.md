@@ -6,21 +6,21 @@ chain end-to-end.
 | Sub-directory             | Direction        | Status               | What it measures                                                                                                  |
 |---------------------------|------------------|----------------------|-------------------------------------------------------------------------------------------------------------------|
 | `validator_scaling_v2/`   | Cosmos only      | **Headline** (paper) | 30-cell run across N ∈ {4, 7, 16} validators × target tx-rate ∈ {10, 50, 100, 200, 500} × scheme ∈ {secp256k1, mldsa44}. Produces Figs. 9-12 of the paper. |
-| `migration_volume/`       | **EVM → Cosmos** | **Current** (paper)  | The migration direction the paper is about. Many independent users each escrow an ERC-20 on Ethereum and are credited a voucher on Cosmos. Varies batch size and the signing key type of the delivery transaction. Real BLS + MPT verification on the measured leg. |
+| `migration_cost/`       | **EVM → Cosmos** | **Current** (paper)  | The migration direction the paper is about. Many independent users each escrow an ERC-20 on Ethereum and are credited a voucher on Cosmos. Varies batch size and the signing key type of the delivery transaction. Real BLS + MPT verification on the measured leg. |
 | `migration_throughput/`   | EVM → Cosmos     | **Complete** (paper) | Batching on the live bridge: transfers acknowledged per finality window across N ∈ {1, 5, 10, 20, 40} packets offered per window, 5 repeats each. 1,000 transfers, 0 failures. |
 | `batch_scaling/`          | Cosmos → EVM     | Superseded           | Forward-leg batching against `SP1MockVerifier`: transfer-mechanism scaling (time, throughput, gas) as group size grows across {1, 10, 50, 100, 250, 500}, stopping automatically at the first group size that fails. |
 | `cold_sync/`              | Cosmos only      | Scaffolded, not run  | Block-sync replay time on a fresh full node — see the explicit "scaffolded, not yet run" notice in its README.    |
 
-**Direction is the axis to check first.** `migration_volume/` and
+**Direction is the axis to check first.** `migration_cost/` and
 `batch_scaling/` are opposite directions of the same bridge and are not
 symmetric: they are finality-bound on opposite legs, prove with different
 machinery, batch through different primitives, and hit different size walls.
 The paper's migration claims are about **Ethereum → Cosmos**, which is
-`migration_volume/`.
+`migration_cost/`.
 
 Each experiment's own README states its method, bounds and limitations:
 [validator_scaling_v2](validator_scaling_v2/summary.md) ·
-[migration_volume](migration_volume/README.md) ·
+[migration_cost](migration_cost/README.md) ·
 [migration_throughput](migration_throughput/README.md) ·
 [batch_scaling](batch_scaling/README.md) ·
 [cold_sync](cold_sync/README.md).
@@ -46,7 +46,7 @@ discussion.
 Reproduction: see [`../REPRODUCE.md`](../REPRODUCE.md) §1 (Path A for
 the figures from existing data, Path B for the full ~5-hour run).
 
-## `migration_volume/`
+## `migration_cost/`
 
 **Ethereum → Cosmos**, the direction the paper's migration claims are about.
 Many independent users each escrow an ERC-20 on Ethereum and are credited a
@@ -70,7 +70,7 @@ configuration, and a delivery too large simply splits. The **acknowledgement**
 is the binding limit at **~56 transfers**: it is walled by geth's 128 KB
 `txMaxSize`, and it cannot be split, because the proof covering the batch is
 cached only for the duration of its own transaction. A delivery larger than
-that can never be acknowledged. See `migration_volume/LIMITS.md`.
+that can never be acknowledged. See `migration_cost/LIMITS.md`.
 
 Runner, plotter and results live in the experiment directory. Needs a live
 devnet.
@@ -107,7 +107,7 @@ light client — so it cannot be re-run from committed data alone.
 **Superseded — Cosmos → EVM, the opposite direction to the paper's migration
 claims.** The code is retained and still runnable, and its committed results
 stand as measurements of that direction, but nothing in the current paper
-depends on it. For the migration direction, use `migration_volume/`.
+depends on it. For the migration direction, use `migration_cost/`.
 
 Measures the **forward** leg's batching (Cosmos → EVM) rather than the return
 leg, at larger group sizes,
@@ -137,8 +137,8 @@ The README in that directory leads with this status note.
 
 - **Raw run data**: `validator_scaling_v2/results/*.json`,
   `migration_throughput/results/*.json`,
-  `migration_volume/results/*.json` (ceiling measurements)
-- **migration_volume output**: `migration_volume/results/`, written by
+  `migration_cost/results/*.json` (ceiling measurements)
+- **migration_cost output**: `migration_cost/results/`, written by
   `measure_data.py`, `measure_delivery.py` and `measure_ack.py`
 - **Per-cell CPU timeseries**: `validator_scaling_v2/cpu_samples/`
 - **Per-cell run logs**: `validator_scaling_v2/logs/`

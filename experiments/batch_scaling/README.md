@@ -6,7 +6,7 @@
 > code is retained and runnable and its results stand as measurements of this
 > direction, but nothing in the current paper depends on it. For Ethereum →
 > Cosmos — the direction the paper is about — see
-> [`../migration_volume/`](../migration_volume/README.md). The two are not
+> [`../migration_cost/`](../migration_cost/README.md). The two are not
 > symmetric: they are finality-bound on opposite legs, prove with different
 > machinery, batch through different primitives, and hit different size walls.
 

@@ -23,7 +23,7 @@
 // Usage: node relay-ack-batch.js <cosmos-recv-txhash> --label=NAME [--expect=N]
 //                                [--dry-run] [--tx-max-size=B] [--chunk-margin=F]
 //                                [--sender-pool=FILE --sender-index=N]
-// Writes $DEVNET_DIR/migration-volume/ack-<label>.json
+// Writes $DEVNET_DIR/migration-cost/ack-<label>.json
 const fs = require("fs");
 const path = require("path");
 const { loadEnv, evm, ethers, config, sendRawTx } = require("../../devnet/lib/lib");
@@ -68,7 +68,7 @@ const arg = (name, dflt) => {
   // packet's commitment when the acknowledgement lands, so a cleared
   // commitment means this batch is closed. Keying off a local ack-*.json
   // instead would disarm the moment that file is moved or deleted.
-  const outDirEarly = path.join(env.DEVNET_DIR, "migration-volume");
+  const outDirEarly = path.join(env.DEVNET_DIR, "migration-cost");
   if (!dryRun && !process.argv.includes("--force")) {
     const recvPath = path.join(outDirEarly, `recv-${label}.json`);
     if (fs.existsSync(recvPath)) {
@@ -277,7 +277,7 @@ const arg = (name, dflt) => {
       `over ${parts.length} transaction(s)`);
   }
 
-  const outDir = path.join(env.DEVNET_DIR, "migration-volume");
+  const outDir = path.join(env.DEVNET_DIR, "migration-cost");
   fs.mkdirSync(outDir, { recursive: true });
   // A dry run must not leave a file that makes this delivery look
   // acknowledged — the default label selection keys off exactly that.
