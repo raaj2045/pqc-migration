@@ -30,6 +30,7 @@
 //
 // Usage: node submit-migrations.js [count] [amount-each] [--per-user=K]
 //                                  [--label=NAME] [--pool-offset=K]
+//                                  [--pool-file=NAME]
 // Writes $DEVNET_DIR/migration-volume/send-<label>.json
 const fs = require("fs");
 const path = require("path");
@@ -59,7 +60,8 @@ const receiverFor = (evmAddress) =>
   config.require_(env, "TEST_ERC20", "ICS20_TRANSFER", "ICS26_ROUTER", "ETH_CLIENT_ID");
   const { provider, router } = evm(env);
 
-  const poolFile = path.join(env.DEVNET_DIR, "evm-user-pool.json");
+  const poolFileArg = (process.argv.find((a) => a.startsWith("--pool-file=")) || "").split("=")[1];
+  const poolFile = path.join(env.DEVNET_DIR, poolFileArg || "evm-user-pool.json");
   if (!fs.existsSync(poolFile)) throw new Error(`no user pool: run 'node setup-user-pool.js ${count}' first`);
   const pool = JSON.parse(fs.readFileSync(poolFile, "utf8"));
   if (pool.length < poolOffset + count) {

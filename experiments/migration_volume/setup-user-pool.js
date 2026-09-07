@@ -24,9 +24,17 @@ const path = require("path");
 const { loadEnv, ethers, config, abi } = require("../../devnet/lib/lib");
 
 const POOL_FILE = "evm-user-pool.json";
+// --pool-file=NAME keeps a second, independent set of accounts in its own file,
+// so a run measuring deliveries cannot hand out the same EVM account another
+// run is already sending from (two in-flight txs from one account race for the
+// same nonce).
+const poolFileArg = (process.argv.find((a) => a.startsWith("--pool-file=")) || "").split("=")[1];
 
 (async () => {
   const poolSize = parseInt(process.argv[2], 10);
+  if (!Number.isFinite(poolSize) || poolSize < 1) {
+    throw new Error("usage: node setup-user-pool.js <size> [eth-each] [token-each] [--pool-file=NAME]");
+  }
   const ethEach = process.argv[3] || "1";
   const tokenEach = BigInt(process.argv[4] || "1000000");
   if (!poolSize || poolSize < 1) {
@@ -40,7 +48,7 @@ const POOL_FILE = "evm-user-pool.json";
   const deployer = new ethers.Wallet(env.DEPLOYER_PK, provider);
   const ethWei = ethers.parseEther(ethEach);
 
-  const poolFile = path.join(env.DEVNET_DIR, POOL_FILE);
+  const poolFile = path.join(env.DEVNET_DIR, poolFileArg || POOL_FILE);
   let pool = fs.existsSync(poolFile) ? JSON.parse(fs.readFileSync(poolFile, "utf8")) : [];
 
   for (let i = 0; i < poolSize; i++) {
