@@ -46,8 +46,10 @@ const receiverFor = (evmAddress) =>
   bech32.encode("cosmos", Buffer.from(evmAddress.slice(2), "hex"));
 
 (async () => {
-  const count = parseInt(process.argv[2] || "10", 10);
-  const amount = BigInt(process.argv[3] || "2000");
+  // Positional arguments with any --flag removed, so flag order never matters.
+  const POS = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+  const count = parseInt(POS[0] || "10", 10);
+  const amount = BigInt(POS[1] || "2000");
   const perUserArg = process.argv.find((a) => a.startsWith("--per-user="));
   const perUser = perUserArg ? parseInt(perUserArg.split("=")[1], 10) : 1;
   const labelArg = process.argv.find((a) => a.startsWith("--label="));

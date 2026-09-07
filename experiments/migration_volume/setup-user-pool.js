@@ -29,14 +29,17 @@ const POOL_FILE = "evm-user-pool.json";
 // run is already sending from (two in-flight txs from one account race for the
 // same nonce).
 const poolFileArg = (process.argv.find((a) => a.startsWith("--pool-file=")) || "").split("=")[1];
+// Positional arguments, with any --flag removed: a flag sitting where the ETH
+// amount is expected would otherwise be parsed as a number.
+const POS = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 
 (async () => {
-  const poolSize = parseInt(process.argv[2], 10);
+  const poolSize = parseInt(POS[0], 10);
   if (!Number.isFinite(poolSize) || poolSize < 1) {
     throw new Error("usage: node setup-user-pool.js <size> [eth-each] [token-each] [--pool-file=NAME]");
   }
-  const ethEach = process.argv[3] || "1";
-  const tokenEach = BigInt(process.argv[4] || "1000000");
+  const ethEach = POS[1] || "1";
+  const tokenEach = BigInt(POS[2] || "1000000");
   if (!poolSize || poolSize < 1) {
     console.error("usage: node setup-user-pool.js <pool-size> [<eth-each>] [<token-each>]");
     process.exit(2);
