@@ -48,31 +48,32 @@ the figures from existing data, Path B for the full ~5-hour run).
 
 ## `migration_volume/`
 
-**Ethereum → Cosmos.** N independent users migrate at the same time: each signs
-and pays for its own `sendTransfer` on the EVM, and the whole cohort is proven
-to Cosmos in one batched receive transaction (one `eth_getProof` with N storage
-keys, one `MsgUpdateClient`, one Cosmos tx of N `MsgRecvPacket`). The measured
-leg carries real `cw-ics08-wasm-eth` BLS and MPT verification; only the ack leg
-touches proof-api.
+**Ethereum → Cosmos**, the direction the paper's migration claims are about.
+Many independent users each escrow an ERC-20 on Ethereum and are credited a
+voucher on Cosmos. Every user signs and pays for their own `sendTransfer`; the
+whole group is then proven to Cosmos in one batched delivery — one
+`eth_getProof` with N storage keys, one `MsgUpdateClient`, one Cosmos
+transaction of N `MsgRecvPacket`. The measured leg carries real
+`cw-ics08-wasm-eth` BLS and Merkle-Patricia verification; only the
+acknowledgement uses proof-api.
 
-The headline is `credited` — the timestamp of the Cosmos block that mints the
-vouchers — decomposed into four measured spans plus an explicitly-named
-unattributed residual. The finality wait dominates and is measured directly.
+Two variables: how many transfers move at once, and the signing key type of the
+delivery transaction. A signature is charged once per transaction while
+transfers are charged per transfer, so ML-DSA-65 adds a fixed ~146,000 gas and
+~5.2 KB per transaction — a share per transfer that falls from +82 % at one
+transfer to +0.8 % at 124. Time is unaffected: ~95 % of a migration is waiting
+for Ethereum finality, which is the same at every batch size.
 
-The second variable is the **signer key type** of the receive transaction. A
-signature is charged once per transaction while packets are charged per packet,
-so ML-DSA-65 costs a fixed ~146,000 gas and ~5.2 KB per transaction that
-a larger batch splits down to +0.8 % at N = 124.
+Capacity is set by infrastructure, not by the signature algorithm. Delivery
+holds ~675 transfers per Cosmos transaction, or 124 at a stock RPC
+configuration, and a delivery too large simply splits. The **acknowledgement**
+is the binding limit at **~56 transfers**: it is walled by geth's 128 KB
+`txMaxSize`, and it cannot be split, because the proof covering the batch is
+cached only for the duration of its own transaction. A delivery larger than
+that can never be acknowledged. See `migration_volume/LIMITS.md`.
 
-Capacity on this path is infrastructure-bound, not crypto-bound. The binding
-wall at stock node configuration is CometBFT's RPC `max_body_bytes`, which caps
-a receive transaction at **124 packets** — bound by transaction body size, not
-by payload size or key type. Raising it exposes the 4 MB mempool `max_tx_bytes`
-wall at 675 packets. ML-DSA-65 and secp256k1 carry the identical count at both.
-See `migration_volume/CEILING-FINDINGS.md`.
-
-The runner and plotter live in the experiment directory alongside everything
-else. Needs a live devnet.
+Runner, plotter and results live in the experiment directory. Needs a live
+devnet.
 
 ## `migration_throughput/`
 

@@ -1,237 +1,164 @@
 # migration_volume
 
-Volume harness for the **Ethereum → Cosmos** direction — the migration
-direction the paper is about. Many *independent* users each escrow an
-Ethereum-native ERC-20 (`TestERC20`) on Ethereum and receive a voucher on
-Cosmos.
+Measures what it costs and how long it takes for many independent users to
+migrate a token from **Ethereum to Cosmos** at the same time, and whether using
+post-quantum signatures changes either.
 
-`../batch_scaling/` measures the opposite direction (Cosmos → Ethereum) and is
-superseded for the paper. The two are not symmetric, and mistaking one for the
-other invalidates the result:
+Each user escrows an Ethereum-native ERC-20 (`TestERC20`) on Ethereum and is
+credited a voucher on Cosmos. The measured leg carries real BLS and
+Merkle-Patricia verification; only the acknowledgement uses proof-api.
 
-| | migration_volume (**EVM → Cosmos**) | batch_scaling (Cosmos → EVM) |
+`../batch_scaling/` measures the opposite direction and is superseded. The two
+are not symmetric — confusing them invalidates the result:
+
+| | migration_volume (**Ethereum → Cosmos**) | batch_scaling (Cosmos → Ethereum) |
 |---|---|---|
-| Measured leg | forward, **real BLS + MPT** | forward, **mock SP1** |
-| Finality-bound | **forward leg** | return (ack) leg |
-| proof-api / SP1 | ack leg only | forward leg |
-| Batching primitive | N `MsgRecvPacket` in one Cosmos tx | `ICS26Router.multicall` from proof-api |
-| Per-tx wall | see [Capacity](#capacity) | geth `txMaxSize`, 128 KB |
-| Headline number | **`credited`** — voucher minted on Cosmos | round-trip ack |
+| Measured leg | forward, real BLS + MPT | forward, mock SP1 |
+| Waits on finality | forward leg | return leg |
+| Batching | N `MsgRecvPacket` in one Cosmos transaction | `ICS26Router.multicall` |
+| Headline | voucher credited on Cosmos | round-trip acknowledgement |
 
-## What it measures
+## How a migration works
 
-One cell is *N independent users migrating at the same time*, run as three
-phases and recorded end to end:
+1. **Submit.** Each user signs and pays for their own
+   `ICS20Transfer.sendTransfer`. The tokens go into escrow and `ICS26Router`
+   writes a commitment into Ethereum storage. ~166,000 gas each.
+2. **Wait for Ethereum finality.** ~540 s, and the same whether one transfer
+   moves or a thousand — it is Ethereum's epoch clock, not a property of the
+   batch. This is ~95 % of the wall clock.
+3. **Update the light client.** `MsgUpdateClient` makes `cw-ics08-wasm-eth`
+   BLS-verify the sync committee and store Ethereum's state root. ~780,000 gas,
+   charged once per batch.
+4. **Fetch one proof.** A single `eth_getProof` returns proofs for every
+   transfer in the batch. Free, and subject to a ~12-minute window (see
+   [LIMITS.md](LIMITS.md)).
+5. **Deliver.** N `MsgRecvPacket` in one Cosmos transaction; the contract
+   verifies each proof and mints the vouchers. ~146,000 gas per transfer.
+6. **Acknowledge.** proof-api returns one multicall of N `ackPacket` calls,
+   closing the packets on Ethereum. ~101,000 gas per transfer.
 
-1. **Submission.** N distinct EVM accounts each sign and pay for their own
-   `ICS20Transfer.sendTransfer`, broadcast concurrently under pre-assigned
-   nonces. `ICS20Transfer` *is* `MulticallUpgradeable`, so N transfers could be
-   packed into one EVM transaction — the harness deliberately does not, because
-   that models a single custodial service and collapses exactly the per-user
-   submission cost being measured.
-2. **Finality wait.** Beacon finality has to advance past the newest send
-   block. This is the wall-clock floor on this direction and is **measured
-   directly**, not inferred.
-3. **Batched relay.** One `eth_getProof` with N storage keys, one
-   `MsgUpdateClient`, one Cosmos transaction of N `MsgRecvPacket` — the places
-   a relayer legitimately batches. The update and the receive are **separate
-   transactions**, so their gas is measured separately and summed, never
-   subtracted one from the other.
+Users each keep their own Ethereum account and their own Cosmos receiver.
+`ICS20Transfer` supports multicall, so all N transfers *could* share one
+Ethereum transaction — this deliberately does not, because that models a single
+custodial service and erases the per-user cost being measured.
 
-Two things are varied: how many transfers move at once (**N**), and the
-**signing key type** of the account that submits the delivery transaction
-(`secp256k1` or `ML-DSA-65`). A signature is charged once per transaction while
-packets are charged per packet, so a post-quantum signer adds a fixed ~5.2 KB
-and ~146,000 gas to each transaction. Split across a larger batch, that fixed
-cost per transfer falls from +82 % at one transfer to +0.8 % at 124.
+## What is varied
 
-The **destination** key type is not a variable, because it cannot be one:
-receivers appear in the packet payload as 20-byte bech32 addresses whatever key
-would control them, and a fresh recipient account carries no pubkey on chain
-until it first signs. `Dest_Key_Type` is recorded as `none` for this reason.
+**Batch size** — how many transfers move together — and the **signing key
+type** of the account submitting the delivery transaction, `secp256k1` or
+`ML-DSA-65`.
+
+A signature is charged once per transaction while transfers are charged per
+transfer, so a post-quantum signer adds a fixed ~5.2 KB and ~146,000 gas per
+transaction. Split across a larger batch, its share per transfer falls from
++82 % at one transfer to +0.8 % at 124.
+
+The *destination* key type is not a variable and cannot be one: receivers
+appear in the payload as 20-byte bech32 addresses whatever key controls them,
+and a fresh recipient holds no public key on chain until it first signs.
 
 ## Running it
 
-Needs a live devnet (Kurtosis Ethereum enclave, Cosmos chain, instantiated
-`cw-ics08-wasm-eth` client) — see [`../../devnet/README.md`](../../devnet/README.md).
-
-All of it lives in this directory; run from the repository root.
+Needs a live devnet — see [`../../devnet/README.md`](../../devnet/README.md).
+Run from the repository root.
 
 ```bash
-python3 experiments/migration_volume/check_setup.py      # preconditions
-python3 experiments/migration_volume/measure_data.py     # per-step time
-python3 experiments/migration_volume/measure_delivery.py # cost by batch size
-python3 experiments/migration_volume/plot_data.py        # figures + table
-```
+python3 experiments/migration_volume/check_setup.py       # preconditions
 
-| Path | Holds |
-|---|---|
-| `measure_data.py` | end-to-end runs: per-step time, one real finality wait each |
-| `measure_delivery.py` | delivery cost by batch size, one finality wait shared by the whole run |
-| `plot_data.py` | the two figures and the gas table |
-| `results/` | raw CSVs and JSON (git-ignored — regenerate against your own devnet) |
-| `results/run-a/` | data from an earlier devnet, kept for reference, not comparable |
-| `fig_*.pdf`, `gas_1_vs_10.md` | the outputs the paper uses |
-
-`measure_data.py` defaults to N ∈ {1, 10, 50, 100} × 3 repeats × both signing
-key types, and takes `--n`, `--trials`, `--signers`, `--amount`, `--out` and
-`--resume` (which skips runs already in the CSV and rebuilds any that finished
-without being recorded). Before the first run it checks the node's live
-`config.toml` and refuses to start if the largest batch would not fit in one
-delivery transaction — a run that fails on size partway through wastes every
-repeat before it.
-
-Every cell carries a run label (`n<N>-t<trial>-<key>`) that both scripts write
-into their output filenames and into the JSON itself. Nothing is selected by
-timestamp, so a file left over from an earlier trial can never be read as this
-one's result.
-
-### Running migrations at the same time
-
-A single migration is mostly spent waiting for Ethereum finality, so repeats
-run one after another take about ten minutes each. `--concurrency=K` runs K of
-them together instead:
-
-```bash
+# Cosmos accounts to sign with, one per concurrent flow
 python3 experiments/migration_volume/setup-signer-pool.py --size 10 --key-type secp256k1
 python3 experiments/migration_volume/setup-signer-pool.py --size 10 --key-type mldsa65
-python3 experiments/migration_volume/measure_data.py --trials=100 --concurrency=10
+
+# time per step: full migrations, one finality wait each
+python3 experiments/migration_volume/measure_data.py --n=1 --trials=50 --concurrency=10
+
+# cost by batch size: one finality wait shared by the whole run
+python3 experiments/migration_volume/measure_delivery.py --sizes=10,25,50 --repeats=3
+
+# the return leg, over deliveries already made
+python3 experiments/migration_volume/measure_ack.py --concurrency=9
+
+python3 experiments/migration_volume/plot_data.py         # figures and table
 ```
 
-Waiting for finality and updating the light client happen **once per wave** and
-are shared — that is what a real relayer does, and charging every migration for
-a wait that happened once would both inflate its total and turn one measurement
-into K identical rows. Submitting, proving and delivering happen per migration
-and run at the same time, so those numbers include contention.
+**Running several migrations at once.** `--concurrency=K` runs K together.
+Waiting for finality and updating the light client happen **once per group** and
+are shared; submitting, proving and delivering happen per migration and run
+concurrently, so those timings carry real contention. Each flow needs its own
+Cosmos signing account and its own slice of the Ethereum account pool, because
+two transactions in flight from one account race for the same nonce.
 
-Each flow needs its own signing account (two in-flight Cosmos transactions from
-one account race for the same sequence number) and its own slice of the EVM
-account pool (same problem with nonces). `Wave`, `Flow` and `Concurrency`
-columns record the arrangement, and the plotter counts repeats of a shared step
-per wave rather than per row.
+Shared steps are recorded against the group, and repeats of a shared step are
+counted per group rather than per row — otherwise one finality measurement
+copied across K rows would read as K independent samples.
 
-### Individual steps
-
-Individual steps can be run by hand:
-
-```bash
-node setup-user-pool.js 100                     # fund 100 EVM users
-node submit-migrations.js 100 2000 --label=x    # phase 1
-node relay-recv-batch.js "$DEVNET_DIR/migration-volume/send-x.json" \
-     --count=100 --label=x --signer-key=relayer # steps 2-3
-```
-
-`relay-recv-batch.js --phase=prepare` does only the shared work (wait for
-finality, update the client); `--phase=deliver` does only the per-migration
-work. `--phase=all` is the default.
-
-A batch too large for one transaction is **split automatically**. The chunk
-size comes from the node's own `max_body_bytes`/`max_tx_bytes` and from
-measuring a real encoded transaction — not from a fixed packet count, because
-per-packet cost is mostly proof data and grows as the router's storage trie
-deepens. Gas and bytes are summed across the chunks.
+**Measuring cost without repeating the wait.** `measure_delivery.py` submits
+every packet a run needs, pays the finality wait once, then delivers batch after
+batch against that state. The deliveries are real transactions carrying real
+proofs; only the shared prelude stops repeating. A row's `T_Deliver_s` is
+therefore the delivery step alone, not an end-to-end time.
 
 ## Outputs
 
-`results/latency_by_step.csv`, one row per migration:
+Raw data goes to `results/` (not tracked — regenerate against your own devnet).
 
-| Column | Meaning |
+| File | Holds |
 |---|---|
-| `N_Users`, `Trial`, `Run_Label` | which run this row is |
-| `Signer_Key_Type` | algorithm of the key signing the delivery transaction |
-| `Submit_Gas_Total`, `Submit_Gas_Per_Tx` | Ethereum submission gas |
-| `Update_Client_Gas` | light-client update — charged once per batch |
-| `Deliver_Gas_Total`, `Deliver_Gas_Per_Tx` | packet delivery on Cosmos |
-| `Deliver_Tx_Bytes` | on-wire size of the delivery transaction |
-| `T_Submit_s` | submitting on Ethereum |
-| `T_Wait_Finality_s` | waiting for Ethereum finality |
-| `T_Update_Client_s` | updating the light client |
-| `T_Fetch_Proof_s` | fetching the proof (`eth_getProof`) |
-| `T_Deliver_s` | delivering the packets on Cosmos |
-| `T_Other_s` | time the steps above do not cover |
-| `T_Total_s` | first submission to the vouchers being credited |
-| `Transfers_Per_Second` | `N_Users / T_Total_s` |
-| `Credited_Height` | Cosmos block that credited the batch |
+| `results/latency_by_step.csv` | one row per migration: time and gas per step |
+| `results/delivery_*.csv` | one row per delivery: gas, bytes, chunking, by batch size |
+| `results/ack_by_batch.csv` | one row per acknowledgement |
 
-`T_Other_s` is named for what it is — process start-up, how often the finality
-check polls, the gaps between steps. It is deliberately *not* folded into the
-finality wait, which is the number the paper quotes.
+`plot_data.py` reads all of them and writes:
 
-**Every step and the total are timed on the relay host's clock.** The Cosmos
-block header runs on a different clock — CometBFT takes it from the median of
-the previous commit's validator timestamps, so it lags the host by seconds
-(−6.4 s measured) — and is never one end of a subtraction here. Mixing the two
-turns that lag into negative leftover time. The whole batch is still credited
-in one Cosmos block, so that instant is exact — it is simply recorded rather
-than subtracted from a host timestamp.
-
-The runner stops if the measured steps sum to more than the total, rather than
-recording a negative leftover.
-
-`plot_data.py` draws three figures, each with 95 % confidence intervals and
-the repeat count printed on it:
-
-| Figure | Shows |
+| Output | Shows |
 |---|---|
-| `fig_latency_by_operation.pdf` | how long each step of a migration takes |
-| `fig_time_vs_transactions.pdf` | total time against how many transfers move at once |
-| `fig_gas_by_operation.pdf` | gas per transfer at each step, one transfer against ten |
+| `fig_time_by_step.pdf` | time each step takes, both key types |
+| `fig_time_by_batch.pdf` | total time against batch size |
+| `cost_by_batch.md` | gas per transfer on both legs, by batch size |
 
-It never averages across signing key types — the signing key changes what a
-Cosmos transaction costs, so a mixed mean would be a number from no real run.
-Pass `--key` to choose; the default is whichever has the most rows.
+Error bars are 95 % confidence intervals, and every figure and table row prints
+its repeat count. Counts differ between steps because waiting for finality and
+updating the client happen once per group.
 
-## Capacity
+**Timing uses one clock.** Every step and every total is measured on the relay
+host. The Cosmos block header runs on a different clock — CometBFT takes it from
+the median of the previous commit's validator timestamps, so it lags by seconds
+— and is never one end of a subtraction. `T_Other_s` holds whatever the measured
+steps do not cover: process start-up, polling granularity, gaps between steps.
 
-Three infrastructure limits bind before post-quantum signature size matters at
-all. Full measurements in [`CEILING-FINDINGS.md`](CEILING-FINDINGS.md).
+## Limits
 
-| Limit | Ceiling | Nature |
+| Limit | Set by | Ceiling |
 |---|---|---|
-| RPC `max_body_bytes` (1 MB default) | **124 packets/tx** | node config |
-| mempool `max_tx_bytes` (4 MB) | 675 packets/tx | protocol |
-| geth state pruning (`TriesInMemory` 128) | ~12-minute relay window | node config |
+| Delivery size | CometBFT `max_tx_bytes` 4 MB | ~675 transfers |
+| Delivery over stock RPC | CometBFT `max_body_bytes` 1 MB | 124 transfers |
+| **Acknowledgement size** | **geth `txMaxSize` 128 KB** | **~56 transfers** |
+| Proof availability | geth `TriesInMemory` 128 | ~12-minute window |
 
-**124 is a deployment limit, 675 is the protocol limit.** With
-`max_body_bytes` at its 1 MB default it is the binding one: `pqchaind tx
-broadcast` base64-encodes the transaction into a JSON-RPC body, and base64
-inflates by 4/3, so the usable raw transaction is ~750 KB — under a fifth of
-`max_tx_bytes`. Over-limit transactions are refused with HTTP 400 at the RPC,
-before CheckTx, so they consume nothing.
+**~56 is the one that binds.** An acknowledgement batch is whatever one
+delivery produced and cannot be split, so delivering more than ~56 transfers at
+once leaves them impossible to acknowledge. Deliveries above that size are
+recorded and skipped rather than attempted.
 
-The ceiling is bound by **transaction body size, not payload size or key
-type**. The per-packet slope is bit-identical (6,000.2 B) between signer key
-types because it is entirely MPT proof data; ML-DSA-65 and secp256k1 carry the
-same 124 packets, a 0.0 % capacity difference. The ceiling also moves between
-runs (699 → 675, −3.4 %) as the router's storage trie deepens, so any chunk
-size needs a real safety margin and is best re-measured per run.
+None of these depend on the signature algorithm. Full measurements in
+[LIMITS.md](LIMITS.md).
 
-The relay must run promptly after finality: geth serves `eth_getProof` only
-within ~128 blocks of head, and finality lags ~70 blocks, leaving a usable
-window of roughly 58 blocks.
+## Files
 
-## Scripts
-
-| Script | Role |
+| File | Role |
 |---|---|
-| `check_setup.py` | Preconditions, re-derived for this direction (see its docstring) |
-| `setup-user-pool.js` | Creates/funds N independent EVM users: ETH, self-minted `TestERC20`, allowance |
-| `submit-migrations.js` | Phase 1 — N concurrent `sendTransfer` calls, pre-assigned nonces |
-| `relay-recv-batch.js` | Phases 2–3 — measured finality wait, then batched forward relay |
-| `build-recv-msgs.js` | Builds the `MsgRecvPacket` array without broadcasting, for the ceiling search |
-| `find_recv_ceiling.py` | Bisects the per-transaction ceiling per signer key type |
-| `run_ceiling_4mb.py`, `bisect_confirm.py` | Ceiling confirmation at the `max_tx_bytes` wall |
-| `probe-ack-batching.js` | Phase 0 probe — decodes what proof-api builds for a multi-ack tx |
-| `bech32.js` | Minimal bech32, to mint one distinct Cosmos receiver per user |
-
-| `measure_data.py` | End-to-end runs; writes `results/latency_by_step.csv` |
-| `measure_delivery.py` | Delivery cost by batch size, sharing one finality wait |
-| `plot_data.py` | Draws the figures and writes the gas table |
-| `setup-signer-pool.py` | Cosmos accounts to sign delivery transactions, one per concurrent flow |
-
-## Findings
-
-- [`PHASE0-FINDINGS.md`](PHASE0-FINDINGS.md) — unknowns resolved at 10 accounts.
-- [`CEILING-FINDINGS.md`](CEILING-FINDINGS.md) — the measured per-transaction
-  ceiling, per signer key type, and the three limits that bind before
-  signature size does.
+| `check_setup.py` | Verifies preconditions before a run |
+| `measure_data.py` | Full migrations; writes `results/latency_by_step.csv` |
+| `measure_delivery.py` | Delivery cost by batch size, one shared finality wait |
+| `measure_ack.py` | The return leg, over deliveries already made |
+| `plot_data.py` | Figures and the cost table |
+| `setup-signer-pool.py` | Cosmos signing accounts, one per concurrent flow |
+| `setup-user-pool.js` | Ethereum accounts: ETH, `TestERC20`, allowance |
+| `submit-migrations.js` | Concurrent `sendTransfer` calls under pre-assigned nonces |
+| `relay-recv-batch.js` | Finality wait, client update, proof fetch, delivery |
+| `relay-ack-batch.js` | One acknowledgement batch back to Ethereum |
+| `build-recv-msgs.js` | Builds `MsgRecvPacket` without broadcasting |
+| `find_recv_ceiling.py` | Finds the delivery ceiling per signing key type |
+| `run_ceiling_4mb.py`, `bisect_confirm.py` | Ceiling confirmation at the 4 MB wall |
+| `probe-ack-batching.js` | Decodes what proof-api builds for a multi-ack request |
+| `bech32.js` | Minimal bech32, one distinct Cosmos receiver per user |

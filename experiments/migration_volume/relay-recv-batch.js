@@ -17,7 +17,7 @@
 //                                           list of messages)
 //
 // --no-update skips the client update, to test whether an ALREADY-held
-// consensus state covers a later batch (Phase 0 unknown 3).
+// consensus state covers a later batch.
 //
 // The message signer is resolved LIVE from the keyring (lib.js's
 // signerAddress), never from a pinned address: a Cosmos tx whose declared
@@ -28,7 +28,7 @@
 // that keyring key instead of RELAYER_KEY. This is the key-type axis: a
 // signature is charged once per transaction, so an ML-DSA-65 signer adds a
 // fixed ~5.2 KB / ~146k gas per tx that a larger batch splits down (see
-// CEILING-FINDINGS.md). The DESTINATION key type is not an axis — receivers
+// LIMITS.md). The DESTINATION key type is not an axis — receivers
 // appear in the payload as 20-byte bech32 addresses whatever key would
 // control them, and a fresh recipient holds no pubkey on chain at all.
 //

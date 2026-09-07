@@ -4,7 +4,7 @@ Ethereum -> Cosmos direction, per SIGNER key type.
 
 WHY THIS EXISTS
 ---------------
-Phase 0 fitted `bytes = 186 + 5,890 * n` from only n = 1, 3, 6 and projected
+An early fit of `bytes = 186 + 5,890 * n` from only n = 1, 3, 6 projected
 the CometBFT `max_tx_bytes` wall (4,194,304 B) at ~712 packets. That is an
 extrapolation two orders of magnitude past the data. This measures it.
 

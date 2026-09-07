@@ -68,7 +68,7 @@ DEFAULT_TRIALS = 3
 # validator is secp256k1, relayer is ML-DSA-65 (devnet/scripts/init-chain.sh).
 DEFAULT_SIGNERS = ["validator", "relayer"]
 
-# Measured per-packet cost of a receive transaction, from CEILING-FINDINGS.md.
+# Measured per-packet cost of a receive transaction, from LIMITS.md.
 # Used only for the pre-flight capacity check below; no reported number
 # depends on it.
 BYTES_PER_PACKET = 6_300      # slope, rounded up (6,000-6,212 observed)
@@ -145,7 +145,7 @@ def node_limits(cfg):
 
     `tx broadcast` base64-encodes the transaction into a JSON-RPC body, so the
     RPC's max_body_bytes caps the raw transaction at 3/4 of its value. Which of
-    the two walls binds depends on node configuration; CEILING-FINDINGS.md
+    the two walls binds depends on node configuration; LIMITS.md
     measured 124 packets when max_body_bytes was at its 1 MB default.
     """
     toml = Path(cfg["CHAIN_HOME"]) / "config" / "config.toml"
@@ -186,7 +186,7 @@ def preflight_capacity(cfg, max_n):
         raise SystemExit(
             f"N={max_n} projects to {projected:,} B, over {CEILING_SAFETY:.0%} of the "
             f"{binding} wall ({wall:,} B, ~{ceiling} packets). Chunk the receive or "
-            f"lower --n; see experiments/migration_volume/CEILING-FINDINGS.md.")
+            f"lower --n; see experiments/migration_volume/LIMITS.md.")
     print(f"  OK: N={max_n} fits with {ceiling - max_n} packet(s) of headroom\n")
     return ceiling
 
@@ -512,7 +512,7 @@ def main():
         # Running one arm to completion and then the other confounds key type
         # with anything that drifts over a long run — most concretely the
         # router's storage trie, which deepens as packets accumulate and moves
-        # per-packet proof size (CEILING-FINDINGS.md §5).
+        # per-packet proof size (LIMITS.md).
         for n in n_users:
             for signer_key in signers:
                 for wave in range(waves):
