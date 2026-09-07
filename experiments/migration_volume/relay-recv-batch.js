@@ -331,7 +331,7 @@ function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log, jsonByt
       jsonrpc: "2.0", method: "eth_getProof",
       params: [env.ICS26_ROUTER, keys, "0x" + useBlock.toString(16)], id: 1,
     }), `http://${rpc}`,
-  ], { maxBuffer: 256e6 })).result;
+  ], { maxBuffer: 256e6 }));
   const proofSeconds = (Date.now() - t_proof0) / 1000;
   if (proofResp && proofResp.error) {
     // geth runs --gcmode=full with TriesInMemory=128, so state older than
