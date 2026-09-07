@@ -43,6 +43,14 @@
 //                                 [--no-update] [--gas=N] [--label=name]
 //                                 [--signer-key=NAME]
 //                                 [--finality-timeout=SECONDS]  (default 3600)
+//                                 [--chunk-margin=FRACTION]     (default 0.90)
+//                                 [--phase=all|prepare|deliver]
+//
+// A batch too large for one transaction is split. The chunk size is derived
+// from the node's OWN max_body_bytes/max_tx_bytes and from a real encoded
+// transaction, not from a hard-coded packet count: per-packet cost is mostly
+// Merkle-Patricia proof data and grows as the router's storage trie deepens,
+// so a fixed count goes stale. Gas and bytes are summed across the chunks.
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
@@ -57,6 +65,82 @@ const flag = (name) => process.argv.includes(`--${name}`);
 const b64 = (hex) => Buffer.from(hex.replace(/^0x/, ""), "hex").toString("base64");
 const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { maxBuffer: 64e6 }));
 
+// --- how many MsgRecvPacket fit in one transaction -------------------------
+// Read from the node's own config rather than assumed: `pqchaind tx broadcast`
+// base64-encodes the tx into a JSON-RPC body, so the RPC's max_body_bytes caps
+// the raw tx at 3/4 of its value, and the mempool's max_tx_bytes caps it
+// outright. Whichever is smaller binds. Both are node configuration and both
+// move between deployments.
+function txSizeLimit(env) {
+  const toml = path.join(env.CHAIN_HOME, "config", "config.toml");
+  let maxBody = null, maxTx = null;
+  for (const raw of fs.readFileSync(toml, "utf8").split("\n")) {
+    const line = raw.split("#")[0].trim();
+    let m;
+    if ((m = line.match(/^max_body_bytes\s*=\s*(\d+)/))) maxBody = parseInt(m[1], 10);
+    else if ((m = line.match(/^max_tx_bytes\s*=\s*(\d+)/))) maxTx = parseInt(m[1], 10);
+  }
+  if (!maxBody || !maxTx) throw new Error(`could not read max_body_bytes/max_tx_bytes from ${toml}`);
+  const rpcRaw = Math.floor(maxBody * 3 / 4);
+  return rpcRaw < maxTx
+    ? { limit: rpcRaw, binding: `RPC max_body_bytes ${maxBody}` }
+    : { limit: maxTx, binding: `mempool max_tx_bytes ${maxTx}` };
+}
+
+// Encoded size of a signed tx carrying `msgs`, measured rather than estimated.
+// The per-packet cost is mostly Merkle-Patricia proof data and moves as the
+// router's storage trie deepens, so a hard-coded packet count goes stale.
+function encodedSize(env, msgs, signerKeyName, gas) {
+  const tmp = path.join(env.DEVNET_DIR, "migration-volume", `.sizeprobe-${process.pid}.json`);
+  fs.writeFileSync(tmp, JSON.stringify({
+    body: { messages: msgs, memo: "", timeout_height: "0",
+            extension_options: [], non_critical_extension_options: [] },
+    auth_info: { signer_infos: [],
+                 fee: { amount: [{ denom: "stake", amount: "6000" }],
+                        gas_limit: String(gas), payer: "", granter: "" } },
+    signatures: [],
+  }));
+  try {
+    const signed = execFileSync(env.PQCHAIND_BIN,
+      ["tx", "sign", tmp, "--from", signerKeyName, "--chain-id", env.CHAIN_ID,
+        "--keyring-backend", "test", "--home", env.CHAIN_HOME, "--node", env.CHAIN_NODE,
+        "--output-document", "/dev/stdout"], { encoding: "utf8", maxBuffer: 256e6 });
+    const sf = tmp.replace(".json", ".signed.json");
+    fs.writeFileSync(sf, signed);
+    const enc = execFileSync(env.PQCHAIND_BIN, ["tx", "encode", sf, "--home", env.CHAIN_HOME],
+      { encoding: "utf8", maxBuffer: 256e6 }).trim();
+    fs.unlinkSync(sf);
+    return Buffer.from(enc, "base64").length;
+  } finally {
+    if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+  }
+}
+
+// Largest chunk that fits under `limit` with a margin, found by measuring one
+// full-size candidate and scaling. Verified by re-measuring before returning,
+// so a non-linear surprise shrinks the chunk instead of failing a broadcast.
+function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log) {
+  if (!msgs.length) return 0;
+  const full = encodedSize(env, msgs, signerKeyName, gasFor(msgs.length));
+  const target = Math.floor(limit * margin);
+  if (full <= target) {
+    log(`  one transaction fits: ${full.toLocaleString()} B of ${target.toLocaleString()} B usable`);
+    return msgs.length;
+  }
+  const perMsg = full / msgs.length;
+  let n = Math.max(1, Math.floor(target / perMsg));
+  for (let i = 0; i < 6 && n > 1; i++) {
+    const got = encodedSize(env, msgs.slice(0, n), signerKeyName, gasFor(n));
+    if (got <= target) {
+      log(`  chunk size ${n}: ${got.toLocaleString()} B of ${target.toLocaleString()} B usable ` +
+        `(~${Math.round(got / n).toLocaleString()} B per packet)`);
+      return n;
+    }
+    n = Math.max(1, Math.floor(n * target / got) - 1);
+  }
+  return Math.max(1, n);
+}
+
 (async () => {
   const sendFile = process.argv[2];
   if (!sendFile || !fs.existsSync(sendFile)) {
@@ -68,6 +152,16 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
   const label = arg("label", `n${count}`);
   const doUpdate = !flag("no-update");
   const signerKey = arg("signer-key", null) || undefined;
+  // Waiting for finality and updating the light client are SHARED work: every
+  // flow relaying from the same Ethereum block wants the same consensus state,
+  // and two flows updating the client at once is a race for no benefit.
+  //   prepare  wait for finality, update the client, stop
+  //   deliver  assume a usable consensus state exists, build and deliver
+  //   all      both, in one process (the default; what a lone flow does)
+  const phase = arg("phase", "all");
+  if (!["all", "prepare", "deliver"].includes(phase)) {
+    throw new Error(`--phase must be all, prepare or deliver (got ${phase})`);
+  }
 
   const env = loadEnv();
   config.require_(env, "COSMOS_CLIENT_ID", "ICS26_ROUTER", "IBC_COMMITMENT_SLOT",
@@ -106,7 +200,7 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
   const finalityTimeout = parseInt(arg("finality-timeout", "3600"), 10) * 1000;
   const t_finality0 = Date.now();
   let hdr, finalityPolls = 0, lastExec = null;
-  while (Date.now() - t_finality0 < finalityTimeout) {
+  while (phase !== "deliver" && Date.now() - t_finality0 < finalityTimeout) {
     const fin = get(`${beacon}/eth/v1/beacon/light_client/finality_update`).data;
     finalityPolls++;
     const execNum = Number(fin.finalized_header.execution.block_number);
@@ -119,7 +213,18 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
     }
     execFileSync("sleep", ["12"]);
   }
-  const finalityWaitSeconds = (Date.now() - t_finality0) / 1000;
+  let finalityWaitSeconds = (Date.now() - t_finality0) / 1000;
+  if (phase === "deliver") {
+    // The shared prepare step already waited; take the finalized header as it
+    // stands and record no wait against this flow, so a wait paid once is not
+    // counted once per flow.
+    finalityWaitSeconds = 0;
+    hdr = get(`${beacon}/eth/v1/beacon/light_client/finality_update`).data.finalized_header;
+    if (Number(hdr.execution.block_number) < maxSendBlock) {
+      throw new Error(`--phase=deliver but finality (${hdr.execution.block_number}) does not ` +
+        `cover send block ${maxSendBlock}; run --phase=prepare first`);
+    }
+  }
   if (!hdr) {
     throw new Error(`finality did not reach block ${maxSendBlock} within ` +
       `${(finalityTimeout / 60000).toFixed(0)} min (last seen ${lastExec}); ` +
@@ -138,7 +243,7 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
   const heights = () => cli(["query", "ibc", "client", "consensus-states", env.COSMOS_CLIENT_ID])
     .consensus_states.map((e) => Number(e.height.revision_height));
 
-  if (doUpdate) {
+  if (doUpdate && phase !== "deliver") {
     const [updCmd, ...updArgs] = env.UPDATE_CLIENT_CMD.split(/\s+/);
     const updSigner = signerKey ? [`--signer-key=${signerKey}`] : [];
     const out = execFileSync(updCmd, [...updArgs, env.COSMOS_CLIENT_ID, ...updSigner], { encoding: "utf8" });
@@ -150,10 +255,13 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
       }
     }
   } else {
-    console.log("  [update] skipped (--no-update): testing coverage by an existing consensus state");
+    console.log(`  [update] skipped (${phase === "deliver" ? "--phase=deliver" : "--no-update"}): ` +
+      `relying on a consensus state already held`);
   }
   const updateSeconds = (Date.now() - t_update0) / 1000;
 
+  const outDir_ = path.join(env.DEVNET_DIR, "migration-volume");
+  fs.mkdirSync(outDir_, { recursive: true });
   const have = heights();
   const usable = have.filter((s) => s >= proofSlot);
   if (!usable.length) {
@@ -164,6 +272,22 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
   // state may already be pruned and eth_getProof then returns nothing. Same
   // reasoning as build-recv-msgs.js.
   const useSlot = Math.max(...usable);
+  if (phase === "prepare") {
+    // Shared work is done. Record what it cost so the flows that follow can be
+    // charged for it once between them rather than once each.
+    const prep = {
+      label, phase, maxSendBlock, proofSlot, useSlot,
+      finalityWaitSeconds, finalityPolls,
+      updateSubmitted: updateDid, updateGas, updateSeconds,
+      consensusStatesHeld: have.length,
+    };
+    const prepFile = path.join(outDir_, `prepare-${label}.json`);
+    fs.writeFileSync(prepFile, JSON.stringify(prep, null, 2));
+    console.log(`\n  PREPARED: finality ${finalityWaitSeconds.toFixed(1)}s, ` +
+      `update ${updateDid ? updateGas + " gas" : "not needed"}, usable slot ${useSlot}`);
+    console.log(`  wrote ${prepFile}`);
+    return;
+  }
   const blk = get(`${beacon}/eth/v2/beacon/blocks/${useSlot}`);
   const useBlock = Number(blk.data.message.body.execution_payload.block_number);
   console.log(`  proving at slot ${useSlot} (execution block ${useBlock}); client holds ${have.length} state(s)`);
@@ -224,42 +348,76 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
     };
   });
 
-  const outDir = path.join(env.DEVNET_DIR, "migration-volume");
-  fs.mkdirSync(outDir, { recursive: true });
+  const outDir = outDir_;
   const msgFile = path.join(outDir, `msg-recv-${label}.json`);
   fs.writeFileSync(msgFile, JSON.stringify(msgs));
   const msgFileBytes = fs.statSync(msgFile).size;
   console.log(`  built ${count} MsgRecvPacket (${msgFileBytes}B of JSON) -> ${path.basename(msgFile)}`);
 
-  const gas = arg("gas", String(400_000 + 900_000 * count));
+  // --- split into as few transactions as the node's limits allow -----------
+  const margin = parseFloat(arg("chunk-margin", "0.90"));
+  const { limit, binding } = txSizeLimit(env);
+  const gasFor = (k) => parseInt(arg("gas", String(400_000 + 900_000 * k)), 10);
+  console.log(`  size limit: ${limit.toLocaleString()} B usable (${binding}), margin ${margin}`);
+  const perChunk = chunkSize(env, msgs, signerKey || env.RELAYER_KEY, gasFor,
+    limit, margin, (m) => console.log(m));
+  const chunks = [];
+  for (let i = 0; i < msgs.length; i += perChunk) chunks.push(msgs.slice(i, i + perChunk));
+  if (chunks.length > 1) {
+    console.log(`  ${count} packet(s) -> ${chunks.length} transaction(s) of <= ${perChunk}`);
+  }
+
   const [txCmd, ...txArgs] = env.SENDTX_CMD.split(/\s+/);
   const t_tx0 = Date.now();
-  let out, failed = false;
-  try {
-    out = execFileSync(txCmd, [...txArgs, msgFile, signerKey || env.RELAYER_KEY, gas],
-      { encoding: "utf8", maxBuffer: 64e6 });
-  } catch (e) {
-    failed = true;
-    out = (e.stdout || "") + (e.stderr || "");
+  const parts = [];
+  let failed = false, out = "";
+  for (let ci = 0; ci < chunks.length && !failed; ci++) {
+    const chunkFile = path.join(outDir,
+      chunks.length > 1 ? `msg-recv-${label}-c${ci}.json` : `msg-recv-${label}.json`);
+    fs.writeFileSync(chunkFile, JSON.stringify(chunks[ci]));
+    const gas = String(gasFor(chunks[ci].length));
+    let cOut;
+    try {
+      cOut = execFileSync(txCmd, [...txArgs, chunkFile, signerKey || env.RELAYER_KEY, gas],
+        { encoding: "utf8", maxBuffer: 64e6 });
+    } catch (e) {
+      failed = true;
+      cOut = (e.stdout || "") + (e.stderr || "");
+    }
+    out += cOut;
+    let r = null;
+    for (const line of cOut.split("\n")) {
+      const t = line.trim();
+      if (t.startsWith("{") && t.includes("gas_used")) { try { r = JSON.parse(t); } catch { /* skip */ } }
+    }
+    if (!r || r.code !== 0) failed = true;
+    parts.push({
+      chunk: ci, packets: chunks[ci].length,
+      txhash: r && r.txhash,
+      gasUsed: r && parseInt(r.gas_used, 10),
+      txBytes: r && r.tx_bytes,
+      height: r && parseInt(r.height, 10),
+      code: r ? r.code : null,
+    });
+    process.stdout.write(cOut.split("\n").filter(Boolean)
+      .map((l) => `  [recv${chunks.length > 1 ? " c" + ci : ""}] ${l}`).join("\n") + "\n");
   }
   const txSeconds = (Date.now() - t_tx0) / 1000;
   const creditedWallTs = Date.now() / 1000;
-  process.stdout.write(out.split("\n").filter(Boolean).map((l) => `  [recv] ${l}`).join("\n") + "\n");
 
-  let result = null;
-  for (const line of out.split("\n")) {
-    const t = line.trim();
-    if (t.startsWith("{") && t.includes("gas_used")) { try { result = JSON.parse(t); } catch { /* skip */ } }
-  }
-  const ok = !failed && result && result.code === 0;
+  const ok = !failed && parts.length === chunks.length && parts.every((p) => p.code === 0);
+  // Gas and bytes are summed across the transactions the batch was split into;
+  // the batch is credited when its LAST transaction lands.
+  const gasUsedTotal = parts.reduce((a, p) => a + (p.gasUsed || 0), 0);
+  const txBytesTotal = parts.reduce((a, p) => a + (p.txBytes || 0), 0);
+  const lastHeight = parts.length ? parts[parts.length - 1].height : null;
 
-  // The whole cohort is credited in ONE Cosmos block, so the credit time is
-  // that block's timestamp — an exact instant, not this process's wall clock
-  // after a polling subprocess returned. Only the wall clock is kept as a
-  // fallback, and it is recorded separately rather than silently substituted.
+  // The batch is credited in the block carrying its last delivery transaction,
+  // so the credit time is that block's timestamp — an exact instant, not this
+  // process's wall clock after a polling subprocess returned.
   let creditedTs = null, creditedHeight = null;
-  if (ok && result.height) {
-    creditedHeight = parseInt(result.height, 10);
+  if (ok && lastHeight) {
+    creditedHeight = lastHeight;
     const rpc = env.CHAIN_NODE.replace(/^tcp:/, "http:");
     const blk = get(`${rpc}/block?height=${creditedHeight}`);
     creditedTs = new Date(blk.result.block.header.time).getTime() / 1000;
@@ -278,14 +436,14 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
     proofSeconds, accountProofBytes,
     storageProofBytesTotal: storageProofBytes.reduce((a, b) => a + b, 0),
     msgJsonBytes: msgFileBytes,
-    gasLimit: parseInt(gas, 10),
+    sizeLimit: limit, sizeLimitBinding: binding,
+    chunks: chunks.length, chunkSize: perChunk, parts,
     txSeconds, creditedTs, creditedHeight, creditedWallTs,
-    txhash: result && result.txhash,
-    gasUsed: result && parseInt(result.gas_used, 10),
-    gasWanted: result && parseInt(result.gas_wanted, 10),
-    txBytes: result && result.tx_bytes,
-    code: result && result.code,
-    rawLog: result && result.raw_log ? String(result.raw_log).slice(0, 400) : undefined,
+    txhash: parts.length ? parts[parts.length - 1].txhash : null,
+    gasUsed: gasUsedTotal,
+    txBytes: txBytesTotal,
+    code: parts.length ? parts[parts.length - 1].code : null,
+    rawLog: failed ? out.split("\n").filter(Boolean).slice(-6).join(" | ").slice(0, 400) : undefined,
     consensusStatesHeld: have.length,
   };
 
@@ -297,7 +455,7 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
   // measurement, so fail here instead. The summary is already on disk at this
   // point, so a failure leaves the evidence behind rather than swallowing it.
   if (ok) {
-    for (const k of ["gasUsed", "gasWanted", "txBytes"]) {
+    for (const k of ["gasUsed", "txBytes"]) {
       if (!Number.isFinite(summary[k]) || summary[k] <= 0) {
         throw new Error(`tx succeeded but ${k} did not parse (${summary[k]}) — refusing to record a batch with unparseable gas/size`);
       }
@@ -311,6 +469,7 @@ const get = (url) => JSON.parse(execFileSync("curl", ["-s", "-m", "30", url], { 
   }
   console.log(`\n  RESULT ${summary.ok ? "OK" : "FAILED"}: ` +
     `gas_used=${summary.gasUsed} tx_bytes=${summary.txBytes} ` +
+    `over ${chunks.length} transaction(s) ` +
     `update_gas=${updateGas} (${updateDid ? "1 update" : "no update"}) ` +
     `signer=${summary.signerKey}/${signerAlgorithm}`);
   console.log(`  wrote ${sumFile}`);

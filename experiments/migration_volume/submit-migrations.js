@@ -24,8 +24,12 @@
 // name. Without it the name carries a timestamp, and a caller picking "the
 // newest send-*.json" races any file left behind by an earlier trial.
 //
+// --pool-offset=K takes accounts K..K+count from the pool instead of the
+// first `count`, so flows running at the same time never share an account —
+// two in-flight transactions from one account race for the same nonce.
+//
 // Usage: node submit-migrations.js [count] [amount-each] [--per-user=K]
-//                                  [--label=NAME]
+//                                  [--label=NAME] [--pool-offset=K]
 // Writes $DEVNET_DIR/migration-volume/send-<label>.json
 const fs = require("fs");
 const path = require("path");
@@ -47,6 +51,10 @@ const receiverFor = (evmAddress) =>
   const perUser = perUserArg ? parseInt(perUserArg.split("=")[1], 10) : 1;
   const labelArg = process.argv.find((a) => a.startsWith("--label="));
   const label = labelArg ? labelArg.split("=").slice(1).join("=") : null;
+  // Concurrent flows must not share EVM accounts: two in-flight transactions
+  // from one account race for the same nonce. Each flow takes its own slice.
+  const offArg = process.argv.find((a) => a.startsWith("--pool-offset="));
+  const poolOffset = offArg ? parseInt(offArg.split("=")[1], 10) : 0;
   const env = loadEnv();
   config.require_(env, "TEST_ERC20", "ICS20_TRANSFER", "ICS26_ROUTER", "ETH_CLIENT_ID");
   const { provider, router } = evm(env);
@@ -54,8 +62,11 @@ const receiverFor = (evmAddress) =>
   const poolFile = path.join(env.DEVNET_DIR, "evm-user-pool.json");
   if (!fs.existsSync(poolFile)) throw new Error(`no user pool: run 'node setup-user-pool.js ${count}' first`);
   const pool = JSON.parse(fs.readFileSync(poolFile, "utf8"));
-  if (pool.length < count) throw new Error(`user pool has ${pool.length} accounts, need ${count}`);
-  const users = pool.slice(0, count);
+  if (pool.length < poolOffset + count) {
+    throw new Error(`user pool has ${pool.length} accounts, need ${poolOffset + count} ` +
+      `(offset ${poolOffset} + count ${count})`);
+  }
+  const users = pool.slice(poolOffset, poolOffset + count);
 
   const outDir = path.join(env.DEVNET_DIR, OUT_SUBDIR);
   fs.mkdirSync(outDir, { recursive: true });
@@ -165,7 +176,7 @@ const receiverFor = (evmAddress) =>
 
   const outFile = path.join(outDir, outName);
   fs.writeFileSync(outFile, JSON.stringify({
-    runId, label, count, perUser, amountEach: amount.toString(),
+    runId, label, count, perUser, poolOffset, amountEach: amount.toString(),
     sourceClient: env.ETH_CLIENT_ID, destClient: env.COSMOS_CLIENT_ID,
     elapsedSeconds: elapsed,
     firstSubmittedTs: Math.min(...results.filter((r) => r.submitted_ts).map((r) => r.submitted_ts)),

@@ -6,7 +6,7 @@
     fig_latency_by_operation.pdf   how long each step of a migration takes
     fig_time_vs_transactions.pdf   total time against how many transfers move
                                    at once
-    fig_gas_by_operation.pdf       gas each step costs, 1 transfer vs 10
+    gas_1_vs_10.md                 table: gas each step costs, 1 transfer vs 10
 
 Error bars are 95% confidence intervals over the repeats in the CSV. Each
 bar's repeat count is printed under it, so a thin interval from few repeats
@@ -76,6 +76,21 @@ def save(fig, name):
 
 # --- 1: how long each step takes --------------------------------------------
 
+# Steps that happen once for a whole wave of migrations running together, not
+# once per migration. Their repeats are waves, not rows: counting the rows
+# would treat one measurement copied across a wave as that many independent
+# samples and report an interval far tighter than the data supports.
+SHARED_STEPS = {"T_Wait_Finality_s", "T_Update_Client_s"}
+
+
+def step_samples(sub, col):
+    """The independent samples of `col`: one per wave for a shared step, one
+    per migration for everything else."""
+    if col in SHARED_STEPS and "Wave" in sub.columns:
+        return sub.groupby(["Wave", "Signer_Key_Type", "N_Users"])[col].first()
+    return sub[col]
+
+
 def latency_by_operation(df, out, n_users=1):
     sub = df[df["N_Users"] == n_users]
     if sub.empty:
@@ -83,12 +98,13 @@ def latency_by_operation(df, out, n_users=1):
         return
     names, means, cis, colors, counts = [], [], [], [], []
     for col, label, color in OPERATIONS:
-        m, ci = mean_ci(sub[col])
+        samples = step_samples(sub, col)
+        m, ci = mean_ci(samples)
         names.append(label)
         means.append(m)
         cis.append(ci)
         colors.append(color)
-        counts.append(len(sub))
+        counts.append(len(samples))
 
     fig, ax = plt.subplots(figsize=(7, 4.4))
     x = np.arange(len(names))
@@ -145,45 +161,68 @@ def time_vs_transactions(df, out):
 
 # --- 3: gas each step costs, one transfer against ten -----------------------
 
-def gas_by_operation(df, out, sizes=(1, 10)):
-    sizes = [n for n in sizes if (df["N_Users"] == n).any()]
-    if not sizes:
-        print(f"skipping {out}: no rows at N_Users in {sizes}")
-        return
-    fig, ax = plt.subplots(figsize=(7.5, 4.4))
-    x = np.arange(len(GAS_OPERATIONS))
-    width = 0.8 / len(sizes)
-    for i, n in enumerate(sizes):
-        sub = df[df["N_Users"] == n]
-        off = (i - (len(sizes) - 1) / 2) * width
-        means, cis = zip(*(mean_ci(sub[c]) for c, _, _ in GAS_OPERATIONS))
-        ax.bar(x + off, np.array(means) / 1e3, width * 0.9,
-               yerr=np.array(cis) / 1e3, color=SIZE_COLORS[i % len(SIZE_COLORS)],
-               capsize=3, ecolor="#52514e", error_kw={"elinewidth": 1.2},
-               label=f"{n} transfer{'s' if n != 1 else ''} at once (n={len(sub)})",
-               zorder=3)
-        for xi, m in zip(x + off, means):
-            ax.annotate(f"{m / 1e3:,.0f}k", (xi, m / 1e3), textcoords="offset points",
-                        xytext=(0, 4), ha="center", fontsize=8, color="#0b0b0b")
-    ax.set_title(f"Gas per transfer at each step, one transfer against ten\n{KEY_NOTE}")
-    ax.set_ylabel("Gas per transfer (thousands)")
-    ax.set_xticks(x, [label for _, label, _ in GAS_OPERATIONS])
-    ax.legend(frameon=False)
-    ax.margins(y=0.2)
-    save(fig, out)
+def gas_table(df, out, sizes=(1, 10)):
+    """A table, not a chart. Three bars per group with one axis carries less
+    than the numbers do, and the interesting quantity here is the ratio between
+    two columns rather than the shape of a series.
 
-    # The question the figure exists to answer, stated in numbers.
-    if len(sizes) >= 2:
-        a, b = sizes[0], sizes[1]
-        sa, sb = df[df["N_Users"] == a], df[df["N_Users"] == b]
-        print(f"\ngas per transfer, {a} at once vs {b} at once")
-        for col, name, _ in GAS_OPERATIONS:
-            pa, pb = sa[col].mean(), sb[col].mean()
-            nm = name.replace("\n", " ")
-            print(f"  {nm:22} {pa:>10,.0f} -> {pb:>10,.0f}  ({(pb - pa) / pa * 100:+6.1f}%)")
-        ta = sum(sa[c].mean() for c, _, _ in GAS_OPERATIONS)
-        tb = sum(sb[c].mean() for c, _, _ in GAS_OPERATIONS)
-        print(f"  {'TOTAL':22} {ta:>10,.0f} -> {tb:>10,.0f}  ({(tb - ta) / ta * 100:+6.1f}%)")
+    Note what this does and does not say. Batch size is how many MIGRATIONS
+    move together, not how busy the chain is: a single migration still shares
+    its blocks with whatever other traffic is running. What changes between the
+    columns is only how many transfers split the costs that are charged once
+    per transaction.
+    """
+    sizes = [n for n in sizes if (df["N_Users"] == n).any()]
+    if len(sizes) < 2:
+        print(f"skipping {out}: need rows at two batch sizes, have {sizes}")
+        return
+    a, b = sizes[0], sizes[1]
+    sa, sb = df[df["N_Users"] == a], df[df["N_Users"] == b]
+
+    rows = []
+    for col, name, _ in GAS_OPERATIONS:
+        ma, ca = mean_ci(sa[col])
+        mb, cb = mean_ci(sb[col])
+        rows.append((name.replace("\n", " "), ma, ca, mb, cb,
+                     (mb - ma) / ma * 100 if ma else float("nan")))
+    ta = sum(r[1] for r in rows)
+    tb = sum(r[3] for r in rows)
+    rows.append(("Total per transfer", ta, float("nan"), tb, float("nan"),
+                 (tb - ta) / ta * 100 if ta else float("nan")))
+
+    def cell(m, ci):
+        return f"{m:,.0f}" + ("" if ci != ci else f" ± {ci:,.0f}")
+
+    lines = [
+        f"# Gas per transfer: {a} transfer at once against {b}",
+        "",
+        f"Signed with {KEY_NOTE.replace('signed with ', '')}. "
+        f"n={len(sa)} and n={len(sb)} repeats; ± is a 95% confidence interval.",
+        "",
+        f"| Step | {a} at once | {b} at once | Change |",
+        "|---|---:|---:|---:|",
+    ]
+    for name, ma, ca, mb, cb, pct in rows:
+        bold = "**" if name.startswith("Total") else ""
+        lines.append(f"| {bold}{name}{bold} | {bold}{cell(ma, ca)}{bold} | "
+                     f"{bold}{cell(mb, cb)}{bold} | {bold}{pct:+.1f}%{bold} |")
+    lines += [
+        "",
+        f"Submitting on Ethereum does not change: each user sends their own",
+        f"transaction either way. The light-client update is charged once per",
+        f"batch, so {b} transfers split one bill. Delivery carries a fixed cost",
+        f"per Cosmos transaction on top of a per-packet cost, and that fixed part",
+        f"is split the same way.",
+        "",
+        f"Batch size here is how many migrations move together, not how busy the",
+        f"chain is — a single migration still shares its blocks with other traffic.",
+        "",
+    ]
+    text = "\n".join(lines)
+    with open(out, "w") as f:
+        f.write(text)
+    print(f"wrote {out}\n")
+    print(text)
 
 
 def main():
@@ -222,7 +261,7 @@ def main():
 
     latency_by_operation(df, "fig_latency_by_operation.pdf", args.latency_at)
     time_vs_transactions(df, "fig_time_vs_transactions.pdf")
-    gas_by_operation(df, "fig_gas_by_operation.pdf")
+    gas_table(df, "gas_1_vs_10.md")
 
 
 if __name__ == "__main__":

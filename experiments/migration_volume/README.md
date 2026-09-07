@@ -74,14 +74,50 @@ into their output filenames and into the JSON itself. Nothing is selected by
 timestamp, so a file left over from an earlier trial can never be read as this
 one's result.
 
-Individual phases can be run by hand:
+### Running migrations at the same time
+
+A single migration is mostly spent waiting for Ethereum finality, so repeats
+run one after another take about ten minutes each. `--concurrency=K` runs K of
+them together instead:
+
+```bash
+python3 experiments/migration_volume/setup-signer-pool.py --size 10 --key-type secp256k1
+python3 experiments/migration_volume/setup-signer-pool.py --size 10 --key-type mldsa65
+python3 measure_data.py --trials=100 --concurrency=10
+```
+
+Waiting for finality and updating the light client happen **once per wave** and
+are shared — that is what a real relayer does, and charging every migration for
+a wait that happened once would both inflate its total and turn one measurement
+into K identical rows. Submitting, proving and delivering happen per migration
+and run at the same time, so those numbers include contention.
+
+Each flow needs its own signing account (two in-flight Cosmos transactions from
+one account race for the same sequence number) and its own slice of the EVM
+account pool (same problem with nonces). `Wave`, `Flow` and `Concurrency`
+columns record the arrangement, and the plotter counts repeats of a shared step
+per wave rather than per row.
+
+### Individual steps
+
+Individual steps can be run by hand:
 
 ```bash
 node setup-user-pool.js 100                     # fund 100 EVM users
 node submit-migrations.js 100 2000 --label=x    # phase 1
 node relay-recv-batch.js "$DEVNET_DIR/migration-volume/send-x.json" \
-     --count=100 --label=x --signer-key=relayer # phases 2-3
+     --count=100 --label=x --signer-key=relayer # steps 2-3
 ```
+
+`relay-recv-batch.js --phase=prepare` does only the shared work (wait for
+finality, update the client); `--phase=deliver` does only the per-migration
+work. `--phase=all` is the default.
+
+A batch too large for one transaction is **split automatically**. The chunk
+size comes from the node's own `max_body_bytes`/`max_tx_bytes` and from
+measuring a real encoded transaction — not from a fixed packet count, because
+per-packet cost is mostly proof data and grows as the router's storage trie
+deepens. Gas and bytes are summed across the chunks.
 
 ## Outputs
 
