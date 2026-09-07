@@ -419,9 +419,11 @@ def run_wave(cfg, out_dir, n, trials, signer_key, amount, wave, concurrency,
     def deliver(i):
         label = labels[i]
         key = signer_pool_key(cfg, key_type, i, signer_key)
+        # Pin every flow to the state prepare selected, so their proofs are
+        # against identical chain state and their costs are comparable.
         run(["node", str(EXP / "relay-recv-batch.js"), str(out_dir / f"send-{label}.json"),
              f"--count={n}", f"--label={label}", f"--signer-key={key}",
-             "--phase=deliver"], f"{label}/deliver")
+             "--phase=deliver", f"--use-slot={shared['useSlot']}"], f"{label}/deliver")
 
     with ThreadPoolExecutor(max_workers=concurrency) as ex:
         list(ex.map(deliver, range(len(labels))))

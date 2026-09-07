@@ -44,7 +44,7 @@
 //                                 [--signer-key=NAME]
 //                                 [--finality-timeout=SECONDS]  (default 3600)
 //                                 [--chunk-margin=FRACTION]     (default 0.90)
-//                                 [--phase=all|prepare|deliver]
+//                                 [--phase=all|prepare|deliver] [--use-slot=N]
 //
 // A batch too large for one transaction is split. The chunk size is derived
 // from the node's OWN max_body_bytes/max_tx_bytes and from a real encoded
@@ -100,29 +100,39 @@ function encodedSize(env, msgs, signerKeyName, gas) {
                         gas_limit: String(gas), payer: "", granter: "" } },
     signatures: [],
   }));
+  // --output-document must be a REAL FILE, not /dev/stdout: this runs as a
+  // child process with a piped stdout, where opening /dev/stdout fails with
+  // "no such device or address".
+  const sf = tmp.replace(".json", ".signed.json");
   try {
-    const signed = execFileSync(env.PQCHAIND_BIN,
+    execFileSync(env.PQCHAIND_BIN,
       ["tx", "sign", tmp, "--from", signerKeyName, "--chain-id", env.CHAIN_ID,
         "--keyring-backend", "test", "--home", env.CHAIN_HOME, "--node", env.CHAIN_NODE,
-        "--output-document", "/dev/stdout"], { encoding: "utf8", maxBuffer: 256e6 });
-    const sf = tmp.replace(".json", ".signed.json");
-    fs.writeFileSync(sf, signed);
+        "--output-document", sf], { encoding: "utf8", maxBuffer: 256e6 });
     const enc = execFileSync(env.PQCHAIND_BIN, ["tx", "encode", sf, "--home", env.CHAIN_HOME],
       { encoding: "utf8", maxBuffer: 256e6 }).trim();
-    fs.unlinkSync(sf);
     return Buffer.from(enc, "base64").length;
   } finally {
-    if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+    for (const f of [tmp, sf]) if (fs.existsSync(f)) fs.unlinkSync(f);
   }
 }
 
 // Largest chunk that fits under `limit` with a margin, found by measuring one
 // full-size candidate and scaling. Verified by re-measuring before returning,
 // so a non-linear surprise shrinks the chunk instead of failing a broadcast.
-function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log) {
+function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log, jsonBytes) {
   if (!msgs.length) return 0;
-  const full = encodedSize(env, msgs, signerKeyName, gasFor(msgs.length));
+  // Signing is not free — ML-DSA-65 especially — so skip the probe when the
+  // batch cannot possibly need splitting. The proto encoding is SMALLER than
+  // the JSON it comes from (proofs are base64 in JSON, raw bytes on the wire),
+  // so the JSON size plus room for the largest signature is a safe bound.
   const target = Math.floor(limit * margin);
+  if (jsonBytes && jsonBytes + 16_000 <= target) {
+    log(`  one transaction fits: ${jsonBytes.toLocaleString()} B of JSON, ` +
+      `bound by ${target.toLocaleString()} B usable (no size probe needed)`);
+    return msgs.length;
+  }
+  const full = encodedSize(env, msgs, signerKeyName, gasFor(msgs.length));
   if (full <= target) {
     log(`  one transaction fits: ${full.toLocaleString()} B of ${target.toLocaleString()} B usable`);
     return msgs.length;
@@ -215,24 +225,23 @@ function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log) {
   }
   let finalityWaitSeconds = (Date.now() - t_finality0) / 1000;
   if (phase === "deliver") {
-    // The shared prepare step already waited; take the finalized header as it
-    // stands and record no wait against this flow, so a wait paid once is not
-    // counted once per flow.
+    // The shared prepare step already waited and already updated the client,
+    // so this flow pays no wait. Do NOT re-read current finality to pick a
+    // slot: finality keeps advancing, and asking for a state at the CURRENT
+    // finalized slot demands one newer than prepare created. What matters is
+    // only that a held state covers this batch's send block.
     finalityWaitSeconds = 0;
-    hdr = get(`${beacon}/eth/v1/beacon/light_client/finality_update`).data.finalized_header;
-    if (Number(hdr.execution.block_number) < maxSendBlock) {
-      throw new Error(`--phase=deliver but finality (${hdr.execution.block_number}) does not ` +
-        `cover send block ${maxSendBlock}; run --phase=prepare first`);
-    }
   }
-  if (!hdr) {
+  if (phase !== "deliver" && !hdr) {
     throw new Error(`finality did not reach block ${maxSendBlock} within ` +
       `${(finalityTimeout / 60000).toFixed(0)} min (last seen ${lastExec}); ` +
       `raise --finality-timeout=SECONDS`);
   }
-  const proofSlot = Number(hdr.beacon.slot);
-  console.log(`  finality wait: ${finalityWaitSeconds.toFixed(1)}s over ${finalityPolls} poll(s), ` +
-    `covering send block ${maxSendBlock} at slot ${proofSlot}`);
+  const proofSlot = hdr ? Number(hdr.beacon.slot) : null;
+  if (phase !== "deliver") {
+    console.log(`  finality wait: ${finalityWaitSeconds.toFixed(1)}s over ${finalityPolls} poll(s), ` +
+      `covering send block ${maxSendBlock} at slot ${proofSlot}`);
+  }
 
   // --- one MsgUpdateClient (or none, if testing coverage of an old state) --
   const t_update0 = Date.now();
@@ -263,15 +272,36 @@ function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log) {
   const outDir_ = path.join(env.DEVNET_DIR, "migration-volume");
   fs.mkdirSync(outDir_, { recursive: true });
   const have = heights();
-  const usable = have.filter((s) => s >= proofSlot);
-  if (!usable.length) {
-    throw new Error(`no consensus state at or after slot ${proofSlot}; have [${have.join(",")}]`);
-  }
-  // NEWEST usable state, not the oldest: geth keeps only ~128 blocks of
+  const execBlockOf = (slot) =>
+    Number(get(`${beacon}/eth/v2/beacon/blocks/${slot}`).data.message.body.execution_payload.block_number);
+
+  // NEWEST state that works, not the oldest: geth keeps only ~128 blocks of
   // historical state (TriesInMemory), so an older state names a block whose
   // state may already be pruned and eth_getProof then returns nothing. Same
   // reasoning as build-recv-msgs.js.
-  const useSlot = Math.max(...usable);
+  let useSlot;
+  const pinned = arg("use-slot", null);
+  if (pinned) {
+    // Every flow in a wave proves against the SAME state, so their proof costs
+    // are comparable.
+    useSlot = parseInt(pinned, 10);
+    if (!have.includes(useSlot)) {
+      throw new Error(`--use-slot=${useSlot} is not held; have [${have.join(",")}]`);
+    }
+  } else if (phase === "deliver") {
+    // Coverage of this batch's send block is the only requirement.
+    useSlot = [...have].sort((a, b) => b - a).find((sl) => execBlockOf(sl) >= maxSendBlock);
+    if (useSlot === undefined) {
+      throw new Error(`no consensus state covering send block ${maxSendBlock}; ` +
+        `have [${have.join(",")}] — run --phase=prepare first`);
+    }
+  } else {
+    const usable = have.filter((sl) => sl >= proofSlot);
+    if (!usable.length) {
+      throw new Error(`no consensus state at or after slot ${proofSlot}; have [${have.join(",")}]`);
+    }
+    useSlot = Math.max(...usable);
+  }
   if (phase === "prepare") {
     // Shared work is done. Record what it cost so the flows that follow can be
     // charged for it once between them rather than once each.
@@ -295,7 +325,7 @@ function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log) {
   // --- ONE eth_getProof for all N storage keys -----------------------------
   const rpc = (env.GETH_RPC || "").replace(/^https?:\/\//, "");
   const t_proof0 = Date.now();
-  const proof = JSON.parse(execFileSync("curl", [
+  const proofResp = JSON.parse(execFileSync("curl", [
     "-s", "-m", "120", "-X", "POST", "-H", "Content-Type: application/json",
     "--data", JSON.stringify({
       jsonrpc: "2.0", method: "eth_getProof",
@@ -303,8 +333,22 @@ function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log) {
     }), `http://${rpc}`,
   ], { maxBuffer: 256e6 })).result;
   const proofSeconds = (Date.now() - t_proof0) / 1000;
+  if (proofResp && proofResp.error) {
+    // geth runs --gcmode=full with TriesInMemory=128, so state older than
+    // ~128 blocks is gone. Relaying has to happen inside the window between
+    // finality covering the send block (~70 blocks back) and that pruning
+    // point — roughly 58 blocks, about 12 minutes.
+    const msg = proofResp.error.message || JSON.stringify(proofResp.error);
+    if (/historical state|not available/i.test(msg)) {
+      throw new Error(`eth_getProof: block ${useBlock} has been pruned by geth (${msg}). ` +
+        `These packets can no longer be proven; they must be re-sent. Relay promptly ` +
+        `after finality — the usable window is ~58 blocks.`);
+    }
+    throw new Error(`eth_getProof failed at block ${useBlock}: ${msg}`);
+  }
+  const proof = proofResp && proofResp.result;
   if (!proof || !proof.storageProof || proof.storageProof.length !== count) {
-    throw new Error(`eth_getProof returned ${proof && proof.storageProof ? proof.storageProof.length : "no"} storage proofs, expected ${count}`);
+    throw new Error(`eth_getProof returned ${proof && proof.storageProof ? proof.storageProof.length : "no"} storage proofs, expected ${count} at block ${useBlock}`);
   }
   const accountProofBytes = proof.accountProof.join("").length / 2;
   const storageProofBytes = proof.storageProof.map((sp) => sp.proof.join("").length / 2);
@@ -360,7 +404,7 @@ function chunkSize(env, msgs, signerKeyName, gasFor, limit, margin, log) {
   const gasFor = (k) => parseInt(arg("gas", String(400_000 + 900_000 * k)), 10);
   console.log(`  size limit: ${limit.toLocaleString()} B usable (${binding}), margin ${margin}`);
   const perChunk = chunkSize(env, msgs, signerKey || env.RELAYER_KEY, gasFor,
-    limit, margin, (m) => console.log(m));
+    limit, margin, (m) => console.log(m), msgFileBytes);
   const chunks = [];
   for (let i = 0; i < msgs.length; i += perChunk) chunks.push(msgs.slice(i, i + perChunk));
   if (chunks.length > 1) {
