@@ -32,7 +32,7 @@ claims. The 30 result JSONs are committed under `results/`; running
 `python3 aggregate.py` regenerates the four figures and `summary.md`
 in seconds.
 
-The sweep classifies each cell as `ok` (committed/submitted ≥ 0.9
+The run classifies each cell as `ok` (committed/submitted ≥ 0.9
 **and** p99 < 10 s) or `saturated`. There are no "crashed" cells in
 the committed dataset.
 
@@ -44,7 +44,7 @@ algorithm. See `validator_scaling_v2/summary.md` for the full
 discussion.
 
 Reproduction: see [`../REPRODUCE.md`](../REPRODUCE.md) §1 (Path A for
-the figures from existing data, Path B for the full ~5-hour sweep).
+the figures from existing data, Path B for the full ~5-hour run).
 
 ## `migration_volume/`
 
@@ -62,7 +62,7 @@ unattributed residual. The finality wait dominates and is measured directly.
 The second variable is the **signer key type** of the receive transaction. A
 signature is charged once per transaction while packets are charged per packet,
 so ML-DSA-65 costs a fixed ~146,000 gas and ~5.2 KB per transaction that
-batching amortizes to +0.8 % at N = 124.
+a larger batch splits down to +0.8 % at N = 124.
 
 Capacity on this path is infrastructure-bound, not crypto-bound. The binding
 wall at stock node configuration is CometBFT's RPC `max_body_bytes`, which caps
@@ -71,9 +71,8 @@ by payload size or key type. Raising it exposes the 4 MB mempool `max_tx_bytes`
 wall at 675 packets. ML-DSA-65 and secp256k1 carry the identical count at both.
 See `migration_volume/CEILING-FINDINGS.md`.
 
-Sweep driver and plotter are at the repository root (`measure_data.py`,
-`plot_data.py`); everything else lives in the experiment directory. Needs a
-live devnet.
+The runner and plotter live in the experiment directory alongside everything
+else. Needs a live devnet.
 
 ## `migration_throughput/`
 
@@ -89,9 +88,9 @@ N = 1 → 40 with zero variance, so amortised gas per transfer falls from 929,68
 measured directly.
 
 No batching ceiling was found within the tested range. Its README explains why
-the round trip is measured rather than the forward leg (that sweep ran the
+the round trip is measured rather than the forward leg (that run used the
 forward leg on a mock verifier; real SP1 Groth16 proving now works, but at
-~10 min per proof it is impractical for a 1,000-transfer sweep), why the
+~10 min per proof it is impractical for a 1,000-transfer run), why the
 independent variable is packets-per-window rather than submission rate, and
 where the harness's own limits lie.
 
@@ -119,7 +118,7 @@ group shares a single light-client update.
 Checks before running that the EVM-side light client is actually bound to the
 mock verifier, and fails clearly rather than silently measuring proving time
 if the real verifier is bound instead. Group sizes are attempted in ascending
-order and the sweep stops automatically at the first size that fails a real
+order and the run stops automatically at the first size that fails a real
 limit (gas, timeout, revert) — that failure is recorded as data, not retried.
 Reusable tooling: no data is committed (see its own `.gitignore`); re-run
 against a live devnet to reproduce.
@@ -138,8 +137,8 @@ The README in that directory leads with this status note.
 - **Raw run data**: `validator_scaling_v2/results/*.json`,
   `migration_throughput/results/*.json`,
   `migration_volume/results/*.json` (ceiling measurements)
-- **migration_volume sweep output**: `migration_metrics_detailed.csv` at the
-  repository root, written by `measure_data.py`
+- **migration_volume output**: `migration_volume/results/`, written by
+  `measure_data.py`, `measure_delivery.py` and `measure_ack.py`
 - **Per-cell CPU timeseries**: `validator_scaling_v2/cpu_samples/`
 - **Per-cell sweep logs**: `validator_scaling_v2/logs/`
 - **Sweep state for resume**: `validator_scaling_v2/sweep_state.json`
