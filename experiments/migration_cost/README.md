@@ -118,7 +118,9 @@ therefore the delivery step alone, not an end-to-end time.
 
 ## Outputs
 
-Raw data goes to `results/` (not tracked — regenerate against your own devnet).
+Raw data goes to `results/`. The files below are committed: they are the data
+behind the figures and the cost table. Re-running against your own devnet
+adds to them.
 
 | File | Holds |
 |---|---|

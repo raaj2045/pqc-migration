@@ -1,1070 +1,1248 @@
 {
   "scheme": "mldsa65",
   "num_tx": 1000000,
-  "tx_mix": "transfer:60,migration:20,stake:15,gov:5",
+  "tx_mix": "recv:100",
   "pubkey_bytes": 1952,
   "signature_bytes": 3309,
   "envelope_overhead_bytes": 110,
   "account_overhead_bytes": 100,
-  "final_state_bytes": 162616896,
-  "final_tx_bytes": 5476041250,
-  "final_unique_accounts": 79248,
+  "final_state_bytes": 100002052,
+  "final_tx_bytes": 9884000000,
+  "final_unique_accounts": 1000001,
+  "final_recv_accounts": 1000000,
+  "final_state_bytes_after_first_signature": 2052002052,
   "series": [
     {
       "tx_count": 0,
       "total_state_bytes": 0,
       "total_tx_bytes": 0,
-      "unique_accounts": 0
+      "unique_accounts": 0,
+      "state_bytes_after_first_signature": 0
     },
     {
       "tx_count": 1,
-      "total_state_bytes": 2052,
-      "total_tx_bytes": 5451,
-      "unique_accounts": 1
+      "total_state_bytes": 2152,
+      "total_tx_bytes": 9884,
+      "unique_accounts": 2,
+      "state_bytes_after_first_signature": 4104
     },
     {
       "tx_count": 2,
-      "total_state_bytes": 4104,
-      "total_tx_bytes": 10902,
-      "unique_accounts": 2
+      "total_state_bytes": 2252,
+      "total_tx_bytes": 19768,
+      "unique_accounts": 3,
+      "state_bytes_after_first_signature": 6156
     },
     {
       "tx_count": 3,
-      "total_state_bytes": 6156,
-      "total_tx_bytes": 16473,
-      "unique_accounts": 3
+      "total_state_bytes": 2352,
+      "total_tx_bytes": 29652,
+      "unique_accounts": 4,
+      "state_bytes_after_first_signature": 8208
     },
     {
       "tx_count": 4,
-      "total_state_bytes": 6156,
-      "total_tx_bytes": 21924,
-      "unique_accounts": 3
+      "total_state_bytes": 2452,
+      "total_tx_bytes": 39536,
+      "unique_accounts": 5,
+      "state_bytes_after_first_signature": 10260
     },
     {
       "tx_count": 5,
-      "total_state_bytes": 8208,
-      "total_tx_bytes": 27375,
-      "unique_accounts": 4
+      "total_state_bytes": 2552,
+      "total_tx_bytes": 49420,
+      "unique_accounts": 6,
+      "state_bytes_after_first_signature": 12312
     },
     {
       "tx_count": 6,
-      "total_state_bytes": 10260,
-      "total_tx_bytes": 32826,
-      "unique_accounts": 5
+      "total_state_bytes": 2652,
+      "total_tx_bytes": 59304,
+      "unique_accounts": 7,
+      "state_bytes_after_first_signature": 14364
     },
     {
       "tx_count": 7,
-      "total_state_bytes": 10260,
-      "total_tx_bytes": 38292,
-      "unique_accounts": 5
+      "total_state_bytes": 2752,
+      "total_tx_bytes": 69188,
+      "unique_accounts": 8,
+      "state_bytes_after_first_signature": 16416
     },
     {
       "tx_count": 8,
-      "total_state_bytes": 12312,
-      "total_tx_bytes": 43743,
-      "unique_accounts": 6
+      "total_state_bytes": 2852,
+      "total_tx_bytes": 79072,
+      "unique_accounts": 9,
+      "state_bytes_after_first_signature": 18468
     },
     {
       "tx_count": 9,
-      "total_state_bytes": 14364,
-      "total_tx_bytes": 49194,
-      "unique_accounts": 7
+      "total_state_bytes": 2952,
+      "total_tx_bytes": 88956,
+      "unique_accounts": 10,
+      "state_bytes_after_first_signature": 20520
     },
     {
       "tx_count": 10,
-      "total_state_bytes": 14364,
-      "total_tx_bytes": 54765,
-      "unique_accounts": 7
+      "total_state_bytes": 3052,
+      "total_tx_bytes": 98840,
+      "unique_accounts": 11,
+      "state_bytes_after_first_signature": 22572
     },
     {
       "tx_count": 11,
-      "total_state_bytes": 16416,
-      "total_tx_bytes": 60336,
-      "unique_accounts": 8
+      "total_state_bytes": 3152,
+      "total_tx_bytes": 108724,
+      "unique_accounts": 12,
+      "state_bytes_after_first_signature": 24624
     },
     {
       "tx_count": 12,
-      "total_state_bytes": 18468,
-      "total_tx_bytes": 65787,
-      "unique_accounts": 9
+      "total_state_bytes": 3252,
+      "total_tx_bytes": 118608,
+      "unique_accounts": 13,
+      "state_bytes_after_first_signature": 26676
     },
     {
       "tx_count": 13,
-      "total_state_bytes": 18468,
-      "total_tx_bytes": 71238,
-      "unique_accounts": 9
+      "total_state_bytes": 3352,
+      "total_tx_bytes": 128492,
+      "unique_accounts": 14,
+      "state_bytes_after_first_signature": 28728
     },
     {
       "tx_count": 14,
-      "total_state_bytes": 20520,
-      "total_tx_bytes": 76689,
-      "unique_accounts": 10
+      "total_state_bytes": 3452,
+      "total_tx_bytes": 138376,
+      "unique_accounts": 15,
+      "state_bytes_after_first_signature": 30780
     },
     {
       "tx_count": 15,
-      "total_state_bytes": 20520,
-      "total_tx_bytes": 82260,
-      "unique_accounts": 10
+      "total_state_bytes": 3552,
+      "total_tx_bytes": 148260,
+      "unique_accounts": 16,
+      "state_bytes_after_first_signature": 32832
     },
     {
       "tx_count": 16,
-      "total_state_bytes": 22572,
-      "total_tx_bytes": 87711,
-      "unique_accounts": 11
+      "total_state_bytes": 3652,
+      "total_tx_bytes": 158144,
+      "unique_accounts": 17,
+      "state_bytes_after_first_signature": 34884
     },
     {
       "tx_count": 17,
-      "total_state_bytes": 24624,
-      "total_tx_bytes": 93282,
-      "unique_accounts": 12
+      "total_state_bytes": 3752,
+      "total_tx_bytes": 168028,
+      "unique_accounts": 18,
+      "state_bytes_after_first_signature": 36936
     },
     {
       "tx_count": 18,
-      "total_state_bytes": 24624,
-      "total_tx_bytes": 98853,
-      "unique_accounts": 12
+      "total_state_bytes": 3852,
+      "total_tx_bytes": 177912,
+      "unique_accounts": 19,
+      "state_bytes_after_first_signature": 38988
     },
     {
       "tx_count": 20,
-      "total_state_bytes": 26676,
-      "total_tx_bytes": 109745,
-      "unique_accounts": 13
+      "total_state_bytes": 4052,
+      "total_tx_bytes": 197680,
+      "unique_accounts": 21,
+      "state_bytes_after_first_signature": 43092
     },
     {
       "tx_count": 21,
-      "total_state_bytes": 28728,
-      "total_tx_bytes": 115196,
-      "unique_accounts": 14
+      "total_state_bytes": 4152,
+      "total_tx_bytes": 207564,
+      "unique_accounts": 22,
+      "state_bytes_after_first_signature": 45144
     },
     {
       "tx_count": 23,
-      "total_state_bytes": 30780,
-      "total_tx_bytes": 126098,
-      "unique_accounts": 15
+      "total_state_bytes": 4352,
+      "total_tx_bytes": 227332,
+      "unique_accounts": 24,
+      "state_bytes_after_first_signature": 49248
     },
     {
       "tx_count": 24,
-      "total_state_bytes": 30780,
-      "total_tx_bytes": 131549,
-      "unique_accounts": 15
+      "total_state_bytes": 4452,
+      "total_tx_bytes": 237216,
+      "unique_accounts": 25,
+      "state_bytes_after_first_signature": 51300
     },
     {
       "tx_count": 26,
-      "total_state_bytes": 34884,
-      "total_tx_bytes": 142571,
-      "unique_accounts": 17
+      "total_state_bytes": 4652,
+      "total_tx_bytes": 256984,
+      "unique_accounts": 27,
+      "state_bytes_after_first_signature": 55404
     },
     {
       "tx_count": 28,
-      "total_state_bytes": 36936,
-      "total_tx_bytes": 153488,
-      "unique_accounts": 18
+      "total_state_bytes": 4852,
+      "total_tx_bytes": 276752,
+      "unique_accounts": 29,
+      "state_bytes_after_first_signature": 59508
     },
     {
       "tx_count": 30,
-      "total_state_bytes": 38988,
-      "total_tx_bytes": 164390,
-      "unique_accounts": 19
+      "total_state_bytes": 5052,
+      "total_tx_bytes": 296520,
+      "unique_accounts": 31,
+      "state_bytes_after_first_signature": 63612
     },
     {
       "tx_count": 32,
-      "total_state_bytes": 41040,
-      "total_tx_bytes": 175412,
-      "unique_accounts": 20
+      "total_state_bytes": 5252,
+      "total_tx_bytes": 316288,
+      "unique_accounts": 33,
+      "state_bytes_after_first_signature": 67716
     },
     {
       "tx_count": 34,
-      "total_state_bytes": 43092,
-      "total_tx_bytes": 186304,
-      "unique_accounts": 21
+      "total_state_bytes": 5452,
+      "total_tx_bytes": 336056,
+      "unique_accounts": 35,
+      "state_bytes_after_first_signature": 71820
     },
     {
       "tx_count": 37,
-      "total_state_bytes": 45144,
-      "total_tx_bytes": 202647,
-      "unique_accounts": 22
+      "total_state_bytes": 5752,
+      "total_tx_bytes": 365708,
+      "unique_accounts": 38,
+      "state_bytes_after_first_signature": 77976
     },
     {
       "tx_count": 40,
-      "total_state_bytes": 49248,
-      "total_tx_bytes": 219135,
-      "unique_accounts": 24
+      "total_state_bytes": 6052,
+      "total_tx_bytes": 395360,
+      "unique_accounts": 41,
+      "state_bytes_after_first_signature": 84132
     },
     {
       "tx_count": 42,
-      "total_state_bytes": 49248,
-      "total_tx_bytes": 230277,
-      "unique_accounts": 24
+      "total_state_bytes": 6252,
+      "total_tx_bytes": 415128,
+      "unique_accounts": 43,
+      "state_bytes_after_first_signature": 88236
     },
     {
       "tx_count": 46,
-      "total_state_bytes": 53352,
-      "total_tx_bytes": 252201,
-      "unique_accounts": 26
+      "total_state_bytes": 6652,
+      "total_tx_bytes": 454664,
+      "unique_accounts": 47,
+      "state_bytes_after_first_signature": 96444
     },
     {
       "tx_count": 49,
-      "total_state_bytes": 57456,
-      "total_tx_bytes": 268569,
-      "unique_accounts": 28
+      "total_state_bytes": 6952,
+      "total_tx_bytes": 484316,
+      "unique_accounts": 50,
+      "state_bytes_after_first_signature": 102600
     },
     {
       "tx_count": 52,
-      "total_state_bytes": 59508,
-      "total_tx_bytes": 285042,
-      "unique_accounts": 29
+      "total_state_bytes": 7252,
+      "total_tx_bytes": 513968,
+      "unique_accounts": 53,
+      "state_bytes_after_first_signature": 108756
     },
     {
       "tx_count": 56,
-      "total_state_bytes": 63612,
-      "total_tx_bytes": 306981,
-      "unique_accounts": 31
+      "total_state_bytes": 7652,
+      "total_tx_bytes": 553504,
+      "unique_accounts": 57,
+      "state_bytes_after_first_signature": 116964
     },
     {
       "tx_count": 60,
-      "total_state_bytes": 67716,
-      "total_tx_bytes": 328785,
-      "unique_accounts": 33
+      "total_state_bytes": 8052,
+      "total_tx_bytes": 593040,
+      "unique_accounts": 61,
+      "state_bytes_after_first_signature": 125172
     },
     {
       "tx_count": 64,
-      "total_state_bytes": 69768,
-      "total_tx_bytes": 350844,
-      "unique_accounts": 34
+      "total_state_bytes": 8452,
+      "total_tx_bytes": 632576,
+      "unique_accounts": 65,
+      "state_bytes_after_first_signature": 133380
     },
     {
       "tx_count": 69,
-      "total_state_bytes": 75924,
-      "total_tx_bytes": 378114,
-      "unique_accounts": 37
+      "total_state_bytes": 8952,
+      "total_tx_bytes": 681996,
+      "unique_accounts": 70,
+      "state_bytes_after_first_signature": 143640
     },
     {
       "tx_count": 74,
-      "total_state_bytes": 80028,
-      "total_tx_bytes": 405519,
-      "unique_accounts": 39
+      "total_state_bytes": 9452,
+      "total_tx_bytes": 731416,
+      "unique_accounts": 75,
+      "state_bytes_after_first_signature": 153900
     },
     {
       "tx_count": 79,
-      "total_state_bytes": 84132,
-      "total_tx_bytes": 432894,
-      "unique_accounts": 41
+      "total_state_bytes": 9952,
+      "total_tx_bytes": 780836,
+      "unique_accounts": 80,
+      "state_bytes_after_first_signature": 164160
     },
     {
       "tx_count": 85,
-      "total_state_bytes": 88236,
-      "total_tx_bytes": 465725,
-      "unique_accounts": 43
+      "total_state_bytes": 10552,
+      "total_tx_bytes": 840140,
+      "unique_accounts": 86,
+      "state_bytes_after_first_signature": 176472
     },
     {
       "tx_count": 91,
-      "total_state_bytes": 94392,
-      "total_tx_bytes": 498686,
-      "unique_accounts": 46
+      "total_state_bytes": 11152,
+      "total_tx_bytes": 899444,
+      "unique_accounts": 92,
+      "state_bytes_after_first_signature": 188784
     },
     {
       "tx_count": 98,
-      "total_state_bytes": 100548,
-      "total_tx_bytes": 536928,
-      "unique_accounts": 49
+      "total_state_bytes": 11852,
+      "total_tx_bytes": 968632,
+      "unique_accounts": 99,
+      "state_bytes_after_first_signature": 203148
     },
     {
       "tx_count": 105,
-      "total_state_bytes": 104652,
-      "total_tx_bytes": 575075,
-      "unique_accounts": 51
+      "total_state_bytes": 12552,
+      "total_tx_bytes": 1037820,
+      "unique_accounts": 106,
+      "state_bytes_after_first_signature": 217512
     },
     {
       "tx_count": 112,
-      "total_state_bytes": 110808,
-      "total_tx_bytes": 613607,
-      "unique_accounts": 54
+      "total_state_bytes": 13252,
+      "total_tx_bytes": 1107008,
+      "unique_accounts": 113,
+      "state_bytes_after_first_signature": 231876
     },
     {
       "tx_count": 120,
-      "total_state_bytes": 116964,
-      "total_tx_bytes": 657365,
-      "unique_accounts": 57
+      "total_state_bytes": 14052,
+      "total_tx_bytes": 1186080,
+      "unique_accounts": 121,
+      "state_bytes_after_first_signature": 248292
     },
     {
       "tx_count": 129,
-      "total_state_bytes": 125172,
-      "total_tx_bytes": 706534,
-      "unique_accounts": 61
+      "total_state_bytes": 14952,
+      "total_tx_bytes": 1275036,
+      "unique_accounts": 130,
+      "state_bytes_after_first_signature": 266760
     },
     {
       "tx_count": 138,
-      "total_state_bytes": 131328,
-      "total_tx_bytes": 755623,
-      "unique_accounts": 64
+      "total_state_bytes": 15852,
+      "total_tx_bytes": 1363992,
+      "unique_accounts": 139,
+      "state_bytes_after_first_signature": 285228
     },
     {
       "tx_count": 148,
-      "total_state_bytes": 139536,
-      "total_tx_bytes": 810643,
-      "unique_accounts": 68
+      "total_state_bytes": 16852,
+      "total_tx_bytes": 1462832,
+      "unique_accounts": 149,
+      "state_bytes_after_first_signature": 305748
     },
     {
       "tx_count": 159,
-      "total_state_bytes": 147744,
-      "total_tx_bytes": 870874,
-      "unique_accounts": 72
+      "total_state_bytes": 17952,
+      "total_tx_bytes": 1571556,
+      "unique_accounts": 160,
+      "state_bytes_after_first_signature": 328320
     },
     {
       "tx_count": 170,
-      "total_state_bytes": 155952,
-      "total_tx_bytes": 931105,
-      "unique_accounts": 76
+      "total_state_bytes": 19052,
+      "total_tx_bytes": 1680280,
+      "unique_accounts": 171,
+      "state_bytes_after_first_signature": 350892
     },
     {
       "tx_count": 183,
-      "total_state_bytes": 166212,
-      "total_tx_bytes": 1002373,
-      "unique_accounts": 81
+      "total_state_bytes": 20352,
+      "total_tx_bytes": 1808772,
+      "unique_accounts": 184,
+      "state_bytes_after_first_signature": 377568
     },
     {
       "tx_count": 196,
-      "total_state_bytes": 174420,
-      "total_tx_bytes": 1073266,
-      "unique_accounts": 85
+      "total_state_bytes": 21652,
+      "total_tx_bytes": 1937264,
+      "unique_accounts": 197,
+      "state_bytes_after_first_signature": 404244
     },
     {
       "tx_count": 210,
-      "total_state_bytes": 184680,
-      "total_tx_bytes": 1149905,
-      "unique_accounts": 90
+      "total_state_bytes": 23052,
+      "total_tx_bytes": 2075640,
+      "unique_accounts": 211,
+      "state_bytes_after_first_signature": 432972
     },
     {
       "tx_count": 225,
-      "total_state_bytes": 194940,
-      "total_tx_bytes": 1231890,
-      "unique_accounts": 95
+      "total_state_bytes": 24552,
+      "total_tx_bytes": 2223900,
+      "unique_accounts": 226,
+      "state_bytes_after_first_signature": 463752
     },
     {
       "tx_count": 241,
-      "total_state_bytes": 207252,
-      "total_tx_bytes": 1319256,
-      "unique_accounts": 101
+      "total_state_bytes": 26152,
+      "total_tx_bytes": 2382044,
+      "unique_accounts": 242,
+      "state_bytes_after_first_signature": 496584
     },
     {
       "tx_count": 258,
-      "total_state_bytes": 217512,
-      "total_tx_bytes": 1412123,
-      "unique_accounts": 106
+      "total_state_bytes": 27852,
+      "total_tx_bytes": 2550072,
+      "unique_accounts": 259,
+      "state_bytes_after_first_signature": 531468
     },
     {
       "tx_count": 277,
-      "total_state_bytes": 229824,
-      "total_tx_bytes": 1515952,
-      "unique_accounts": 112
+      "total_state_bytes": 29752,
+      "total_tx_bytes": 2737868,
+      "unique_accounts": 278,
+      "state_bytes_after_first_signature": 570456
     },
     {
       "tx_count": 297,
-      "total_state_bytes": 244188,
-      "total_tx_bytes": 1625177,
-      "unique_accounts": 119
+      "total_state_bytes": 31752,
+      "total_tx_bytes": 2935548,
+      "unique_accounts": 298,
+      "state_bytes_after_first_signature": 611496
     },
     {
       "tx_count": 318,
-      "total_state_bytes": 258552,
-      "total_tx_bytes": 1740148,
-      "unique_accounts": 126
+      "total_state_bytes": 33852,
+      "total_tx_bytes": 3143112,
+      "unique_accounts": 319,
+      "state_bytes_after_first_signature": 654588
     },
     {
       "tx_count": 341,
-      "total_state_bytes": 272916,
-      "total_tx_bytes": 1866411,
-      "unique_accounts": 133
+      "total_state_bytes": 36152,
+      "total_tx_bytes": 3370444,
+      "unique_accounts": 342,
+      "state_bytes_after_first_signature": 701784
     },
     {
       "tx_count": 365,
-      "total_state_bytes": 287280,
-      "total_tx_bytes": 1997865,
-      "unique_accounts": 140
+      "total_state_bytes": 38552,
+      "total_tx_bytes": 3607660,
+      "unique_accounts": 366,
+      "state_bytes_after_first_signature": 751032
     },
     {
       "tx_count": 392,
-      "total_state_bytes": 305748,
-      "total_tx_bytes": 2145692,
-      "unique_accounts": 149
+      "total_state_bytes": 41252,
+      "total_tx_bytes": 3874528,
+      "unique_accounts": 393,
+      "state_bytes_after_first_signature": 806436
     },
     {
       "tx_count": 420,
-      "total_state_bytes": 322164,
-      "total_tx_bytes": 2298570,
-      "unique_accounts": 157
+      "total_state_bytes": 44052,
+      "total_tx_bytes": 4151280,
+      "unique_accounts": 421,
+      "state_bytes_after_first_signature": 863892
     },
     {
       "tx_count": 450,
-      "total_state_bytes": 340632,
-      "total_tx_bytes": 2463010,
-      "unique_accounts": 166
+      "total_state_bytes": 47052,
+      "total_tx_bytes": 4447800,
+      "unique_accounts": 451,
+      "state_bytes_after_first_signature": 925452
     },
     {
       "tx_count": 482,
-      "total_state_bytes": 359100,
-      "total_tx_bytes": 2638157,
-      "unique_accounts": 175
+      "total_state_bytes": 50252,
+      "total_tx_bytes": 4764088,
+      "unique_accounts": 483,
+      "state_bytes_after_first_signature": 991116
     },
     {
       "tx_count": 517,
-      "total_state_bytes": 381672,
-      "total_tx_bytes": 2829947,
-      "unique_accounts": 186
+      "total_state_bytes": 53752,
+      "total_tx_bytes": 5110028,
+      "unique_accounts": 518,
+      "state_bytes_after_first_signature": 1062936
     },
     {
       "tx_count": 554,
-      "total_state_bytes": 402192,
-      "total_tx_bytes": 3032544,
-      "unique_accounts": 196
+      "total_state_bytes": 57452,
+      "total_tx_bytes": 5475736,
+      "unique_accounts": 555,
+      "state_bytes_after_first_signature": 1138860
     },
     {
       "tx_count": 594,
-      "total_state_bytes": 424764,
-      "total_tx_bytes": 3251534,
-      "unique_accounts": 207
+      "total_state_bytes": 61452,
+      "total_tx_bytes": 5871096,
+      "unique_accounts": 595,
+      "state_bytes_after_first_signature": 1220940
     },
     {
       "tx_count": 637,
-      "total_state_bytes": 449388,
-      "total_tx_bytes": 3486262,
-      "unique_accounts": 219
+      "total_state_bytes": 65752,
+      "total_tx_bytes": 6296108,
+      "unique_accounts": 638,
+      "state_bytes_after_first_signature": 1309176
     },
     {
       "tx_count": 683,
-      "total_state_bytes": 476064,
-      "total_tx_bytes": 3737993,
-      "unique_accounts": 232
+      "total_state_bytes": 70352,
+      "total_tx_bytes": 6750772,
+      "unique_accounts": 684,
+      "state_bytes_after_first_signature": 1403568
     },
     {
       "tx_count": 732,
-      "total_state_bytes": 502740,
-      "total_tx_bytes": 4006552,
-      "unique_accounts": 245
+      "total_state_bytes": 75252,
+      "total_tx_bytes": 7235088,
+      "unique_accounts": 733,
+      "state_bytes_after_first_signature": 1504116
     },
     {
       "tx_count": 784,
-      "total_state_bytes": 531468,
-      "total_tx_bytes": 4291704,
-      "unique_accounts": 259
+      "total_state_bytes": 80452,
+      "total_tx_bytes": 7749056,
+      "unique_accounts": 785,
+      "state_bytes_after_first_signature": 1610820
     },
     {
       "tx_count": 841,
-      "total_state_bytes": 562248,
-      "total_tx_bytes": 4603401,
-      "unique_accounts": 274
+      "total_state_bytes": 86152,
+      "total_tx_bytes": 8312444,
+      "unique_accounts": 842,
+      "state_bytes_after_first_signature": 1727784
     },
     {
       "tx_count": 901,
-      "total_state_bytes": 595080,
-      "total_tx_bytes": 4931941,
-      "unique_accounts": 290
+      "total_state_bytes": 92152,
+      "total_tx_bytes": 8905484,
+      "unique_accounts": 902,
+      "state_bytes_after_first_signature": 1850904
     },
     {
       "tx_count": 966,
-      "total_state_bytes": 627912,
-      "total_tx_bytes": 5288196,
-      "unique_accounts": 306
+      "total_state_bytes": 98652,
+      "total_tx_bytes": 9547944,
+      "unique_accounts": 967,
+      "state_bytes_after_first_signature": 1984284
     },
     {
       "tx_count": 1035,
-      "total_state_bytes": 664848,
-      "total_tx_bytes": 5666105,
-      "unique_accounts": 324
+      "total_state_bytes": 105552,
+      "total_tx_bytes": 10229940,
+      "unique_accounts": 1036,
+      "state_bytes_after_first_signature": 2125872
     },
     {
       "tx_count": 1110,
-      "total_state_bytes": 701784,
-      "total_tx_bytes": 6076600,
-      "unique_accounts": 342
+      "total_state_bytes": 113052,
+      "total_tx_bytes": 10971240,
+      "unique_accounts": 1111,
+      "state_bytes_after_first_signature": 2279772
     },
     {
       "tx_count": 1190,
-      "total_state_bytes": 742824,
-      "total_tx_bytes": 6514595,
-      "unique_accounts": 362
+      "total_state_bytes": 121052,
+      "total_tx_bytes": 11761960,
+      "unique_accounts": 1191,
+      "state_bytes_after_first_signature": 2443932
     },
     {
       "tx_count": 1275,
-      "total_state_bytes": 785916,
-      "total_tx_bytes": 6979990,
-      "unique_accounts": 383
+      "total_state_bytes": 129552,
+      "total_tx_bytes": 12602100,
+      "unique_accounts": 1276,
+      "state_bytes_after_first_signature": 2618352
     },
     {
       "tx_count": 1367,
-      "total_state_bytes": 831060,
-      "total_tx_bytes": 7484517,
-      "unique_accounts": 405
+      "total_state_bytes": 138752,
+      "total_tx_bytes": 13511428,
+      "unique_accounts": 1368,
+      "state_bytes_after_first_signature": 2807136
     },
     {
       "tx_count": 1465,
-      "total_state_bytes": 878256,
-      "total_tx_bytes": 8020800,
-      "unique_accounts": 428
+      "total_state_bytes": 148552,
+      "total_tx_bytes": 14480060,
+      "unique_accounts": 1466,
+      "state_bytes_after_first_signature": 3008232
     },
     {
       "tx_count": 1570,
-      "total_state_bytes": 927504,
-      "total_tx_bytes": 8595905,
-      "unique_accounts": 452
+      "total_state_bytes": 159052,
+      "total_tx_bytes": 15517880,
+      "unique_accounts": 1571,
+      "state_bytes_after_first_signature": 3223692
     },
     {
       "tx_count": 1683,
-      "total_state_bytes": 980856,
-      "total_tx_bytes": 9214108,
-      "unique_accounts": 478
+      "total_state_bytes": 170352,
+      "total_tx_bytes": 16634772,
+      "unique_accounts": 1684,
+      "state_bytes_after_first_signature": 3455568
     },
     {
       "tx_count": 1804,
-      "total_state_bytes": 1036260,
-      "total_tx_bytes": 9876809,
-      "unique_accounts": 505
+      "total_state_bytes": 182452,
+      "total_tx_bytes": 17830736,
+      "unique_accounts": 1805,
+      "state_bytes_after_first_signature": 3703860
     },
     {
       "tx_count": 1934,
-      "total_state_bytes": 1095768,
-      "total_tx_bytes": 10588319,
-      "unique_accounts": 534
+      "total_state_bytes": 195452,
+      "total_tx_bytes": 19115656,
+      "unique_accounts": 1935,
+      "state_bytes_after_first_signature": 3970620
     },
     {
       "tx_count": 2073,
-      "total_state_bytes": 1159380,
-      "total_tx_bytes": 11349903,
-      "unique_accounts": 565
+      "total_state_bytes": 209352,
+      "total_tx_bytes": 20489532,
+      "unique_accounts": 2074,
+      "state_bytes_after_first_signature": 4255848
     },
     {
       "tx_count": 2222,
-      "total_state_bytes": 1225044,
-      "total_tx_bytes": 12166617,
-      "unique_accounts": 597
+      "total_state_bytes": 224252,
+      "total_tx_bytes": 21962248,
+      "unique_accounts": 2223,
+      "state_bytes_after_first_signature": 4561596
     },
     {
       "tx_count": 2382,
-      "total_state_bytes": 1294812,
-      "total_tx_bytes": 13042737,
-      "unique_accounts": 631
+      "total_state_bytes": 240252,
+      "total_tx_bytes": 23543688,
+      "unique_accounts": 2383,
+      "state_bytes_after_first_signature": 4889916
     },
     {
       "tx_count": 2553,
-      "total_state_bytes": 1368684,
-      "total_tx_bytes": 13978558,
-      "unique_accounts": 667
+      "total_state_bytes": 257352,
+      "total_tx_bytes": 25233852,
+      "unique_accounts": 2554,
+      "state_bytes_after_first_signature": 5240808
     },
     {
       "tx_count": 2736,
-      "total_state_bytes": 1446660,
-      "total_tx_bytes": 14981036,
-      "unique_accounts": 705
+      "total_state_bytes": 275652,
+      "total_tx_bytes": 27042624,
+      "unique_accounts": 2737,
+      "state_bytes_after_first_signature": 5616324
     },
     {
       "tx_count": 2933,
-      "total_state_bytes": 1530792,
-      "total_tx_bytes": 16060653,
-      "unique_accounts": 746
+      "total_state_bytes": 295352,
+      "total_tx_bytes": 28989772,
+      "unique_accounts": 2934,
+      "state_bytes_after_first_signature": 6020568
     },
     {
       "tx_count": 3144,
-      "total_state_bytes": 1616976,
-      "total_tx_bytes": 17215679,
-      "unique_accounts": 788
+      "total_state_bytes": 316452,
+      "total_tx_bytes": 31075296,
+      "unique_accounts": 3145,
+      "state_bytes_after_first_signature": 6453540
     },
     {
       "tx_count": 3370,
-      "total_state_bytes": 1709316,
-      "total_tx_bytes": 18452755,
-      "unique_accounts": 833
+      "total_state_bytes": 339052,
+      "total_tx_bytes": 33309080,
+      "unique_accounts": 3371,
+      "state_bytes_after_first_signature": 6917292
     },
     {
       "tx_count": 3612,
-      "total_state_bytes": 1807812,
-      "total_tx_bytes": 19777892,
-      "unique_accounts": 881
+      "total_state_bytes": 363252,
+      "total_tx_bytes": 35701008,
+      "unique_accounts": 3613,
+      "state_bytes_after_first_signature": 7413876
     },
     {
       "tx_count": 3872,
-      "total_state_bytes": 1910412,
-      "total_tx_bytes": 21201222,
-      "unique_accounts": 931
+      "total_state_bytes": 389252,
+      "total_tx_bytes": 38270848,
+      "unique_accounts": 3873,
+      "state_bytes_after_first_signature": 7947396
     },
     {
       "tx_count": 4150,
-      "total_state_bytes": 2019168,
-      "total_tx_bytes": 22721660,
-      "unique_accounts": 984
+      "total_state_bytes": 417052,
+      "total_tx_bytes": 41018600,
+      "unique_accounts": 4151,
+      "state_bytes_after_first_signature": 8517852
     },
     {
       "tx_count": 4449,
-      "total_state_bytes": 2136132,
-      "total_tx_bytes": 24358829,
-      "unique_accounts": 1041
+      "total_state_bytes": 446952,
+      "total_tx_bytes": 43973916,
+      "unique_accounts": 4450,
+      "state_bytes_after_first_signature": 9131400
     },
     {
       "tx_count": 4769,
-      "total_state_bytes": 2257200,
-      "total_tx_bytes": 26109089,
-      "unique_accounts": 1100
+      "total_state_bytes": 478952,
+      "total_tx_bytes": 47136796,
+      "unique_accounts": 4770,
+      "state_bytes_after_first_signature": 9788040
     },
     {
       "tx_count": 5111,
-      "total_state_bytes": 2386476,
-      "total_tx_bytes": 27982811,
-      "unique_accounts": 1163
+      "total_state_bytes": 513152,
+      "total_tx_bytes": 50517124,
+      "unique_accounts": 5112,
+      "state_bytes_after_first_signature": 10489824
     },
     {
       "tx_count": 5479,
-      "total_state_bytes": 2523960,
-      "total_tx_bytes": 29996059,
-      "unique_accounts": 1230
+      "total_state_bytes": 549952,
+      "total_tx_bytes": 54154436,
+      "unique_accounts": 5480,
+      "state_bytes_after_first_signature": 11244960
     },
     {
       "tx_count": 5873,
-      "total_state_bytes": 2667600,
-      "total_tx_bytes": 32153428,
-      "unique_accounts": 1300
+      "total_state_bytes": 589352,
+      "total_tx_bytes": 58048732,
+      "unique_accounts": 5874,
+      "state_bytes_after_first_signature": 12053448
     },
     {
       "tx_count": 6295,
-      "total_state_bytes": 2819448,
-      "total_tx_bytes": 34465490,
-      "unique_accounts": 1374
+      "total_state_bytes": 631552,
+      "total_tx_bytes": 62219780,
+      "unique_accounts": 6296,
+      "state_bytes_after_first_signature": 12919392
     },
     {
       "tx_count": 6748,
-      "total_state_bytes": 2981556,
-      "total_tx_bytes": 36945818,
-      "unique_accounts": 1453
+      "total_state_bytes": 676852,
+      "total_tx_bytes": 66697232,
+      "unique_accounts": 6749,
+      "state_bytes_after_first_signature": 13848948
     },
     {
       "tx_count": 7233,
-      "total_state_bytes": 3151872,
-      "total_tx_bytes": 39600538,
-      "unique_accounts": 1536
+      "total_state_bytes": 725352,
+      "total_tx_bytes": 71490972,
+      "unique_accounts": 7234,
+      "state_bytes_after_first_signature": 14844168
     },
     {
       "tx_count": 7753,
-      "total_state_bytes": 3330396,
-      "total_tx_bytes": 42447128,
-      "unique_accounts": 1623
+      "total_state_bytes": 777352,
+      "total_tx_bytes": 76630652,
+      "unique_accounts": 7754,
+      "state_bytes_after_first_signature": 15911208
     },
     {
       "tx_count": 8310,
-      "total_state_bytes": 3521232,
-      "total_tx_bytes": 45498680,
-      "unique_accounts": 1716
+      "total_state_bytes": 833052,
+      "total_tx_bytes": 82136040,
+      "unique_accounts": 8311,
+      "state_bytes_after_first_signature": 17054172
     },
     {
       "tx_count": 8907,
-      "total_state_bytes": 3722328,
-      "total_tx_bytes": 48767727,
-      "unique_accounts": 1814
+      "total_state_bytes": 892752,
+      "total_tx_bytes": 88036788,
+      "unique_accounts": 8908,
+      "state_bytes_after_first_signature": 18279216
     },
     {
       "tx_count": 9548,
-      "total_state_bytes": 3935736,
-      "total_tx_bytes": 52278358,
-      "unique_accounts": 1918
+      "total_state_bytes": 956852,
+      "total_tx_bytes": 94372432,
+      "unique_accounts": 9549,
+      "state_bytes_after_first_signature": 19594548
     },
     {
       "tx_count": 10234,
-      "total_state_bytes": 4159404,
-      "total_tx_bytes": 56034129,
-      "unique_accounts": 2027
+      "total_state_bytes": 1025452,
+      "total_tx_bytes": 101152856,
+      "unique_accounts": 10235,
+      "state_bytes_after_first_signature": 21002220
     },
     {
       "tx_count": 10970,
-      "total_state_bytes": 4397436,
-      "total_tx_bytes": 60064375,
-      "unique_accounts": 2143
+      "total_state_bytes": 1099052,
+      "total_tx_bytes": 108427480,
+      "unique_accounts": 10971,
+      "state_bytes_after_first_signature": 22512492
     },
     {
       "tx_count": 11758,
-      "total_state_bytes": 4647780,
-      "total_tx_bytes": 64381943,
-      "unique_accounts": 2265
+      "total_state_bytes": 1177852,
+      "total_tx_bytes": 116216072,
+      "unique_accounts": 11759,
+      "state_bytes_after_first_signature": 24129468
     },
     {
       "tx_count": 12604,
-      "total_state_bytes": 4914540,
-      "total_tx_bytes": 69017854,
-      "unique_accounts": 2395
+      "total_state_bytes": 1262452,
+      "total_tx_bytes": 124577936,
+      "unique_accounts": 12605,
+      "state_bytes_after_first_signature": 25865460
     },
     {
       "tx_count": 13510,
-      "total_state_bytes": 5195664,
-      "total_tx_bytes": 73979835,
-      "unique_accounts": 2532
+      "total_state_bytes": 1353052,
+      "total_tx_bytes": 133532840,
+      "unique_accounts": 13511,
+      "state_bytes_after_first_signature": 27724572
     },
     {
       "tx_count": 14481,
-      "total_state_bytes": 5491152,
-      "total_tx_bytes": 79295876,
-      "unique_accounts": 2676
+      "total_state_bytes": 1450152,
+      "total_tx_bytes": 143130204,
+      "unique_accounts": 14482,
+      "state_bytes_after_first_signature": 29717064
     },
     {
       "tx_count": 15522,
-      "total_state_bytes": 5805108,
-      "total_tx_bytes": 84996282,
-      "unique_accounts": 2829
+      "total_state_bytes": 1554252,
+      "total_tx_bytes": 153419448,
+      "unique_accounts": 15523,
+      "state_bytes_after_first_signature": 31853196
     },
     {
       "tx_count": 16638,
-      "total_state_bytes": 6137532,
-      "total_tx_bytes": 91108718,
-      "unique_accounts": 2991
+      "total_state_bytes": 1665852,
+      "total_tx_bytes": 164449992,
+      "unique_accounts": 16639,
+      "state_bytes_after_first_signature": 34143228
     },
     {
       "tx_count": 17834,
-      "total_state_bytes": 6488424,
-      "total_tx_bytes": 97656904,
-      "unique_accounts": 3162
+      "total_state_bytes": 1785452,
+      "total_tx_bytes": 176271256,
+      "unique_accounts": 17835,
+      "state_bytes_after_first_signature": 36597420
     },
     {
       "tx_count": 19116,
-      "total_state_bytes": 6857784,
-      "total_tx_bytes": 104672336,
-      "unique_accounts": 3342
+      "total_state_bytes": 1913652,
+      "total_tx_bytes": 188942544,
+      "unique_accounts": 19117,
+      "state_bytes_after_first_signature": 39228084
     },
     {
       "tx_count": 20491,
-      "total_state_bytes": 7249716,
-      "total_tx_bytes": 112200686,
-      "unique_accounts": 3533
+      "total_state_bytes": 2051152,
+      "total_tx_bytes": 202533044,
+      "unique_accounts": 20492,
+      "state_bytes_after_first_signature": 42049584
     },
     {
       "tx_count": 21964,
-      "total_state_bytes": 7664220,
-      "total_tx_bytes": 120265179,
-      "unique_accounts": 3735
+      "total_state_bytes": 2198452,
+      "total_tx_bytes": 217092176,
+      "unique_accounts": 21965,
+      "state_bytes_after_first_signature": 45072180
     },
     {
       "tx_count": 23543,
-      "total_state_bytes": 8101296,
-      "total_tx_bytes": 128909363,
-      "unique_accounts": 3948
+      "total_state_bytes": 2356352,
+      "total_tx_bytes": 232699012,
+      "unique_accounts": 23544,
+      "state_bytes_after_first_signature": 48312288
     },
     {
       "tx_count": 25235,
-      "total_state_bytes": 8565048,
-      "total_tx_bytes": 138174565,
-      "unique_accounts": 4174
+      "total_state_bytes": 2525552,
+      "total_tx_bytes": 249422740,
+      "unique_accounts": 25236,
+      "state_bytes_after_first_signature": 51784272
     },
     {
       "tx_count": 27050,
-      "total_state_bytes": 9053424,
-      "total_tx_bytes": 148113325,
-      "unique_accounts": 4412
+      "total_state_bytes": 2707052,
+      "total_tx_bytes": 267362200,
+      "unique_accounts": 27051,
+      "state_bytes_after_first_signature": 55508652
     },
     {
       "tx_count": 28994,
-      "total_state_bytes": 9570528,
-      "total_tx_bytes": 158757674,
-      "unique_accounts": 4664
+      "total_state_bytes": 2901452,
+      "total_tx_bytes": 286576696,
+      "unique_accounts": 28995,
+      "state_bytes_after_first_signature": 59497740
     },
     {
       "tx_count": 31079,
-      "total_state_bytes": 10118412,
-      "total_tx_bytes": 170178399,
-      "unique_accounts": 4931
+      "total_state_bytes": 3109952,
+      "total_tx_bytes": 307184836,
+      "unique_accounts": 31080,
+      "state_bytes_after_first_signature": 63776160
     },
     {
       "tx_count": 33313,
-      "total_state_bytes": 10695024,
-      "total_tx_bytes": 182414233,
-      "unique_accounts": 5212
+      "total_state_bytes": 3333352,
+      "total_tx_bytes": 329265692,
+      "unique_accounts": 33314,
+      "state_bytes_after_first_signature": 68360328
     },
     {
       "tx_count": 35708,
-      "total_state_bytes": 11306520,
-      "total_tx_bytes": 195531258,
-      "unique_accounts": 5510
+      "total_state_bytes": 3572852,
+      "total_tx_bytes": 352937872,
+      "unique_accounts": 35709,
+      "state_bytes_after_first_signature": 73274868
     },
     {
       "tx_count": 38275,
-      "total_state_bytes": 11952900,
-      "total_tx_bytes": 209589595,
-      "unique_accounts": 5825
+      "total_state_bytes": 3829552,
+      "total_tx_bytes": 378310100,
+      "unique_accounts": 38276,
+      "state_bytes_after_first_signature": 78542352
     },
     {
       "tx_count": 41027,
-      "total_state_bytes": 12636216,
-      "total_tx_bytes": 224659422,
-      "unique_accounts": 6158
+      "total_state_bytes": 4104752,
+      "total_tx_bytes": 405510868,
+      "unique_accounts": 41028,
+      "state_bytes_after_first_signature": 84189456
     },
     {
       "tx_count": 43976,
-      "total_state_bytes": 13356468,
-      "total_tx_bytes": 240806706,
-      "unique_accounts": 6509
+      "total_state_bytes": 4399652,
+      "total_tx_bytes": 434658784,
+      "unique_accounts": 43977,
+      "state_bytes_after_first_signature": 90240804
     },
     {
       "tx_count": 47138,
-      "total_state_bytes": 14119812,
-      "total_tx_bytes": 258124053,
-      "unique_accounts": 6881
+      "total_state_bytes": 4715852,
+      "total_tx_bytes": 465911992,
+      "unique_accounts": 47139,
+      "state_bytes_after_first_signature": 96729228
     },
     {
       "tx_count": 50526,
-      "total_state_bytes": 14926248,
-      "total_tx_bytes": 276678026,
-      "unique_accounts": 7274
+      "total_state_bytes": 5054652,
+      "total_tx_bytes": 499398984,
+      "unique_accounts": 50527,
+      "state_bytes_after_first_signature": 103681404
     },
     {
       "tx_count": 54159,
-      "total_state_bytes": 15777828,
-      "total_tx_bytes": 296573749,
-      "unique_accounts": 7689
+      "total_state_bytes": 5417952,
+      "total_tx_bytes": 535307556,
+      "unique_accounts": 54160,
+      "state_bytes_after_first_signature": 111136320
     },
     {
       "tx_count": 58052,
-      "total_state_bytes": 16680708,
-      "total_tx_bytes": 317893937,
-      "unique_accounts": 8129
+      "total_state_bytes": 5807252,
+      "total_tx_bytes": 573785968,
+      "unique_accounts": 58053,
+      "state_bytes_after_first_signature": 119124756
     },
     {
       "tx_count": 62226,
-      "total_state_bytes": 17632836,
-      "total_tx_bytes": 340750346,
-      "unique_accounts": 8593
+      "total_state_bytes": 6224652,
+      "total_tx_bytes": 615041784,
+      "unique_accounts": 62227,
+      "state_bytes_after_first_signature": 127689804
     },
     {
       "tx_count": 66699,
-      "total_state_bytes": 18640368,
-      "total_tx_bytes": 365253799,
-      "unique_accounts": 9084
+      "total_state_bytes": 6671952,
+      "total_tx_bytes": 659252916,
+      "unique_accounts": 66700,
+      "state_bytes_after_first_signature": 136868400
     },
     {
       "tx_count": 71494,
-      "total_state_bytes": 19703304,
-      "total_tx_bytes": 391511009,
-      "unique_accounts": 9602
+      "total_state_bytes": 7151452,
+      "total_tx_bytes": 706646696,
+      "unique_accounts": 71495,
+      "state_bytes_after_first_signature": 146707740
     },
     {
       "tx_count": 76634,
-      "total_state_bytes": 20829852,
-      "total_tx_bytes": 419651429,
-      "unique_accounts": 10151
+      "total_state_bytes": 7665452,
+      "total_tx_bytes": 757450456,
+      "unique_accounts": 76635,
+      "state_bytes_after_first_signature": 157255020
     },
     {
       "tx_count": 82143,
-      "total_state_bytes": 22020012,
-      "total_tx_bytes": 449820248,
-      "unique_accounts": 10731
+      "total_state_bytes": 8216352,
+      "total_tx_bytes": 811901412,
+      "unique_accounts": 82144,
+      "state_bytes_after_first_signature": 168559488
     },
     {
       "tx_count": 88049,
-      "total_state_bytes": 23277888,
-      "total_tx_bytes": 482161714,
-      "unique_accounts": 11344
+      "total_state_bytes": 8806952,
+      "total_tx_bytes": 870276316,
+      "unique_accounts": 88050,
+      "state_bytes_after_first_signature": 180678600
     },
     {
       "tx_count": 94379,
-      "total_state_bytes": 24605532,
-      "total_tx_bytes": 516824169,
-      "unique_accounts": 11991
+      "total_state_bytes": 9439952,
+      "total_tx_bytes": 932842036,
+      "unique_accounts": 94380,
+      "state_bytes_after_first_signature": 193667760
     },
     {
       "tx_count": 101164,
-      "total_state_bytes": 26011152,
-      "total_tx_bytes": 553976749,
-      "unique_accounts": 12676
+      "total_state_bytes": 10118452,
+      "total_tx_bytes": 999904976,
+      "unique_accounts": 101165,
+      "state_bytes_after_first_signature": 207590580
     },
     {
       "tx_count": 108437,
-      "total_state_bytes": 27496800,
-      "total_tx_bytes": 593800512,
-      "unique_accounts": 13400
+      "total_state_bytes": 10845752,
+      "total_tx_bytes": 1071791308,
+      "unique_accounts": 108438,
+      "state_bytes_after_first_signature": 222514776
     },
     {
       "tx_count": 116232,
-      "total_state_bytes": 29068632,
-      "total_tx_bytes": 636488307,
-      "unique_accounts": 14166
+      "total_state_bytes": 11625252,
+      "total_tx_bytes": 1148837088,
+      "unique_accounts": 116233,
+      "state_bytes_after_first_signature": 238510116
     },
     {
       "tx_count": 124588,
-      "total_state_bytes": 30728700,
-      "total_tx_bytes": 682241018,
-      "unique_accounts": 14975
+      "total_state_bytes": 12460852,
+      "total_tx_bytes": 1231427792,
+      "unique_accounts": 124589,
+      "state_bytes_after_first_signature": 255656628
     },
     {
       "tx_count": 133545,
-      "total_state_bytes": 32483160,
-      "total_tx_bytes": 731283035,
-      "unique_accounts": 15830
+      "total_state_bytes": 13356552,
+      "total_tx_bytes": 1319958780,
+      "unique_accounts": 133546,
+      "state_bytes_after_first_signature": 274036392
     },
     {
       "tx_count": 143146,
-      "total_state_bytes": 34338168,
-      "total_tx_bytes": 783857576,
-      "unique_accounts": 16734
+      "total_state_bytes": 14316652,
+      "total_tx_bytes": 1414855064,
+      "unique_accounts": 143147,
+      "state_bytes_after_first_signature": 293737644
     },
     {
       "tx_count": 153437,
-      "total_state_bytes": 36299880,
-      "total_tx_bytes": 840212672,
-      "unique_accounts": 17690
+      "total_state_bytes": 15345752,
+      "total_tx_bytes": 1516571308,
+      "unique_accounts": 153438,
+      "state_bytes_after_first_signature": 314854776
     },
     {
       "tx_count": 164468,
-      "total_state_bytes": 38372400,
-      "total_tx_bytes": 900635493,
-      "unique_accounts": 18700
+      "total_state_bytes": 16448852,
+      "total_tx_bytes": 1625601712,
+      "unique_accounts": 164469,
+      "state_bytes_after_first_signature": 337490388
     },
     {
       "tx_count": 176291,
-      "total_state_bytes": 40563936,
-      "total_tx_bytes": 965378266,
-      "unique_accounts": 19768
+      "total_state_bytes": 17631152,
+      "total_tx_bytes": 1742460244,
+      "unique_accounts": 176292,
+      "state_bytes_after_first_signature": 361751184
     },
     {
       "tx_count": 188965,
-      "total_state_bytes": 42880644,
-      "total_tx_bytes": 1034782165,
-      "unique_accounts": 20897
+      "total_state_bytes": 18898552,
+      "total_tx_bytes": 1867730060,
+      "unique_accounts": 188966,
+      "state_bytes_after_first_signature": 387758232
     },
     {
       "tx_count": 202550,
-      "total_state_bytes": 45330732,
-      "total_tx_bytes": 1109173130,
-      "unique_accounts": 22091
+      "total_state_bytes": 20257052,
+      "total_tx_bytes": 2002004200,
+      "unique_accounts": 202551,
+      "state_bytes_after_first_signature": 415634652
     },
     {
       "tx_count": 217112,
-      "total_state_bytes": 47918304,
-      "total_tx_bytes": 1188911962,
-      "unique_accounts": 23352
+      "total_state_bytes": 21713252,
+      "total_tx_bytes": 2145935008,
+      "unique_accounts": 217113,
+      "state_bytes_after_first_signature": 445515876
     },
     {
       "tx_count": 232720,
-      "total_state_bytes": 50655672,
-      "total_tx_bytes": 1274372960,
-      "unique_accounts": 24686
+      "total_state_bytes": 23274052,
+      "total_tx_bytes": 2300204480,
+      "unique_accounts": 232721,
+      "state_bytes_after_first_signature": 477543492
     },
     {
       "tx_count": 249451,
-      "total_state_bytes": 53548992,
-      "total_tx_bytes": 1365991146,
-      "unique_accounts": 26096
+      "total_state_bytes": 24947152,
+      "total_tx_bytes": 2465573684,
+      "unique_accounts": 249452,
+      "state_bytes_after_first_signature": 511875504
     },
     {
       "tx_count": 267384,
-      "total_state_bytes": 56606472,
-      "total_tx_bytes": 1464183864,
-      "unique_accounts": 27586
+      "total_state_bytes": 26740452,
+      "total_tx_bytes": 2642823456,
+      "unique_accounts": 267385,
+      "state_bytes_after_first_signature": 548674020
     },
     {
       "tx_count": 286607,
-      "total_state_bytes": 59840424,
-      "total_tx_bytes": 1569447397,
-      "unique_accounts": 29162
+      "total_state_bytes": 28662752,
+      "total_tx_bytes": 2832823588,
+      "unique_accounts": 286608,
+      "state_bytes_after_first_signature": 588119616
     },
     {
       "tx_count": 307211,
-      "total_state_bytes": 63257004,
-      "total_tx_bytes": 1682285086,
-      "unique_accounts": 30827
+      "total_state_bytes": 30723152,
+      "total_tx_bytes": 3036473524,
+      "unique_accounts": 307212,
+      "state_bytes_after_first_signature": 630399024
     },
     {
       "tx_count": 329297,
-      "total_state_bytes": 66870576,
-      "total_tx_bytes": 1803237027,
-      "unique_accounts": 32588
+      "total_state_bytes": 32931752,
+      "total_tx_bytes": 3254771548,
+      "unique_accounts": 329298,
+      "state_bytes_after_first_signature": 675719496
     },
     {
       "tx_count": 352971,
-      "total_state_bytes": 70689348,
-      "total_tx_bytes": 1932880186,
-      "unique_accounts": 34449
+      "total_state_bytes": 35299152,
+      "total_tx_bytes": 3488765364,
+      "unique_accounts": 352972,
+      "state_bytes_after_first_signature": 724298544
     },
     {
       "tx_count": 378346,
-      "total_state_bytes": 74725632,
-      "total_tx_bytes": 2071834356,
-      "unique_accounts": 36416
+      "total_state_bytes": 37836652,
+      "total_tx_bytes": 3739571864,
+      "unique_accounts": 378347,
+      "state_bytes_after_first_signature": 776368044
     },
     {
       "tx_count": 405546,
-      "total_state_bytes": 78993792,
-      "total_tx_bytes": 2220792881,
-      "unique_accounts": 38496
+      "total_state_bytes": 40556652,
+      "total_tx_bytes": 4008416664,
+      "unique_accounts": 405547,
+      "state_bytes_after_first_signature": 832182444
     },
     {
       "tx_count": 434701,
-      "total_state_bytes": 83506140,
-      "total_tx_bytes": 2380428641,
-      "unique_accounts": 40695
+      "total_state_bytes": 43472152,
+      "total_tx_bytes": 4296584684,
+      "unique_accounts": 434702,
+      "state_bytes_after_first_signature": 892008504
     },
     {
       "tx_count": 465953,
-      "total_state_bytes": 88274988,
-      "total_tx_bytes": 2551570683,
-      "unique_accounts": 43019
+      "total_state_bytes": 46597352,
+      "total_tx_bytes": 4605479452,
+      "unique_accounts": 465954,
+      "state_bytes_after_first_signature": 956137608
     },
     {
       "tx_count": 499451,
-      "total_state_bytes": 93316752,
-      "total_tx_bytes": 2735012701,
-      "unique_accounts": 45476
+      "total_state_bytes": 49947152,
+      "total_tx_bytes": 4936573684,
+      "unique_accounts": 499452,
+      "state_bytes_after_first_signature": 1024875504
     },
     {
       "tx_count": 535357,
-      "total_state_bytes": 98645796,
-      "total_tx_bytes": 2931643032,
-      "unique_accounts": 48073
+      "total_state_bytes": 53537752,
+      "total_tx_bytes": 5291468588,
+      "unique_accounts": 535358,
+      "state_bytes_after_first_signature": 1098554616
     },
     {
       "tx_count": 573844,
-      "total_state_bytes": 104278536,
-      "total_tx_bytes": 3142397914,
-      "unique_accounts": 50818
+      "total_state_bytes": 57386452,
+      "total_tx_bytes": 5671874096,
+      "unique_accounts": 573845,
+      "state_bytes_after_first_signature": 1177529940
     },
     {
       "tx_count": 615099,
-      "total_state_bytes": 110235492,
-      "total_tx_bytes": 3368311579,
-      "unique_accounts": 53721
+      "total_state_bytes": 61511952,
+      "total_tx_bytes": 6079638516,
+      "unique_accounts": 615100,
+      "state_bytes_after_first_signature": 1262185200
     },
     {
       "tx_count": 659319,
-      "total_state_bytes": 116531028,
-      "total_tx_bytes": 3610454154,
-      "unique_accounts": 56789
+      "total_state_bytes": 65933952,
+      "total_tx_bytes": 6516708996,
+      "unique_accounts": 659320,
+      "state_bytes_after_first_signature": 1352924640
     },
     {
       "tx_count": 706718,
-      "total_state_bytes": 123185664,
-      "total_tx_bytes": 3870018418,
-      "unique_accounts": 60032
+      "total_state_bytes": 70673852,
+      "total_tx_bytes": 6985200712,
+      "unique_accounts": 706719,
+      "state_bytes_after_first_signature": 1450187388
     },
     {
       "tx_count": 757525,
-      "total_state_bytes": 130221972,
-      "total_tx_bytes": 4148235300,
-      "unique_accounts": 63461
+      "total_state_bytes": 75754552,
+      "total_tx_bytes": 7487377100,
+      "unique_accounts": 757526,
+      "state_bytes_after_first_signature": 1554443352
     },
     {
       "tx_count": 811984,
-      "total_state_bytes": 137658420,
-      "total_tx_bytes": 4446453719,
-      "unique_accounts": 67085
+      "total_state_bytes": 81200452,
+      "total_tx_bytes": 8025649856,
+      "unique_accounts": 811985,
+      "state_bytes_after_first_signature": 1666193220
     },
     {
       "tx_count": 870359,
-      "total_state_bytes": 145519632,
-      "total_tx_bytes": 4766127259,
-      "unique_accounts": 70916
+      "total_state_bytes": 87037952,
+      "total_tx_bytes": 8602628356,
+      "unique_accounts": 870360,
+      "state_bytes_after_first_signature": 1785978720
     },
     {
       "tx_count": 932930,
-      "total_state_bytes": 153830232,
-      "total_tx_bytes": 5108784290,
-      "unique_accounts": 74966
+      "total_state_bytes": 93295052,
+      "total_tx_bytes": 9221080120,
+      "unique_accounts": 932931,
+      "state_bytes_after_first_signature": 1914374412
     },
     {
       "tx_count": 1000000,
-      "total_state_bytes": 162616896,
-      "total_tx_bytes": 5476041250,
-      "unique_accounts": 79248
+      "total_state_bytes": 100002052,
+      "total_tx_bytes": 9884000000,
+      "unique_accounts": 1000001,
+      "state_bytes_after_first_signature": 2052002052
     }
   ]
 }

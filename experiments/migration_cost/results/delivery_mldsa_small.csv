@@ -1,0 +1,7 @@
+Batch_Size,Repeat,Signer_Key_Type,Signer_Key,Run_Label,Generation,Offset,Deliver_Gas_Total,Deliver_Gas_Per_Tx,Deliver_Tx_Bytes,Chunks,T_Deliver_s,Deliver_Per_Tx_s,Gen_Wait_Finality_s,Gen_Update_Client_Gas,Gen_Update_Client_s,Gen_Use_Slot
+10,1,mldsa65,relayer,d10-r1-relayer,gen1788788087,0,1676616,167661.6,71456,1,4.719,0.47190000000000004,492.427,929868,17.531,4032
+10,2,mldsa65,relayer,d10-r2-relayer,gen1788788087,10,1686280,168628.0,72397,1,4.566,0.4566,492.427,929868,17.531,4032
+10,3,mldsa65,relayer,d10-r3-relayer,gen1788788087,20,1677652,167765.2,71566,1,4.519,0.4519,492.427,929868,17.531,4032
+25,1,mldsa65,relayer,d25-r1-relayer,gen1788788087,30,3901150,156046.0,170855,1,4.556,0.18224,492.427,929868,17.531,4032
+25,2,mldsa65,relayer,d25-r2-relayer,gen1788788087,55,3918118,156724.72,172495,1,2.483,0.09932,492.427,929868,17.531,4032
+25,3,mldsa65,relayer,d25-r3-relayer,gen1788788087,80,3919021,156760.84,172575,1,4.561,0.18244,492.427,929868,17.531,4032

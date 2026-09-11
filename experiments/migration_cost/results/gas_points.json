@@ -1,0 +1,54 @@
+{
+  "validator": {
+    "1": {
+      "gas_used": 186449,
+      "tx_bytes": 6086,
+      "gas_per_packet": 186449.0,
+      "txhash": "CB5AF608E05F8B23C69B6C7B8CC412799CD28B7E4E60C5ADB9EFB0A2B298DE8B"
+    },
+    "10": {
+      "gas_used": 1479256,
+      "tx_bytes": 61712,
+      "gas_per_packet": 147925.6,
+      "txhash": "9BC311E242AFA2C511905D8CAA277CAC8E37AB714790234BE232A02A2F90E127"
+    },
+    "50": {
+      "gas_used": 7125946,
+      "tx_bytes": 299333,
+      "gas_per_packet": 142518.92,
+      "txhash": "C851A15FBA1C66C1E48F18F2E20D2B85FEE5303038D9930B5AB6616DBF79C694"
+    },
+    "124": {
+      "gas_used": 17625307,
+      "tx_bytes": 744078,
+      "gas_per_packet": 142139.57258064515,
+      "txhash": "D3549017F38B4B691B01DB84A69835BEBAF73E3F4CA2B65E03ECBDA97141A51D"
+    }
+  },
+  "loadgen-pool-0": {
+    "1": {
+      "gas_used": 339011,
+      "tx_bytes": 11513,
+      "gas_per_packet": 339011.0,
+      "txhash": "41F36783A2B68065F6B445BD5318A0D52FE5BF31685FA1AF237B5E7608AEBC71"
+    },
+    "10": {
+      "gas_used": 1611218,
+      "tx_bytes": 65139,
+      "gas_per_packet": 161121.8,
+      "txhash": "B2DEDA4C0C1DBBF15679C2ADF6F635E5BB4DC2484AD7E55457141B1811F72409"
+    },
+    "50": {
+      "gas_used": 7284422,
+      "tx_bytes": 305296,
+      "gas_per_packet": 145688.44,
+      "txhash": "9339C02908DC5C1F725D0E0784ECB3D028FBE1D5C096B53DC37261F500A81018"
+    },
+    "124": {
+      "gas_used": 17769960,
+      "tx_bytes": 748325,
+      "gas_per_packet": 143306.12903225806,
+      "txhash": "2382F5893A4B506E867E939C262784CC6413FE48026759C24E3BAB9E8783E343"
+    }
+  }
+}

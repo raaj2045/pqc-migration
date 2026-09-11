@@ -7,7 +7,7 @@ own `go.mod` so they can be built independently of the cosmos fork.
 |-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
 | `presigner/`      | Builds a pre-signed transaction pool: `emit-addresses` lists deterministic loadgen-sender addresses; `sign` serialises N pre-signed `MsgSend` txs per sender. Imports the cosmos fork via local `replace` directives. | Nothing current. Kept for reference; the experiment that used it was removed |
 | `loadgen/`        | Pure-stdlib Go RPC loadgen: replays a pre-signed pool against a CometBFT JSON-RPC endpoint, paces submissions at a target rate, and records per-tx submit/commit timings. Block-sampler observes `/block?height=` independently, so commit time is wall-clock when our poller first observes the inclusion block — not the validator-derived header time. | Nothing current. Kept for reference |
-| `storage_sim/`    | Simulator for on-chain account-state growth at 100 k / 1 M / 10 M txs. Computes per-tx wire size and per-account state size for both schemes. Pure-stdlib. | `benchmarks/storage_sim/plot.py` |
+| `storage_sim/`    | Simulator for account-state and transaction-history growth from 100 k / 1 M / 10 M Ethereum → Cosmos migrations (`MsgRecvPacket`), for both schemes. Pure-stdlib. | `benchmarks/storage_sim/plot.py` |
 | `block_packing/`  | Computes the maximum number of transfers per block for both schemes at default / 2× / 4× block-size limits, using the CometBFT MaxDataBytes overhead model. Pure-stdlib. | `benchmarks/block_packing/plot.py` |
 
 Individual tools: [presigner](presigner/README.md).

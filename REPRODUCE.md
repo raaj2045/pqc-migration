@@ -75,10 +75,10 @@ and `cost_by_batch.md` in `experiments/migration_cost/` — come from:
 python3 experiments/migration_cost/plot_data.py
 ```
 
-It reads `experiments/migration_cost/results/`, which is **not committed**: run
-the measurements in section 2 against a devnet first. It also reads the real
-SP1 proving times committed under
-`experiments/migration_throughput/results/real-verifier/`.
+It reads the measurements committed under `experiments/migration_cost/results/`
+and the real SP1 proving times under
+`experiments/migration_throughput/results/real-verifier/`, so it needs no
+devnet. New measurements from section 2 are added to the same directory.
 
 What each tree contains: [benchmarks/](benchmarks/README.md) (micro-benchmarks
 and simulator output), [experiments/](experiments/README.md) (live-chain

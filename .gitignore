@@ -85,9 +85,14 @@ protocgen.log
 /*.pdf
 
 # Raw per-run experiment data. Regenerate by re-running against your own
-# devnet; only the scripts that produce it are tracked. migration_throughput is
-# the exception — its result set is committed evidence and stays tracked.
+# devnet; only the scripts that produce it are tracked. migration_cost and
+# migration_throughput are the exceptions — their result sets are the source
+# data for the paper's figures and stay tracked. migration_cost's run-a/ and
+# smoke.csv are leftovers that no figure reads.
 experiments/*/results/
 !experiments/migration_throughput/results/
+!experiments/migration_cost/results/
+experiments/migration_cost/results/run-a/
+experiments/migration_cost/results/smoke.csv
 experiments/*/logs/
 experiments/*/sweep_state.json

@@ -35,12 +35,12 @@ const (
 // excluding the pubkey bytes, signature bytes, and the message payload. It
 // sums tag/length bytes from the SDK proto definitions:
 //
-//   TxRaw wrapper (tags for body_bytes, auth_info_bytes, signatures):   ~10 B
-//   TxBody tags (messages, memo=empty, extension_options=empty):        ~10 B
-//   AuthInfo tags (signer_infos, fee):                                  ~8  B
-//   SignerInfo: Any{type_url="/cosmos.crypto.*.PubKey"} + ModeInfo +
-//               sequence varint (pubkey bytes counted separately):      ~46 B
-//   Fee: gas_limit varint + amount=[{denom,amount}]:                    ~36 B
+//	TxRaw wrapper (tags for body_bytes, auth_info_bytes, signatures):   ~10 B
+//	TxBody tags (messages, memo=empty, extension_options=empty):        ~10 B
+//	AuthInfo tags (signer_infos, fee):                                  ~8  B
+//	SignerInfo: Any{type_url="/cosmos.crypto.*.PubKey"} + ModeInfo +
+//	            sequence varint (pubkey bytes counted separately):      ~46 B
+//	Fee: gas_limit varint + amount=[{denom,amount}]:                    ~36 B
 //
 // See github.com/cosmos/cosmos-sdk/proto/cosmos/tx/v1beta1/tx.proto and the
 // generated types in types/tx/tx.pb.go.
@@ -54,28 +54,44 @@ const TxEnvelopeOverhead = 110
 const AccountStateOverhead = 100
 
 // MsgBodySizes lists serialized bytes for common Cosmos SDK messages at
-// typical field values. Values are conservative averages measured against the
-// generated proto types in the SDK (x/bank, x/staking, x/gov, x/wasm, and a
-// custom bridge module for "migration").
+// typical field values.
 //
-//   transfer  (MsgSend):              ~80  B (2 bech32 addresses + 1 Coin)
-//   migration (MsgMigrate/RedeemWETH): ~200 B (includes payload bytes)
-//   stake     (MsgDelegate):           ~95  B (2 addresses + 1 Coin)
-//   gov       (MsgVote):               ~55  B (proposal_id + voter + option)
+//	recv     (MsgRecvPacket):  4,513 B — one Ethereum -> Cosmos migration, as
+//	                           delivered by the relayer. Measured: the median
+//	                           of 110 single-transfer deliveries in
+//	                           experiments/migration_cost/results/latency_by_step.csv,
+//	                           less the envelope, public key and signature.
+//	                           Almost all of it is the Merkle-Patricia proof,
+//	                           which grows as Ethereum's storage trie deepens.
+//	transfer (MsgSend):        ~80 B (2 bech32 addresses + 1 Coin)
+//	stake    (MsgDelegate):    ~95 B (2 addresses + 1 Coin)
+//	gov      (MsgVote):        ~55 B (proposal_id + voter + option)
 var MsgBodySizes = map[string]int{
-	"transfer":  80,
-	"migration": 200,
-	"stake":     95,
-	"gov":       55,
+	"recv":     4513,
+	"transfer": 80,
+	"stake":    95,
+	"gov":      55,
 }
 
-// Account growth model: unique(n) = ceil(K * n^alpha). Sub-linear growth is
+// RecvMsg names the migration message. It differs from the others in who signs
+// it and what account it creates:
+//
+//   - the relayer signs it, not the user, so its public key and signature are
+//     the relayer's, and the relayer's account is stored once;
+//   - it credits a new receiver account — one per migration, since every user
+//     migrates to their own Cosmos address — and that account holds no public
+//     key until its owner first signs a Cosmos transaction. So at migration
+//     time the receiver's key type costs nothing in state.
+const RecvMsg = "recv"
+
+// Account growth model for user-signed messages (everything except recv):
+// unique(n) = ceil(K * n^alpha), n counting user-signed txs only. Sub-linear growth is
 // observed on every production Cosmos chain — new-signer ratio drops from
 // ~100% early in history to 1-2% in mature operation. Calibration targets:
 //
-//   unique(100k)  ≈ 12.5 k  (12.5 % of txs are first-seen)
-//   unique(1M)    ≈ 79   k  ( 7.9 % )
-//   unique(10M)   ≈ 500  k  ( 5.0 % )
+//	unique(100k)  ≈ 12.5 k  (12.5 % of txs are first-seen)
+//	unique(1M)    ≈ 79   k  ( 7.9 % )
+//	unique(10M)   ≈ 500  k  ( 5.0 % )
 //
 // Tunable via --account-alpha / --account-k flags for sensitivity analysis.
 const (
@@ -88,6 +104,9 @@ type Sample struct {
 	TotalStateBytes int64 `json:"total_state_bytes"`
 	TotalTxBytes    int64 `json:"total_tx_bytes"`
 	UniqueAccounts  int64 `json:"unique_accounts"`
+	// State if every account created by a migration had since signed once and
+	// so stored its public key. An upper bound: it adds the key, not the tx.
+	StateBytesAfterFirstSignature int64 `json:"state_bytes_after_first_signature"`
 }
 
 type SimResult struct {
@@ -101,6 +120,8 @@ type SimResult struct {
 	FinalStateBytes     int64    `json:"final_state_bytes"`
 	FinalTxBytes        int64    `json:"final_tx_bytes"`
 	FinalUniqueAccounts int64    `json:"final_unique_accounts"`
+	FinalRecvAccounts   int64    `json:"final_recv_accounts"`
+	FinalStateAfterSign int64    `json:"final_state_bytes_after_first_signature"`
 	Series              []Sample `json:"series"`
 }
 
@@ -119,7 +140,7 @@ func parseMix(s string) (map[string]float64, []string, error) {
 			return nil, nil, fmt.Errorf("bad percent in %q: %v", p, err)
 		}
 		if _, ok := MsgBodySizes[name]; !ok {
-			return nil, nil, fmt.Errorf("unknown msg type %q (known: transfer, migration, stake, gov)", name)
+			return nil, nil, fmt.Errorf("unknown msg type %q (known: recv, transfer, stake, gov)", name)
 		}
 		mix[name] = pct
 		names = append(names, name)
@@ -186,9 +207,13 @@ type Simulator struct {
 	accountK        float64
 	rng             *rand.Rand
 	txCount         int64
+	userTxCount     int64
 	totalTxBytes    int64
 	totalStateBytes int64
 	uniqueAccounts  int64
+	userAccounts    int64
+	recvAccounts    int64
+	relayerStored   bool
 }
 
 func newSim(scheme string, numTx int64, mix map[string]float64, names []string, alpha, k float64, seed int64) (*Simulator, error) {
@@ -237,23 +262,44 @@ func (s *Simulator) expectedAccounts(n int64) int64 {
 }
 
 func (s *Simulator) step() {
-	msgSize := MsgBodySizes[s.pickMsg()]
-	s.totalTxBytes += int64(TxEnvelopeOverhead) + int64(msgSize) + s.pubKeySize + s.sigSize
+	msg := s.pickMsg()
+	// Every tx carries its signer's public key and signature; for recv the
+	// signer is the relayer, whose key is the same scheme.
+	s.totalTxBytes += int64(TxEnvelopeOverhead) + int64(MsgBodySizes[msg]) + s.pubKeySize + s.sigSize
 	s.txCount++
-	target := s.expectedAccounts(s.txCount)
-	if target > s.uniqueAccounts {
-		delta := target - s.uniqueAccounts
-		s.uniqueAccounts = target
+	if msg == RecvMsg {
+		if !s.relayerStored {
+			s.relayerStored = true
+			s.uniqueAccounts++
+			s.totalStateBytes += int64(AccountStateOverhead) + s.pubKeySize
+		}
+		// The new receiver account: no public key yet.
+		s.recvAccounts++
+		s.uniqueAccounts++
+		s.totalStateBytes += int64(AccountStateOverhead)
+		return
+	}
+	s.userTxCount++
+	target := s.expectedAccounts(s.userTxCount)
+	if target > s.userAccounts {
+		delta := target - s.userAccounts
+		s.userAccounts = target
+		s.uniqueAccounts += delta
 		s.totalStateBytes += delta * (int64(AccountStateOverhead) + s.pubKeySize)
 	}
 }
 
+func (s *Simulator) stateAfterFirstSignature() int64 {
+	return s.totalStateBytes + s.recvAccounts*s.pubKeySize
+}
+
 func (s *Simulator) snapshot() Sample {
 	return Sample{
-		TxCount:         s.txCount,
-		TotalStateBytes: s.totalStateBytes,
-		TotalTxBytes:    s.totalTxBytes,
-		UniqueAccounts:  s.uniqueAccounts,
+		TxCount:                       s.txCount,
+		TotalStateBytes:               s.totalStateBytes,
+		TotalTxBytes:                  s.totalTxBytes,
+		UniqueAccounts:                s.uniqueAccounts,
+		StateBytesAfterFirstSignature: s.stateAfterFirstSignature(),
 	}
 }
 
@@ -275,7 +321,7 @@ func (s *Simulator) run(nSamples int) []Sample {
 func main() {
 	scheme := flag.String("scheme", "secp256k1", "signature scheme: secp256k1|mldsa65")
 	numTx := flag.Int64("num-tx", 100000, "number of transactions to simulate")
-	txMix := flag.String("tx-mix", "transfer:60,migration:20,stake:15,gov:5", "tx-type mix (type:pct,...)")
+	txMix := flag.String("tx-mix", "recv:100", "tx-type mix (type:pct,...)")
 	output := flag.String("output", "results.json", "output JSON path")
 	seed := flag.Int64("seed", 42, "RNG seed")
 	alpha := flag.Float64("account-alpha", defaultAccountAlpha, "account-growth exponent (unique = K*n^alpha)")
@@ -307,6 +353,8 @@ func main() {
 		FinalStateBytes:     sim.totalStateBytes,
 		FinalTxBytes:        sim.totalTxBytes,
 		FinalUniqueAccounts: sim.uniqueAccounts,
+		FinalRecvAccounts:   sim.recvAccounts,
+		FinalStateAfterSign: sim.stateAfterFirstSignature(),
 		Series:              series,
 	}
 	data, err := json.MarshalIndent(&res, "", "  ")

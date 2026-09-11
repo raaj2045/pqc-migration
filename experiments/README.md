@@ -106,10 +106,11 @@ against a live devnet to reproduce.
 
 ## What lives where
 
-- **Committed raw data**: `migration_throughput/results/`
-- **Not committed, regenerated against a devnet**: `migration_cost/results/`,
-  written by `measure_data.py`, `measure_delivery.py`, `measure_ack.py` and
-  `measure_throughput.py`; `batch_scaling/results/`
+- **Committed raw data**: `migration_cost/results/`, written by
+  `measure_data.py`, `measure_delivery.py`, `measure_ack.py`,
+  `measure_throughput.py` and `find_recv_ceiling.py`; and
+  `migration_throughput/results/`
+- **Not committed, regenerated against a devnet**: `batch_scaling/results/`
 - **migration_cost figures and cost table**: in `migration_cost/` itself,
   written by `plot_data.py` — see [REPRODUCE.md](../REPRODUCE.md#3-regenerate-the-figures)
 

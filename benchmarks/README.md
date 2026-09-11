@@ -1,15 +1,15 @@
 # benchmarks
 
-Three local benchmarks that produce six of the paper's figures. Each
+Three local benchmarks that produce Figures 1 to 8 of the paper. Each
 sub-directory ships with raw data (`results*.json`), a `plot.py` that
 renders every figure for that benchmark, and a `caption.txt` per
 figure that carries the IEEE-style caption text.
 
 | Sub-directory       | Figures it produces                                                                                                                                              | Source of `results*.json`                  |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
-| `crypto_micro/`     | Fig. 4 (signing latency vs msg size), Fig. 5 (verification vs msg size), Fig. 6 (concurrent signing) — and three additional figures used in the paper appendix. | Go bench at `crypto_micro/crypto_bench_test.go` (own `go.mod`, replace dirs to `../../cosmos`). Run with `go test -bench=. -benchtime=1x -run=^$`. |
-| `storage_sim/`      | Fig. 8 (account-state growth)                                                                                                                                    | Storage simulator at `tools/storage_sim/main.go`. Pure-stdlib Go program; runs in seconds. |
-| `block_packing/`    | Fig. 7 (block capacity)                                                                                                                                          | Block-packing analyser at `tools/block_packing/main.go`. Pure-stdlib Go program; runs in seconds. |
+| `crypto_micro/`     | Fig. 1 (key generation), Fig. 2 (signing vs message size), Fig. 3 (verification vs message size), Fig. 4 (concurrent signing), Fig. 5 (batch verification), Fig. 6 (memory per operation). ML-DSA-44, from the superseded fork | Go bench at `crypto_micro/crypto_bench_test.go` (own `go.mod`, replace dirs to `../../cosmos`). Run with `go test -bench=. -benchtime=1x -run=^$`. |
+| `storage_sim/`      | Fig. 7 (account-state growth from migrations) | Storage simulator at `tools/storage_sim/main.go`. Pure-stdlib Go program; runs in seconds. |
+| `block_packing/`    | Fig. 8 (block capacity) | Block-packing analyser at `tools/block_packing/main.go`. Pure-stdlib Go program; runs in seconds. |
 
 See [`../REPRODUCE.md`](../REPRODUCE.md) for the exact command per
 figure.
