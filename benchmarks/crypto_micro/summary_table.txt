@@ -1,68 +1,68 @@
 ================================================================================
 CRYPTO BENCHMARK SUMMARY
-secp256k1 (ECDSA) vs ML-DSA-44 (FIPS 204)
+secp256k1 (ECDSA) vs ML-DSA-65 (FIPS 204)
 ================================================================================
 
 KEY GENERATION
 ----------------------------------------
-  secp256k1   :       0.56 μs  (    96 B/op,   2 allocs/op)
-  mldsa44     :      52.39 μs  ( 58041 B/op,   5 allocs/op)
+  secp256k1   :       0.10 μs  (    96 B/op,   2 allocs/op)
+  mldsa65     :      69.77 μs  ( 86049 B/op,   4 allocs/op)
 
 SIGNING (by message size)
 ----------------------------------------
   100 B:
-    secp256k1   :      36.67 μs
-    mldsa44     :     123.46 μs
+    secp256k1   :      24.20 μs
+    mldsa65     :     140.30 μs
   1 KiB:
-    secp256k1   :      35.54 μs
-    mldsa44     :     127.35 μs
+    secp256k1   :      24.45 μs
+    mldsa65     :     167.02 μs
   10 KiB:
-    secp256k1   :      39.31 μs
-    mldsa44     :     125.88 μs
+    secp256k1   :      28.11 μs
+    mldsa65     :     163.42 μs
   100 KiB:
-    secp256k1   :      84.42 μs
-    mldsa44     :     358.91 μs
+    secp256k1   :      63.59 μs
+    mldsa65     :     370.64 μs
 
 VERIFICATION (by message size)
 ----------------------------------------
   100 B:
-    secp256k1   :     132.62 μs
-    mldsa44     :      38.03 μs
+    secp256k1   :      96.07 μs
+    mldsa65     :      43.65 μs
   1 KiB:
-    secp256k1   :     131.61 μs
-    mldsa44     :      39.50 μs
+    secp256k1   :      95.13 μs
+    mldsa65     :      45.12 μs
   10 KiB:
-    secp256k1   :     140.00 μs
-    mldsa44     :      65.75 μs
+    secp256k1   :     100.31 μs
+    mldsa65     :      59.92 μs
   100 KiB:
-    secp256k1   :     186.78 μs
-    mldsa44     :     338.92 μs
+    secp256k1   :     135.58 μs
+    mldsa65     :     215.60 μs
 
 BATCH VERIFICATION
 ----------------------------------------
   Batch size 10:
-    secp256k1   :       1.45 ms total (145.34 μs/sig)
-    mldsa44     :       0.38 ms total (38.50 μs/sig)
+    secp256k1   :       0.96 ms total (95.76 μs/sig)
+    mldsa65     :       0.44 ms total (43.92 μs/sig)
   Batch size 100:
-    secp256k1   :      14.54 ms total (145.36 μs/sig)
-    mldsa44     :       4.18 ms total (41.79 μs/sig)
+    secp256k1   :       9.66 ms total (96.62 μs/sig)
+    mldsa65     :       4.31 ms total (43.06 μs/sig)
   Batch size 1000:
-    secp256k1   :     145.23 ms total (145.23 μs/sig)
-    mldsa44     :      40.92 ms total (40.92 μs/sig)
+    secp256k1   :      96.72 ms total (96.72 μs/sig)
+    mldsa65     :      39.49 ms total (39.49 μs/sig)
 
 CONCURRENT SIGNING THROUGHPUT (sigs/sec)
 ----------------------------------------
   1 goroutine(s):
-    secp256k1   :        24604 sigs/sec
-    mldsa44     :         4306 sigs/sec
+    secp256k1   :        41333 sigs/sec
+    mldsa65     :         7166 sigs/sec
   4 goroutine(s):
-    secp256k1   :        86453 sigs/sec
-    mldsa44     :        11818 sigs/sec
+    secp256k1   :       152300 sigs/sec
+    mldsa65     :        15746 sigs/sec
   8 goroutine(s):
-    secp256k1   :       118036 sigs/sec
-    mldsa44     :        12687 sigs/sec
+    secp256k1   :       203046 sigs/sec
+    mldsa65     :        21697 sigs/sec
   16 goroutine(s):
-    secp256k1   :       114377 sigs/sec
-    mldsa44     :        22061 sigs/sec
+    secp256k1   :       198768 sigs/sec
+    mldsa65     :        25950 sigs/sec
 
 ================================================================================

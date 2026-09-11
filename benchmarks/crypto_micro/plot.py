@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Crypto microbenchmarks — secp256k1 vs ML-DSA-44 — publication figures (v2).
+Crypto microbenchmarks — secp256k1 vs ML-DSA-65 — publication figures (v2).
 
 Six PDFs are produced from results.json:
 
@@ -18,7 +18,7 @@ draw confidence intervals. Captions state this.
 
 v2 declutter pass: titles dropped (caption carries them), data labels
 limited to one per element, scheme labels minimal ("secp256k1" /
-"ML-DSA-44"), reference lines and axis labels trimmed.
+"ML-DSA-65"), reference lines and axis labels trimmed.
 """
 
 import json
@@ -44,8 +44,8 @@ plt.rcParams.update({
 
 COLOR_SECP = "#1f77b4"
 COLOR_MLDSA = "#d62728"
-COLORS = {"secp256k1": COLOR_SECP, "mldsa44": COLOR_MLDSA}
-LABELS = {"secp256k1": "secp256k1", "mldsa44": "ML-DSA-44"}
+COLORS = {"secp256k1": COLOR_SECP, "mldsa65": COLOR_MLDSA}
+LABELS = {"secp256k1": "secp256k1", "mldsa65": "ML-DSA-65"}
 
 MSG_SIZES = [100, 1024, 10240, 102400]
 MSG_LABELS = ["100 B", "1 KiB", "10 KiB", "100 KiB"]
@@ -74,7 +74,7 @@ def ns_to_ms(ns):
 def plot_keygen_comparison(grouped, out="fig_keygen_comparison.pdf"):
     fig, ax = plt.subplots(figsize=(5.5, 3.5))
 
-    schemes = ["secp256k1", "mldsa44"]
+    schemes = ["secp256k1", "mldsa65"]
     latencies_us = []
     for s in schemes:
         rows = [r for r in grouped.get("KeyGen", []) if r["scheme"] == s]
@@ -92,7 +92,8 @@ def plot_keygen_comparison(grouped, out="fig_keygen_comparison.pdf"):
     ax.set_xticklabels([LABELS[s] for s in schemes])
     ax.set_ylabel("Key generation latency (μs, log)")
     ax.set_yscale("log")
-    ax.set_ylim(1, max(latencies_us) * 4)
+    # Floor a decade below the smallest bar so every bar and its label is inside.
+    ax.set_ylim(10 ** np.floor(np.log10(min(latencies_us)) - 1), max(latencies_us) * 4)
     ax.grid(True, axis="y", which="both", linestyle="--", alpha=0.4)
 
     fig.tight_layout()
@@ -105,7 +106,7 @@ def plot_op_by_msg_size(grouped, op, ylabel, out):
     fig, ax = plt.subplots(figsize=(5.5, 3.5))
 
     rows_all = [r for r in grouped.get(op, []) if r["msg_size_bytes"] > 0]
-    for scheme in ("secp256k1", "mldsa44"):
+    for scheme in ("secp256k1", "mldsa65"):
         rows = sorted(
             (r for r in rows_all if r["scheme"] == scheme),
             key=lambda r: r["msg_size_bytes"],
@@ -138,7 +139,7 @@ def plot_concurrent_signing(grouped, out="fig_concurrent_signing.pdf"):
 
     rows_all = grouped.get("Throughput") or grouped.get("ConcurrentSign") or []
 
-    for scheme in ("secp256k1", "mldsa44"):
+    for scheme in ("secp256k1", "mldsa65"):
         rows = sorted(
             (r for r in rows_all
              if r["scheme"] == scheme and r.get("goroutines", 0) > 0),
@@ -173,7 +174,7 @@ def plot_batch_verification(grouped, out="fig_batch_verification.pdf"):
     fig, ax = plt.subplots(figsize=(5.5, 3.5))
 
     rows_all = grouped.get("BatchVerify", [])
-    for scheme in ("secp256k1", "mldsa44"):
+    for scheme in ("secp256k1", "mldsa65"):
         rows = sorted(
             (r for r in rows_all
              if r["scheme"] == scheme and r.get("batch_size", 0) > 0),
@@ -206,7 +207,7 @@ def plot_memory_allocs(grouped, out="fig_memory_allocs.pdf"):
     fig, (ax_bytes, ax_allocs) = plt.subplots(1, 2, figsize=(9.0, 3.5))
 
     operations = ["KeyGen", "Sign", "Verify"]
-    schemes = ["secp256k1", "mldsa44"]
+    schemes = ["secp256k1", "mldsa65"]
 
     bytes_data = {s: [] for s in schemes}
     allocs_data = {s: [] for s in schemes}
@@ -268,7 +269,7 @@ def create_summary_table(results, out="summary_table.txt"):
     with open(out, "w") as f:
         f.write("=" * 80 + "\n")
         f.write("CRYPTO BENCHMARK SUMMARY\n")
-        f.write("secp256k1 (ECDSA) vs ML-DSA-44 (FIPS 204)\n")
+        f.write("secp256k1 (ECDSA) vs ML-DSA-65 (FIPS 204)\n")
         f.write("=" * 80 + "\n\n")
 
         f.write("KEY GENERATION\n" + "-" * 40 + "\n")

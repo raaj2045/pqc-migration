@@ -6,12 +6,12 @@
     "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 4182673,
-    "tx_size_bytes": 287,
-    "max_tx_per_block": 14573,
-    "avg_tx_size_bytes": 287,
-    "used_bytes": 4182451,
-    "block_utilization_pct": 99.71740245819092,
-    "wasted_bytes": 11853
+    "tx_size_bytes": 319,
+    "max_tx_per_block": 13111,
+    "avg_tx_size_bytes": 319,
+    "used_bytes": 4182409,
+    "block_utilization_pct": 99.71640110015869,
+    "wasted_bytes": 11895
   },
   {
     "scheme": "mldsa65",
@@ -20,12 +20,12 @@
     "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 4182673,
-    "tx_size_bytes": 5451,
-    "max_tx_per_block": 767,
-    "avg_tx_size_bytes": 5451,
-    "used_bytes": 4180917,
-    "block_utilization_pct": 99.68082904815674,
-    "wasted_bytes": 13387
+    "tx_size_bytes": 5483,
+    "max_tx_per_block": 762,
+    "avg_tx_size_bytes": 5483,
+    "used_bytes": 4178046,
+    "block_utilization_pct": 99.61237907409668,
+    "wasted_bytes": 16258
   },
   {
     "scheme": "secp256k1",
@@ -34,12 +34,12 @@
     "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 8376977,
-    "tx_size_bytes": 287,
-    "max_tx_per_block": 29188,
-    "avg_tx_size_bytes": 287,
-    "used_bytes": 8376956,
-    "block_utilization_pct": 99.86109733581543,
-    "wasted_bytes": 11652
+    "tx_size_bytes": 319,
+    "max_tx_per_block": 26260,
+    "avg_tx_size_bytes": 319,
+    "used_bytes": 8376940,
+    "block_utilization_pct": 99.86090660095215,
+    "wasted_bytes": 11668
   },
   {
     "scheme": "mldsa65",
@@ -48,12 +48,12 @@
     "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 8376977,
-    "tx_size_bytes": 5451,
-    "max_tx_per_block": 1536,
-    "avg_tx_size_bytes": 5451,
-    "used_bytes": 8372736,
-    "block_utilization_pct": 99.810791015625,
-    "wasted_bytes": 15872
+    "tx_size_bytes": 5483,
+    "max_tx_per_block": 1527,
+    "avg_tx_size_bytes": 5483,
+    "used_bytes": 8372541,
+    "block_utilization_pct": 99.80846643447876,
+    "wasted_bytes": 16067
   },
   {
     "scheme": "secp256k1",
@@ -62,12 +62,12 @@
     "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 16765585,
-    "tx_size_bytes": 287,
-    "max_tx_per_block": 58416,
-    "avg_tx_size_bytes": 287,
-    "used_bytes": 16765392,
-    "block_utilization_pct": 99.92952346801758,
-    "wasted_bytes": 11824
+    "tx_size_bytes": 319,
+    "max_tx_per_block": 52556,
+    "avg_tx_size_bytes": 319,
+    "used_bytes": 16765364,
+    "block_utilization_pct": 99.9293565750122,
+    "wasted_bytes": 11852
   },
   {
     "scheme": "mldsa65",
@@ -76,11 +76,11 @@
     "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 16765585,
-    "tx_size_bytes": 5451,
-    "max_tx_per_block": 3075,
-    "avg_tx_size_bytes": 5451,
-    "used_bytes": 16761825,
-    "block_utilization_pct": 99.9082624912262,
-    "wasted_bytes": 15391
+    "tx_size_bytes": 5483,
+    "max_tx_per_block": 3057,
+    "avg_tx_size_bytes": 5483,
+    "used_bytes": 16761531,
+    "block_utilization_pct": 99.9065101146698,
+    "wasted_bytes": 15685
   }
 ]

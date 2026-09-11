@@ -35,7 +35,7 @@ const CometBFTGenesisDefaultMaxBytes int64 = 22020096
 // Cosmos SDK tx proto types. See tools/storage_sim/main.go for the derivation.
 const (
 	TxEnvelopeOverhead   = 110 // TxRaw + TxBody + AuthInfo + Fee + SignerInfo (ex pubkey)
-	MsgSend1In1OutBytes  = 80  // MsgSend with 2 bech32 addrs + 1 Coin
+	MsgSend1In1OutBytes  = 112 // MsgSend with 2 bech32 addrs + 1 Coin, as encoded by SDK v0.55
 	Secp256k1PubKeyBytes = 33
 	Secp256k1SigBytes    = 64
 	MLDSA65PubKeyBytes   = 1952

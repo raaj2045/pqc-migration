@@ -168,9 +168,10 @@ def write_summary() -> None:
         "roughly doubles rather than growing with the key-size ratio.\n"
     )
     lines.append(
-        "Not modelled: the per-migration state ICS-20 writes regardless of key "
-        "type — the packet receipt, the acknowledgement commitment and the "
-        "voucher balance. They add the same bytes under both schemes.\n"
+        "**Limitation — not modelled:** the per-migration state ICS-20 writes "
+        "whatever the key type: the packet receipt, the acknowledgement "
+        "commitment and the voucher balance. Including it would pull both "
+        "totals up by the same amount and push every ratio above closer to 1.\n"
     )
 
     out = HERE / "summary.md"

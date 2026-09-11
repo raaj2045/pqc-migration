@@ -106,14 +106,26 @@ These tools build standalone and are covered by CI. The block-packing limit is
 pinned at 4 MiB so the figure does not depend on whichever `genesis.json` the
 tool finds on the machine.
 
+`benchmarks/crypto_micro/results.json` comes from Go benchmarks of both key
+types, each run 10 times; the parser keeps the median:
+
+```bash
+cd benchmarks/crypto_micro
+go test -bench=. -benchmem -count=10 -run='^$' -timeout=60m . > raw_benchmark.txt
+python3 parse_results.py && python3 plot.py
+cd ../..
+```
+
+About 15 minutes. Timings depend on the machine, so run nothing else alongside
+it; the committed results were measured on an AMD Ryzen 5 7600X with 6 logical
+CPUs.
+
 ## Scope
 
-Two modules report **ML-DSA-44 from the superseded fork**, not the current
-chain's ML-DSA-65: `benchmarks/crypto_micro` and `tools/presigner`. Neither
-builds in this tree, and both are excluded from CI. The crypto_micro figure
-above re-renders their committed ML-DSA-44 results; it does not describe the
-current chain. See
-[HISTORY.md](HISTORY.md#ml-dsa-44-modules-still-in-the-tree).
+Every figure above describes the current chain's ML-DSA-65. The crypto
+benchmarks (Figures 1–6) were re-measured after the move from the ML-DSA-44
+fork and are not comparable to the figures published from it; see
+[HISTORY.md](HISTORY.md#moving-the-measurements-to-ml-dsa-65).
 
 The adversarial light-client suite in
 [`security/light-client-stress/`](security/light-client-stress/README.md)

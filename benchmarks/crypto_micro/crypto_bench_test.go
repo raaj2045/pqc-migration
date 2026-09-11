@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/cloudflare/circl/sign/mldsa/mldsa44"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/mldsa"
+	cmtmldsa65 "github.com/cometbft/cometbft/crypto/mldsa65"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/mldsa65"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 )
 
@@ -46,11 +46,11 @@ func BenchmarkKeyGen_Secp256k1(b *testing.B) {
 	}
 }
 
-func BenchmarkKeyGen_MLDSA44(b *testing.B) {
+func BenchmarkKeyGen_MLDSA65(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := mldsa.GenPrivKey()
+		_, err := mldsa65.GenPrivKey()
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -89,24 +89,24 @@ func benchmarkSignSecp256k1(b *testing.B, msgSize int) {
 	}
 }
 
-func BenchmarkSign_MLDSA44_100B(b *testing.B) {
-	benchmarkSignMLDSA44(b, 100)
+func BenchmarkSign_MLDSA65_100B(b *testing.B) {
+	benchmarkSignMLDSA65(b, 100)
 }
 
-func BenchmarkSign_MLDSA44_1KB(b *testing.B) {
-	benchmarkSignMLDSA44(b, 1024)
+func BenchmarkSign_MLDSA65_1KB(b *testing.B) {
+	benchmarkSignMLDSA65(b, 1024)
 }
 
-func BenchmarkSign_MLDSA44_10KB(b *testing.B) {
-	benchmarkSignMLDSA44(b, 10240)
+func BenchmarkSign_MLDSA65_10KB(b *testing.B) {
+	benchmarkSignMLDSA65(b, 10240)
 }
 
-func BenchmarkSign_MLDSA44_100KB(b *testing.B) {
-	benchmarkSignMLDSA44(b, 102400)
+func BenchmarkSign_MLDSA65_100KB(b *testing.B) {
+	benchmarkSignMLDSA65(b, 102400)
 }
 
-func benchmarkSignMLDSA44(b *testing.B, msgSize int) {
-	privKey, err := mldsa.GenPrivKey()
+func benchmarkSignMLDSA65(b *testing.B, msgSize int) {
+	privKey, err := mldsa65.GenPrivKey()
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -158,24 +158,24 @@ func benchmarkVerifySecp256k1(b *testing.B, msgSize int) {
 	}
 }
 
-func BenchmarkVerify_MLDSA44_100B(b *testing.B) {
-	benchmarkVerifyMLDSA44(b, 100)
+func BenchmarkVerify_MLDSA65_100B(b *testing.B) {
+	benchmarkVerifyMLDSA65(b, 100)
 }
 
-func BenchmarkVerify_MLDSA44_1KB(b *testing.B) {
-	benchmarkVerifyMLDSA44(b, 1024)
+func BenchmarkVerify_MLDSA65_1KB(b *testing.B) {
+	benchmarkVerifyMLDSA65(b, 1024)
 }
 
-func BenchmarkVerify_MLDSA44_10KB(b *testing.B) {
-	benchmarkVerifyMLDSA44(b, 10240)
+func BenchmarkVerify_MLDSA65_10KB(b *testing.B) {
+	benchmarkVerifyMLDSA65(b, 10240)
 }
 
-func BenchmarkVerify_MLDSA44_100KB(b *testing.B) {
-	benchmarkVerifyMLDSA44(b, 102400)
+func BenchmarkVerify_MLDSA65_100KB(b *testing.B) {
+	benchmarkVerifyMLDSA65(b, 102400)
 }
 
-func benchmarkVerifyMLDSA44(b *testing.B, msgSize int) {
-	privKey, err := mldsa.GenPrivKey()
+func benchmarkVerifyMLDSA65(b *testing.B, msgSize int) {
+	privKey, err := mldsa65.GenPrivKey()
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -197,7 +197,7 @@ func benchmarkVerifyMLDSA44(b *testing.B, msgSize int) {
 
 // ==================== Batch Verify Benchmarks ====================
 // Note: secp256k1 does not have native batch verification
-// ML-DSA-44 via circl does not expose batch verification either
+// ML-DSA-65 (CometBFT, over circl) does not expose batch verification either
 // We simulate batch by sequential verification and note this limitation
 
 func BenchmarkBatchVerify_Secp256k1_10(b *testing.B) {
@@ -239,19 +239,19 @@ func benchmarkBatchVerifySecp256k1(b *testing.B, batchSize int) {
 	}
 }
 
-func BenchmarkBatchVerify_MLDSA44_10(b *testing.B) {
-	benchmarkBatchVerifyMLDSA44(b, 10)
+func BenchmarkBatchVerify_MLDSA65_10(b *testing.B) {
+	benchmarkBatchVerifyMLDSA65(b, 10)
 }
 
-func BenchmarkBatchVerify_MLDSA44_100(b *testing.B) {
-	benchmarkBatchVerifyMLDSA44(b, 100)
+func BenchmarkBatchVerify_MLDSA65_100(b *testing.B) {
+	benchmarkBatchVerifyMLDSA65(b, 100)
 }
 
-func BenchmarkBatchVerify_MLDSA44_1000(b *testing.B) {
-	benchmarkBatchVerifyMLDSA44(b, 1000)
+func BenchmarkBatchVerify_MLDSA65_1000(b *testing.B) {
+	benchmarkBatchVerifyMLDSA65(b, 1000)
 }
 
-func benchmarkBatchVerifyMLDSA44(b *testing.B, batchSize int) {
+func benchmarkBatchVerifyMLDSA65(b *testing.B, batchSize int) {
 	// Pre-generate keys, messages, and signatures
 	type sigBundle struct {
 		pubKey interface{ VerifySignature([]byte, []byte) bool }
@@ -261,7 +261,7 @@ func benchmarkBatchVerifyMLDSA44(b *testing.B, batchSize int) {
 
 	bundles := make([]sigBundle, batchSize)
 	for i := 0; i < batchSize; i++ {
-		privKey, _ := mldsa.GenPrivKey()
+		privKey, _ := mldsa65.GenPrivKey()
 		msg := generateMessage(100)
 		sig, _ := privKey.Sign(msg)
 		bundles[i] = sigBundle{privKey.PubKey(), msg, sig}
@@ -329,27 +329,27 @@ func benchmarkConcurrentSignSecp256k1(b *testing.B, numGoroutines int) {
 	}
 }
 
-func BenchmarkConcurrentSign_MLDSA44_1(b *testing.B) {
-	benchmarkConcurrentSignMLDSA44(b, 1)
+func BenchmarkConcurrentSign_MLDSA65_1(b *testing.B) {
+	benchmarkConcurrentSignMLDSA65(b, 1)
 }
 
-func BenchmarkConcurrentSign_MLDSA44_4(b *testing.B) {
-	benchmarkConcurrentSignMLDSA44(b, 4)
+func BenchmarkConcurrentSign_MLDSA65_4(b *testing.B) {
+	benchmarkConcurrentSignMLDSA65(b, 4)
 }
 
-func BenchmarkConcurrentSign_MLDSA44_8(b *testing.B) {
-	benchmarkConcurrentSignMLDSA44(b, 8)
+func BenchmarkConcurrentSign_MLDSA65_8(b *testing.B) {
+	benchmarkConcurrentSignMLDSA65(b, 8)
 }
 
-func BenchmarkConcurrentSign_MLDSA44_16(b *testing.B) {
-	benchmarkConcurrentSignMLDSA44(b, 16)
+func BenchmarkConcurrentSign_MLDSA65_16(b *testing.B) {
+	benchmarkConcurrentSignMLDSA65(b, 16)
 }
 
-func benchmarkConcurrentSignMLDSA44(b *testing.B, numGoroutines int) {
+func benchmarkConcurrentSignMLDSA65(b *testing.B, numGoroutines int) {
 	// Pre-generate keys for each goroutine
-	keys := make([]*mldsa.PrivKey, numGoroutines)
+	keys := make([]mldsa65.PrivKey, numGoroutines)
 	for i := 0; i < numGoroutines; i++ {
-		key, err := mldsa.GenPrivKey()
+		key, err := mldsa65.GenPrivKey()
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -432,29 +432,29 @@ func benchmarkThroughputSecp256k1(b *testing.B, numGoroutines int) {
 	wg.Wait()
 }
 
-func BenchmarkThroughput_MLDSA44_1(b *testing.B) {
-	benchmarkThroughputMLDSA44(b, 1)
+func BenchmarkThroughput_MLDSA65_1(b *testing.B) {
+	benchmarkThroughputMLDSA65(b, 1)
 }
 
-func BenchmarkThroughput_MLDSA44_4(b *testing.B) {
-	benchmarkThroughputMLDSA44(b, 4)
+func BenchmarkThroughput_MLDSA65_4(b *testing.B) {
+	benchmarkThroughputMLDSA65(b, 4)
 }
 
-func BenchmarkThroughput_MLDSA44_8(b *testing.B) {
-	benchmarkThroughputMLDSA44(b, 8)
+func BenchmarkThroughput_MLDSA65_8(b *testing.B) {
+	benchmarkThroughputMLDSA65(b, 8)
 }
 
-func BenchmarkThroughput_MLDSA44_16(b *testing.B) {
-	benchmarkThroughputMLDSA44(b, 16)
+func BenchmarkThroughput_MLDSA65_16(b *testing.B) {
+	benchmarkThroughputMLDSA65(b, 16)
 }
 
-func benchmarkThroughputMLDSA44(b *testing.B, numGoroutines int) {
+func benchmarkThroughputMLDSA65(b *testing.B, numGoroutines int) {
 	runtime.GOMAXPROCS(numGoroutines)
 
 	// Pre-generate keys for each goroutine
-	keys := make([]*mldsa.PrivKey, numGoroutines)
+	keys := make([]mldsa65.PrivKey, numGoroutines)
 	for i := 0; i < numGoroutines; i++ {
-		key, err := mldsa.GenPrivKey()
+		key, err := mldsa65.GenPrivKey()
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -492,8 +492,8 @@ func TestKeySizes(t *testing.T) {
 	msg := []byte("test message")
 	secpSig, _ := secpPriv.Sign(msg)
 
-	// ML-DSA-44
-	mldsaPriv, _ := mldsa.GenPrivKey()
+	// ML-DSA-65
+	mldsaPriv, _ := mldsa65.GenPrivKey()
 	mldsaPub := mldsaPriv.PubKey()
 	mldsaSig, _ := mldsaPriv.Sign(msg)
 
@@ -502,15 +502,15 @@ func TestKeySizes(t *testing.T) {
 	fmt.Printf("  Private Key: %d bytes\n", len(secpPriv.Bytes()))
 	fmt.Printf("  Public Key:  %d bytes\n", len(secpPub.Bytes()))
 	fmt.Printf("  Signature:   %d bytes\n", len(secpSig))
-	fmt.Printf("\nML-DSA-44:\n")
+	fmt.Printf("\nML-DSA-65:\n")
 	fmt.Printf("  Private Key: %d bytes\n", len(mldsaPriv.Bytes()))
 	fmt.Printf("  Public Key:  %d bytes\n", len(mldsaPub.Bytes()))
 	fmt.Printf("  Signature:   %d bytes\n", len(mldsaSig))
-	fmt.Printf("\nML-DSA-44 constants:\n")
-	fmt.Printf("  Seed Size:       %d bytes\n", mldsa44.SeedSize)
-	fmt.Printf("  Public Key Size: %d bytes\n", mldsa44.PublicKeySize)
-	fmt.Printf("  Private Key Size: %d bytes\n", mldsa44.PrivateKeySize)
-	fmt.Printf("  Signature Size:  %d bytes\n", mldsa44.SignatureSize)
+	fmt.Printf("\nML-DSA-65 constants:\n")
+	fmt.Printf("  Seed Size:       %d bytes\n", cmtmldsa65.SeedSize)
+	fmt.Printf("  Public Key Size: %d bytes\n", cmtmldsa65.PubKeySize)
+	fmt.Printf("  Private Key Size: %d bytes\n", cmtmldsa65.PrivKeySize)
+	fmt.Printf("  Signature Size:  %d bytes\n", cmtmldsa65.SignatureSize)
 }
 
 // ==================== JSON Export Helper ====================

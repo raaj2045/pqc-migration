@@ -2,12 +2,9 @@
 # tests, and builds the standalone paper tools. Total wall time is well
 # under 10 minutes.
 #
-# NOTE: benchmarks/crypto_micro and tools/presigner are not built here.
-# Both import github.com/cosmos/cosmos-sdk/crypto/keys/mldsa via a
-# `replace` onto the deleted cosmos/ fork. Stock SDK v0.55 ships
-# crypto/keys/mldsa65 instead, so they need source changes (a different
-# package and a different ML-DSA parameter set) rather than a dropped
-# replace directive. Tracked with the paper rewrite.
+# NOTE: tools/presigner is not built here. It imports the ML-DSA-44
+# crypto/keys/mldsa package through a `replace` onto the deleted cosmos/
+# fork, and nothing current uses it. See HISTORY.md.
 name: ci
 
 on:
@@ -43,6 +40,14 @@ jobs:
         run: |
           go build -o /tmp/pqchaind ./cmd/pqchaind
           /tmp/pqchaind version
+
+      # Own go.mod on the same SDK as the chain, so it needs the same Go.
+      # Builds the benchmarks and checks key sizes; the timed run is manual.
+      - name: build crypto benchmarks
+        run: |
+          cd benchmarks/crypto_micro
+          go vet ./...
+          go test -run TestKeySizes .
 
   devnet-config:
     runs-on: ubuntu-latest

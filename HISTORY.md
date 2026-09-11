@@ -28,28 +28,37 @@ For history before the fork point, consult the
 [upstream repository](https://github.com/cosmos/cosmos-sdk) (Apache-2.0,
 copyright the Cosmos SDK contributors).
 
-## ML-DSA-44 modules still in the tree
+## Moving the measurements to ML-DSA-65
 
-Two modules measure **ML-DSA-44 from the superseded fork**, not the ML-DSA-65
-implementation this repository now builds. They are retained for historical
-reference, and every figure they produce shows ML-DSA-44 numbers rather than
-the current chain's.
+Every figure in the repository now describes the current chain's ML-DSA-65.
+The ML-DSA-44 figures published from the fork remain at the
+**`v1-mldsa44-fork`** tag.
 
-| Module | State |
+| Module | What changed |
 |---|---|
-| `benchmarks/crypto_micro` | `go test -bench` imports `crypto/keys/mldsa` via a `replace` onto the removed `cosmos/` fork. Does not build; excluded from CI |
-| `tools/presigner` | Same import, same `replace`. Does not build; excluded from CI |
+| `benchmarks/crypto_micro` (Figures 1–6) | Ported to the SDK's own `crypto/keys/mldsa65` on stock SDK v0.55, with the `replace` onto the removed fork dropped. Builds and is in CI |
+| `tools/storage_sim` (Figure 7) | ML-DSA-65 key and signature sizes; transaction mix rebuilt around the Ethereum → Cosmos migration message |
+| `tools/block_packing` (Figure 8) | ML-DSA-65 key and signature sizes |
 
-The block-packing and storage simulators (`tools/block_packing`,
-`tools/storage_sim`) were also written for ML-DSA-44 and have since been re-run
-with ML-DSA-65 sizes.
+**The new crypto_micro figures are not comparable to the ML-DSA-44 ones.** The
+port changes three things at once, so neither set is an update of the other:
 
-**These are not to be ported to ML-DSA-65 as a mechanical fix.** Stock SDK v0.55
-ships `crypto/keys/mldsa65` — a different package *and* a different parameter
-set — so dropping the `replace` directive is not sufficient. Porting changes
-what is being measured, and the resulting numbers would not be comparable to
-those already published. Whether to re-measure, and how to present both sets of
-figures, is tied to the paper rewrite.
+- **The parameter set.** ML-DSA-65 is a higher security level than ML-DSA-44,
+  with larger keys and signatures and more work per operation.
+- **The code path.** The benchmark now goes through the SDK key type the chain
+  itself uses, which re-parses the packed key on every signature and every
+  verification. That is the cost a transaction actually pays.
+- **The machine.** Same CPU (AMD Ryzen 5 7600X), but the ML-DSA-44 run had 12
+  logical CPUs and this one has 6, which changes the shape of the concurrency
+  figures.
+
+The comparison that holds is the one inside each run: both key types were
+measured together, on the same machine, in the same session.
+
+One module still carries ML-DSA-44: **`tools/presigner`**, which imports the
+fork's `crypto/keys/mldsa` through a `replace` onto the removed `cosmos/`
+directory. It does not build and is excluded from CI. Nothing current uses it;
+it built transaction pools for an experiment that has since been removed.
 
 ## The retired bridge module
 

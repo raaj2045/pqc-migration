@@ -156,8 +156,8 @@ func parseResultName(name string) BenchmarkResult {
 	// Determine scheme
 	if strings.Contains(name, "Secp256k1") {
 		result.Scheme = "secp256k1"
-	} else if strings.Contains(name, "MLDSA44") {
-		result.Scheme = "mldsa44"
+	} else if strings.Contains(name, "MLDSA65") {
+		result.Scheme = "mldsa65"
 	}
 
 	// Parse message size

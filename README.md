@@ -62,10 +62,10 @@ Reference notes: [Ethereum light client](docs/ethereum-light-client.md) ·
 
 ## Status
 
-Everything in the tree builds and is covered by CI, except two ML-DSA-44
-modules from the superseded fork, `benchmarks/crypto_micro` and
-`tools/presigner`, which still report ML-DSA-44 rather than the current chain's
-ML-DSA-65; see [HISTORY.md](HISTORY.md#ml-dsa-44-modules-still-in-the-tree).
+Everything in the tree builds and is covered by CI, and every figure describes
+the current chain's ML-DSA-65. The one exception is `tools/presigner`, an unused
+module from the superseded ML-DSA-44 fork that no longer builds; see
+[HISTORY.md](HISTORY.md#moving-the-measurements-to-ml-dsa-65).
 
 ## Project
 

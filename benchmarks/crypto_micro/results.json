@@ -3,342 +3,342 @@
     "operation": "KeyGen",
     "scheme": "secp256k1",
     "msg_size_bytes": 0,
-    "ns_per_op": 563,
+    "ns_per_op": 103,
     "allocs_per_op": 2,
     "bytes_per_op": 96
   },
   {
     "operation": "KeyGen",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 0,
-    "ns_per_op": 52387,
-    "allocs_per_op": 5,
-    "bytes_per_op": 58041
+    "ns_per_op": 69765,
+    "allocs_per_op": 4,
+    "bytes_per_op": 86049
   },
   {
     "operation": "Sign",
     "scheme": "secp256k1",
     "msg_size_bytes": 100,
-    "ns_per_op": 36670,
-    "allocs_per_op": 34,
-    "bytes_per_op": 1744
+    "ns_per_op": 24203,
+    "allocs_per_op": 30,
+    "bytes_per_op": 1624
   },
   {
     "operation": "Sign",
     "scheme": "secp256k1",
     "msg_size_bytes": 1024,
-    "ns_per_op": 35544,
-    "allocs_per_op": 34,
-    "bytes_per_op": 1744
+    "ns_per_op": 24446,
+    "allocs_per_op": 30,
+    "bytes_per_op": 1624
   },
   {
     "operation": "Sign",
     "scheme": "secp256k1",
     "msg_size_bytes": 10240,
-    "ns_per_op": 39314,
-    "allocs_per_op": 34,
-    "bytes_per_op": 1744
+    "ns_per_op": 28105,
+    "allocs_per_op": 30,
+    "bytes_per_op": 1624
   },
   {
     "operation": "Sign",
     "scheme": "secp256k1",
     "msg_size_bytes": 102400,
-    "ns_per_op": 84418,
-    "allocs_per_op": 34,
-    "bytes_per_op": 1744
+    "ns_per_op": 63594,
+    "allocs_per_op": 30,
+    "bytes_per_op": 1624
   },
   {
     "operation": "Sign",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 100,
-    "ns_per_op": 123462,
+    "ns_per_op": 140303,
     "allocs_per_op": 5,
-    "bytes_per_op": 52291
+    "bytes_per_op": 77635
   },
   {
     "operation": "Sign",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 1024,
-    "ns_per_op": 127354,
+    "ns_per_op": 167023,
     "allocs_per_op": 5,
-    "bytes_per_op": 52291
+    "bytes_per_op": 77635
   },
   {
     "operation": "Sign",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 10240,
-    "ns_per_op": 125884,
+    "ns_per_op": 163416,
     "allocs_per_op": 5,
-    "bytes_per_op": 52291
+    "bytes_per_op": 77635
   },
   {
     "operation": "Sign",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 102400,
-    "ns_per_op": 358911,
+    "ns_per_op": 370643,
     "allocs_per_op": 5,
-    "bytes_per_op": 52291
+    "bytes_per_op": 77635
   },
   {
     "operation": "Verify",
     "scheme": "secp256k1",
     "msg_size_bytes": 100,
-    "ns_per_op": 132616,
-    "allocs_per_op": 19,
-    "bytes_per_op": 864
+    "ns_per_op": 96073,
+    "allocs_per_op": 15,
+    "bytes_per_op": 744
   },
   {
     "operation": "Verify",
     "scheme": "secp256k1",
     "msg_size_bytes": 1024,
-    "ns_per_op": 131606,
-    "allocs_per_op": 19,
-    "bytes_per_op": 864
+    "ns_per_op": 95130,
+    "allocs_per_op": 15,
+    "bytes_per_op": 744
   },
   {
     "operation": "Verify",
     "scheme": "secp256k1",
     "msg_size_bytes": 10240,
-    "ns_per_op": 139999,
-    "allocs_per_op": 19,
-    "bytes_per_op": 864
+    "ns_per_op": 100314,
+    "allocs_per_op": 15,
+    "bytes_per_op": 744
   },
   {
     "operation": "Verify",
     "scheme": "secp256k1",
     "msg_size_bytes": 102400,
-    "ns_per_op": 186775,
-    "allocs_per_op": 19,
-    "bytes_per_op": 864
+    "ns_per_op": 135576,
+    "allocs_per_op": 15,
+    "bytes_per_op": 744
   },
   {
     "operation": "Verify",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 100,
-    "ns_per_op": 38034,
-    "allocs_per_op": 5,
-    "bytes_per_op": 16898
+    "ns_per_op": 43648,
+    "allocs_per_op": 6,
+    "bytes_per_op": 41474
   },
   {
     "operation": "Verify",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 1024,
-    "ns_per_op": 39503,
-    "allocs_per_op": 5,
-    "bytes_per_op": 16898
+    "ns_per_op": 45115,
+    "allocs_per_op": 6,
+    "bytes_per_op": 41474
   },
   {
     "operation": "Verify",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 10240,
-    "ns_per_op": 65748,
-    "allocs_per_op": 5,
-    "bytes_per_op": 16898
+    "ns_per_op": 59922,
+    "allocs_per_op": 6,
+    "bytes_per_op": 41474
   },
   {
     "operation": "Verify",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 102400,
-    "ns_per_op": 338922,
-    "allocs_per_op": 5,
-    "bytes_per_op": 16898
+    "ns_per_op": 215603,
+    "allocs_per_op": 6,
+    "bytes_per_op": 41474
   },
   {
     "operation": "BatchVerify",
     "scheme": "secp256k1",
     "msg_size_bytes": 100,
-    "ns_per_op": 1453409,
-    "allocs_per_op": 190,
-    "bytes_per_op": 8640,
+    "ns_per_op": 957623,
+    "allocs_per_op": 150,
+    "bytes_per_op": 7440,
     "batch_size": 10
   },
   {
     "operation": "BatchVerify",
     "scheme": "secp256k1",
     "msg_size_bytes": 100,
-    "ns_per_op": 14536435,
-    "allocs_per_op": 1900,
-    "bytes_per_op": 86401,
+    "ns_per_op": 9661897,
+    "allocs_per_op": 1500,
+    "bytes_per_op": 74400,
     "batch_size": 100
   },
   {
     "operation": "BatchVerify",
     "scheme": "secp256k1",
     "msg_size_bytes": 100,
-    "ns_per_op": 145227868,
-    "allocs_per_op": 19000,
-    "bytes_per_op": 864014,
+    "ns_per_op": 96722473,
+    "allocs_per_op": 15000,
+    "bytes_per_op": 744021,
     "batch_size": 1000
   },
   {
     "operation": "BatchVerify",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 100,
-    "ns_per_op": 384974,
-    "allocs_per_op": 50,
-    "bytes_per_op": 168983,
+    "ns_per_op": 439231,
+    "allocs_per_op": 60,
+    "bytes_per_op": 414746,
     "batch_size": 10
   },
   {
     "operation": "BatchVerify",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 100,
-    "ns_per_op": 4178589,
-    "allocs_per_op": 500,
-    "bytes_per_op": 1689837,
+    "ns_per_op": 4305701,
+    "allocs_per_op": 600,
+    "bytes_per_op": 4147463,
     "batch_size": 100
   },
   {
     "operation": "BatchVerify",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 100,
-    "ns_per_op": 40915994,
-    "allocs_per_op": 5004,
-    "bytes_per_op": 16898184,
+    "ns_per_op": 39489435,
+    "allocs_per_op": 6001,
+    "bytes_per_op": 41474223,
     "batch_size": 1000
   },
   {
     "operation": "ConcurrentSign",
     "scheme": "secp256k1",
     "msg_size_bytes": 1024,
-    "ns_per_op": 3649892,
-    "allocs_per_op": 3404,
-    "bytes_per_op": 174533,
+    "ns_per_op": 2461680,
+    "allocs_per_op": 3004,
+    "bytes_per_op": 162529,
     "goroutines": 1
   },
   {
     "operation": "ConcurrentSign",
     "scheme": "secp256k1",
     "msg_size_bytes": 1024,
-    "ns_per_op": 5958612,
-    "allocs_per_op": 13610,
-    "bytes_per_op": 698129,
+    "ns_per_op": 2765716,
+    "allocs_per_op": 12010,
+    "bytes_per_op": 650156,
     "goroutines": 4
   },
   {
     "operation": "ConcurrentSign",
     "scheme": "secp256k1",
     "msg_size_bytes": 1024,
-    "ns_per_op": 9350059,
-    "allocs_per_op": 27219,
-    "bytes_per_op": 1396322,
+    "ns_per_op": 5204607,
+    "allocs_per_op": 24018,
+    "bytes_per_op": 1300086,
     "goroutines": 8
   },
   {
     "operation": "ConcurrentSign",
     "scheme": "secp256k1",
     "msg_size_bytes": 1024,
-    "ns_per_op": 15627483,
-    "allocs_per_op": 54435,
-    "bytes_per_op": 2792152,
+    "ns_per_op": 8292647,
+    "allocs_per_op": 48034,
+    "bytes_per_op": 2600125,
     "goroutines": 16
   },
   {
     "operation": "ConcurrentSign",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 1024,
-    "ns_per_op": 8889465,
-    "allocs_per_op": 506,
-    "bytes_per_op": 5229234,
+    "ns_per_op": 15856807,
+    "allocs_per_op": 504,
+    "bytes_per_op": 7763585,
     "goroutines": 1
   },
   {
     "operation": "ConcurrentSign",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 1024,
-    "ns_per_op": 34606362,
-    "allocs_per_op": 2020,
-    "bytes_per_op": 20917019,
+    "ns_per_op": 27144101,
+    "allocs_per_op": 2010,
+    "bytes_per_op": 31054403,
     "goroutines": 4
   },
   {
     "operation": "ConcurrentSign",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 1024,
-    "ns_per_op": 48642622,
-    "allocs_per_op": 4030,
-    "bytes_per_op": 41833716,
+    "ns_per_op": 41203766,
+    "allocs_per_op": 4020,
+    "bytes_per_op": 62108824,
     "goroutines": 8
   },
   {
     "operation": "ConcurrentSign",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 1024,
-    "ns_per_op": 85324957,
-    "allocs_per_op": 8051,
-    "bytes_per_op": 83666801,
+    "ns_per_op": 56541686,
+    "allocs_per_op": 8043,
+    "bytes_per_op": 124217941,
     "goroutines": 16
   },
   {
     "operation": "Throughput",
     "scheme": "secp256k1",
     "msg_size_bytes": 256,
-    "ns_per_op": 40644,
-    "allocs_per_op": 34,
-    "bytes_per_op": 1744,
+    "ns_per_op": 24194,
+    "allocs_per_op": 30,
+    "bytes_per_op": 1624,
     "goroutines": 1
   },
   {
     "operation": "Throughput",
     "scheme": "secp256k1",
     "msg_size_bytes": 256,
-    "ns_per_op": 11567,
-    "allocs_per_op": 34,
-    "bytes_per_op": 1744,
+    "ns_per_op": 6566,
+    "allocs_per_op": 29,
+    "bytes_per_op": 1623,
     "goroutines": 4
   },
   {
     "operation": "Throughput",
     "scheme": "secp256k1",
     "msg_size_bytes": 256,
-    "ns_per_op": 8472,
-    "allocs_per_op": 34,
-    "bytes_per_op": 1744,
+    "ns_per_op": 4925,
+    "allocs_per_op": 30,
+    "bytes_per_op": 1624,
     "goroutines": 8
   },
   {
     "operation": "Throughput",
     "scheme": "secp256k1",
     "msg_size_bytes": 256,
-    "ns_per_op": 8743,
-    "allocs_per_op": 33,
-    "bytes_per_op": 1743,
+    "ns_per_op": 5031,
+    "allocs_per_op": 30,
+    "bytes_per_op": 1624,
     "goroutines": 16
   },
   {
     "operation": "Throughput",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 256,
-    "ns_per_op": 232253,
+    "ns_per_op": 139555,
     "allocs_per_op": 5,
-    "bytes_per_op": 52290,
+    "bytes_per_op": 77634,
     "goroutines": 1
   },
   {
     "operation": "Throughput",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 256,
-    "ns_per_op": 84614,
+    "ns_per_op": 63507,
     "allocs_per_op": 5,
-    "bytes_per_op": 52286,
+    "bytes_per_op": 77634,
     "goroutines": 4
   },
   {
     "operation": "Throughput",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 256,
-    "ns_per_op": 78821,
+    "ns_per_op": 46089,
     "allocs_per_op": 5,
-    "bytes_per_op": 52285,
+    "bytes_per_op": 77624,
     "goroutines": 8
   },
   {
     "operation": "Throughput",
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "msg_size_bytes": 256,
-    "ns_per_op": 45329,
+    "ns_per_op": 38536,
     "allocs_per_op": 5,
-    "bytes_per_op": 52256,
+    "bytes_per_op": 77621,
     "goroutines": 16
   }
 ]

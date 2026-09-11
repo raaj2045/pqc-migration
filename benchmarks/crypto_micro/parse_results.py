@@ -60,8 +60,8 @@ def parse_result_name(name):
     # Determine scheme
     if 'Secp256k1' in name:
         result['scheme'] = 'secp256k1'
-    elif 'MLDSA44' in name:
-        result['scheme'] = 'mldsa44'
+    elif 'MLDSA65' in name:
+        result['scheme'] = 'mldsa65'
 
     # Parse message size
     if '_100B' in name:

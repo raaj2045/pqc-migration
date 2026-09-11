@@ -63,12 +63,13 @@ const AccountStateOverhead = 100
 //	                           less the envelope, public key and signature.
 //	                           Almost all of it is the Merkle-Patricia proof,
 //	                           which grows as Ethereum's storage trie deepens.
-//	transfer (MsgSend):        ~80 B (2 bech32 addresses + 1 Coin)
+//	transfer (MsgSend):        112 B (2 bech32 addresses + 1 Coin), measured by
+//	                           encoding one with the SDK v0.55 type
 //	stake    (MsgDelegate):    ~95 B (2 addresses + 1 Coin)
 //	gov      (MsgVote):        ~55 B (proposal_id + voter + option)
 var MsgBodySizes = map[string]int{
 	"recv":     4513,
-	"transfer": 80,
+	"transfer": 112,
 	"stake":    95,
 	"gov":      55,
 }

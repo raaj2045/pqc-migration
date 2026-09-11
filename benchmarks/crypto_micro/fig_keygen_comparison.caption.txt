@@ -1,3 +1,3 @@
-Fig. 1: Mean key generation latency for secp256k1 (ECDSA) versus ML-DSA-44 (FIPS 204), bar chart with logarithmic ordinate.
-Single Go testing.B run per scheme on AMD Ryzen 5 7600X (6 cores, 12 threads) under Go 1.23.5; the reported value is the mean over the framework's auto-tuned internal iteration count and run-to-run variance is not measured.
-ML-DSA-44 key generation costs 52.4 microseconds versus 0.56 microseconds for secp256k1, a 93x slowdown that reflects the post-quantum scheme's lattice-sampling cost.
+Fig. 1: Key generation latency for secp256k1 (ECDSA) versus ML-DSA-65 (FIPS 204), bar chart with logarithmic ordinate.
+Median of 10 Go testing.B runs per key type, each with testing.B's own iteration count, on an AMD Ryzen 5 7600X with 6 logical CPUs under Go 1.26.5; ML-DSA-65 is measured through the Cosmos SDK v0.55 key type the chain uses, which re-parses the packed key on every call.
+ML-DSA-65 key generation costs 69.8 microseconds versus 0.10 microseconds for secp256k1, a 677x slowdown; key generation happens once per account, so it does not bear on transaction throughput.

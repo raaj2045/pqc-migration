@@ -36,4 +36,4 @@ The post-quantum key is paid when each migrated user first signs: if all 10 M do
 
 Transaction history at 10 M migrations is 92.05 GiB (ML-DSA-65) vs 43.96 GiB (secp256k1), 2.09x. The Merkle-Patricia proof inside each `MsgRecvPacket` is the same under both schemes, so history roughly doubles rather than growing with the key-size ratio.
 
-Not modelled: the per-migration state ICS-20 writes regardless of key type — the packet receipt, the acknowledgement commitment and the voucher balance. They add the same bytes under both schemes.
+**Limitation — not modelled:** the per-migration state ICS-20 writes whatever the key type: the packet receipt, the acknowledgement commitment and the voucher balance. Including it would pull both totals up by the same amount and push every ratio above closer to 1.

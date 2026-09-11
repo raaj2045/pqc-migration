@@ -7,7 +7,7 @@ figure that carries the IEEE-style caption text.
 
 | Sub-directory       | Figures it produces                                                                                                                                              | Source of `results*.json`                  |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
-| `crypto_micro/`     | Fig. 1 (key generation), Fig. 2 (signing vs message size), Fig. 3 (verification vs message size), Fig. 4 (concurrent signing), Fig. 5 (batch verification), Fig. 6 (memory per operation). ML-DSA-44, from the superseded fork | Go bench at `crypto_micro/crypto_bench_test.go` (own `go.mod`, replace dirs to `../../cosmos`). Run with `go test -bench=. -benchtime=1x -run=^$`. |
+| `crypto_micro/`     | Fig. 1 (key generation), Fig. 2 (signing vs message size), Fig. 3 (verification vs message size), Fig. 4 (concurrent signing), Fig. 5 (batch verification), Fig. 6 (memory per operation) | Go bench at `crypto_micro/crypto_bench_test.go` (own `go.mod`, stock Cosmos SDK v0.55). Run with `go test -bench=. -benchmem -count=10 -run='^$'`. |
 | `storage_sim/`      | Fig. 7 (account-state growth from migrations) | Storage simulator at `tools/storage_sim/main.go`. Pure-stdlib Go program; runs in seconds. |
 | `block_packing/`    | Fig. 8 (block capacity) | Block-packing analyser at `tools/block_packing/main.go`. Pure-stdlib Go program; runs in seconds. |
 
@@ -29,26 +29,21 @@ outputs with per-tx and per-block accounting.
 
 ```bash
 # crypto_micro (parse_results.py reads raw_benchmark.txt and writes results.json; it takes no args)
-cd crypto_micro && go test -bench=. -benchtime=1x -run=^$ > raw_benchmark.txt \
+cd crypto_micro && go test -bench=. -benchmem -count=10 -run='^$' -timeout=60m . > raw_benchmark.txt \
   && python3 parse_results.py && python3 plot.py
 
-# storage_sim
-cd ../../tools/storage_sim && go run . --out ../../benchmarks/storage_sim/
-cd ../../benchmarks/storage_sim && python3 plot.py
-
-# block_packing
-cd ../../tools/block_packing && go run . > ../../benchmarks/block_packing/results.json
-cd ../../benchmarks/block_packing && python3 plot.py
 ```
 
-## Single Go run vs paper data
+The simulator commands for `storage_sim` and `block_packing` are in
+[REPRODUCE.md §4](../REPRODUCE.md#4-regenerate-the-raw-data-optional).
 
-`crypto_bench_test.go` runs each sub-benchmark a single time
-(`-benchtime=1x`) — that is what produced the data shipped here.
-There is no run-to-run variance reported in the figures because
-`testing.B` auto-tunes its own iteration count. Numbers will differ
-slightly on different hardware; the magnitudes and ratios that the
-paper draws conclusions from are stable.
+## How the timings are taken
+
+Each sub-benchmark runs 10 times (`-count=10`), and `testing.B` picks its own
+iteration count within each run; the parser keeps the median of the 10. The
+figures show that median, without run-to-run spread. Absolute timings depend on
+the hardware; the committed data comes from an AMD Ryzen 5 7600X with 6 logical
+CPUs, which also sets where the concurrency figures stop scaling.
 
 ---
 
