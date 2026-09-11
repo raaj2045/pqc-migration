@@ -26,14 +26,17 @@ Transfer is **ICS-20 over IBC v2 (Eureka)**. There is no custom bridge module:
 `x/lockandmint` was retired, and all cross-chain value movement now goes through
 standard ICS-20 packets whose proofs are checked by light clients on both sides.
 
-`stake` is Cosmos-native, so **Cosmos holds the escrow and Ethereum holds the
-IBCERC20 vouchers**. Redemption burns the voucher on Ethereum and unescrows on
-Cosmos — the mirror of the outbound transfer.
+Assets move in both directions, and which chain holds the escrow depends on
+where the asset was issued:
 
-The reverse direction runs too: an Ethereum-native ERC-20 escrowed on
-Ethereum, with a voucher auto-minted on Cosmos — no pre-registration on either
-side, same denom-trace mechanism as the forward leg. See
-[devnet/README.md#native-asset-cycle](../devnet/README.md#native-asset-cycle).
+| Asset | Escrowed on | Voucher on | Role |
+|---|---|---|---|
+| Ethereum-native ERC-20 (`TestERC20`) | Ethereum | Cosmos, as `ibc/<hash>` | **The migration the paper measures** |
+| Cosmos-native `stake` | Cosmos | Ethereum, as `IBCERC20` | Supported; measured earlier, now superseded |
+
+Vouchers are minted automatically on first receipt, with no pre-registration on
+either side. The escrowed original is locked, never burned, so total supply is
+unchanged and each voucher is a claim on what is held.
 
 ## The two light clients
 
@@ -45,28 +48,36 @@ relayer; a relayer can only deliver proofs, never assert facts.
 | Ethereum → Cosmos | Cosmos | `cw-ics08-wasm-eth` (inside 08-wasm) | BLS signatures of the 512-key sync committee |
 | Cosmos → Ethereum | Ethereum | `SP1ICS07Tendermint` | An SP1 Groth16 proof of Tendermint consensus |
 
+The migration path — an Ethereum-native asset moving to Cosmos — is drawn solid.
+The acknowledgement that closes it, and the superseded Cosmos-native path, are
+dashed.
+
 ```mermaid
 flowchart LR
-    subgraph COSMOS["Cosmos chain (ML-DSA-65 accounts)"]
-        ESCROW["ICS-20 escrow"]
-        WASMLC["cw-ics08-wasm-eth<br/>BLS sync-committee verification"]
-    end
-
     subgraph ETH["Ethereum"]
-        ROUTER["ICS26Router / ICS20Transfer"]
-        VOUCHER["IBCERC20 voucher"]
+        ERC20["TestERC20<br/>(Ethereum-native)"]
+        ESCROW["ICS20Transfer escrow<br/>via ICS26Router"]
         SP1LC["SP1ICS07Tendermint<br/>+ SP1VerifierGroth16"]
+        IBCERC20["IBCERC20 voucher<br/>(for stake)"]
     end
 
-    ESCROW -- "transfer: packet + SP1 proof" --> SP1LC
-    SP1LC -- verifies --> ROUTER
-    ROUTER --> VOUCHER
+    subgraph COSMOS["Cosmos chain (ML-DSA-65 accounts)"]
+        WASMLC["cw-ics08-wasm-eth<br/>BLS sync-committee verification"]
+        MINT["ibc/#lt;hash#gt; voucher<br/>minted to the user"]
+        STAKE["stake escrow"]
+    end
 
-    VOUCHER -- "redeem: burn + packet" --> WASMLC
-    WASMLC -- verifies --> ESCROW
+    ERC20 -- "1. sendTransfer: escrow + packet" --> ESCROW
+    ESCROW -- "2. packet + Merkle-Patricia proof,<br/>after Ethereum finality" --> WASMLC
+    WASMLC -- "3. verifies, then mints" --> MINT
+    MINT -.->|"4. acknowledgement + SP1 proof"| SP1LC
+    SP1LC -.->|"clears the packet commitment"| ESCROW
 
-    style COSMOS fill:#1f2937,stroke:#4b5563,color:#f9fafb
+    STAKE -.->|"superseded: stake out, SP1 proof"| SP1LC
+    SP1LC -.-> IBCERC20
+
     style ETH fill:#1f2937,stroke:#4b5563,color:#f9fafb
+    style COSMOS fill:#1f2937,stroke:#4b5563,color:#f9fafb
 ```
 
 ### Ethereum → Cosmos
@@ -110,7 +121,35 @@ Client creation therefore goes through **proof-api**, which derives the keys
 from the ELFs and reads trusted state from a live light block, returning
 deployment calldata. See [devnet/README.md](../devnet/README.md#proving).
 
-## Transfer flow
+## Migration flow: Ethereum → Cosmos
+
+The direction the paper is about, measured in
+[`experiments/migration_cost/`](../experiments/migration_cost/README.md). Run a
+single cycle by hand with the
+[native-asset cycle](../devnet/README.md#native-asset-cycle).
+
+1. **Escrow (Ethereum).** The user calls `ICS20Transfer.sendTransfer` with an
+   Ethereum-native ERC-20. The tokens go into escrow and `ICS26Router` writes a
+   packet commitment into Ethereum storage.
+2. **Wait for finality (Ethereum).** The packet cannot be proved until Ethereum
+   finality covers the block containing it — roughly two epochs, about 540 s on
+   the devnet.
+3. **Update the light client (Cosmos).** `MsgUpdateClient` makes
+   `cw-ics08-wasm-eth` BLS-verify the sync committee and store the finalized
+   execution state root.
+4. **Receive and mint (Cosmos).** `MsgRecvPacket` carries a Merkle-Patricia
+   proof of the commitment, fetched with `eth_getProof`. The light client
+   verifies it against the stored root, ICS-20 mints the `ibc/<hash>` voucher to
+   the receiver, and the acknowledgement is written in the same transaction.
+5. **Acknowledge (Ethereum).** proof-api proves the acknowledgement with SP1;
+   `SP1ICS07Tendermint` verifies it and `ICS26Router` clears the packet
+   commitment, closing the migration.
+
+## Cosmos-native transfer flow: Cosmos → Ethereum
+
+The opposite direction, for `stake`. Measured earlier in
+[`experiments/batch_scaling/`](../experiments/batch_scaling/README.md), which
+is superseded and is not the paper's migration result.
 
 1. **Send.** A `MsgTransfer` on Cosmos escrows `stake` and commits a packet.
    The packet must carry `encoding: application/x-solidity-abi`, since the EVM
@@ -122,7 +161,7 @@ deployment calldata. See [devnet/README.md](../devnet/README.md#proving).
 4. **Acknowledge.** The acknowledgement is proved back to Cosmos, closing the
    packet.
 
-## Redemption flow
+## Redemption flow: `stake` back to Cosmos
 
 1. **Burn.** `ICS20Transfer` recognises the voucher's denom as returning to
    source, burns it, and emits a packet back to Cosmos.
@@ -148,7 +187,10 @@ application-level identifier check.
 | `devnet/` | Devnet tooling: deployment, relayer, transfer and redemption steps |
 | `docs/` | This documentation, and the live-path formal verification |
 | `security/` | Fuzzing and adversarial light-client tests |
-| `benchmarks/`, `experiments/` | Raw data and plot scripts for the paper figures |
+| `benchmarks/` | Signature, block-packing and storage measurements, with plot scripts |
+| `experiments/migration_cost/` | **Current.** Ethereum → Cosmos migration: cost, time and rate, by batch size and signing key type |
+| `experiments/batch_scaling/` | **Superseded.** Cosmos → Ethereum transfers of `stake` against the mock SP1 verifier; the opposite direction, not the paper's migration result |
+| `experiments/` (others) | Validator scaling, the live-bridge throughput run and cold sync — see [experiments/README.md](../experiments/README.md) |
 | `tools/` | Simulators and load-generation tooling |
 
 ---

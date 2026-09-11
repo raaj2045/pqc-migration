@@ -5,8 +5,9 @@ Migrating Legacy Blockchain Accounts to Post-Quantum Systems"*. It is
 **not** an actively-maintained software product.
 
 The repository is published so that the paper's claims are
-reproducible and the engineering choices behind ML-DSA-44 in Cosmos
-SDK can be inspected end-to-end. We accept issues and pull requests
+reproducible and the engineering choices behind ML-DSA-65 accounts on
+stock Cosmos SDK, and Ethereum → Cosmos asset migration over ICS-20,
+can be inspected end-to-end. We accept issues and pull requests
 in the spirit of academic record-keeping but cannot promise turnaround
 times.
 

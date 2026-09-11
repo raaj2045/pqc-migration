@@ -7,7 +7,7 @@ chain end-to-end.
 |---------------------------|------------------|----------------------|-------------------------------------------------------------------------------------------------------------------|
 | `validator_scaling_v2/`   | Cosmos only      | **Headline** (paper) | 30-cell run across N ∈ {4, 7, 16} validators × target tx-rate ∈ {10, 50, 100, 200, 500} × scheme ∈ {secp256k1, mldsa44}. Produces Figs. 9-12 of the paper. |
 | `migration_cost/`       | **EVM → Cosmos** | **Current** (paper)  | The migration direction the paper is about. Many independent users each escrow an ERC-20 on Ethereum and are credited a voucher on Cosmos. Varies batch size and the signing key type of the delivery transaction. Real BLS + MPT verification on the measured leg. |
-| `migration_throughput/`   | EVM → Cosmos     | **Complete** (paper) | Batching on the live bridge: transfers acknowledged per finality window across N ∈ {1, 5, 10, 20, 40} packets offered per window, 5 repeats each. 1,000 transfers, 0 failures. |
+| `migration_throughput/`   | Cosmos → EVM → Cosmos (round trip of `stake`) | **Complete** (paper) | Batching on the live bridge: transfers acknowledged per finality window across N ∈ {1, 5, 10, 20, 40} packets offered per window, 5 repeats each. 1,000 transfers, 0 failures. |
 | `batch_scaling/`          | Cosmos → EVM     | Superseded           | Forward-leg batching against `SP1MockVerifier`: transfer-mechanism scaling (time, throughput, gas) as group size grows across {1, 10, 50, 100, 250, 500}, stopping automatically at the first group size that fails. |
 | `cold_sync/`              | Cosmos only      | Scaffolded, not run  | Block-sync replay time on a fresh full node — see the explicit "scaffolded, not yet run" notice in its README.    |
 
@@ -76,6 +76,11 @@ Runner, plotter and results live in the experiment directory. Needs a live
 devnet.
 
 ## `migration_throughput/`
+
+**Direction: a round trip of Cosmos-native `stake`.** Each transfer goes out
+from Cosmos to Ethereum, and the leg measured is its acknowledgement coming
+back to Cosmos. It is not the Ethereum-native migration measured in
+`migration_cost/`.
 
 Sustained ICS-20 throughput on the **live** bridge — ML-DSA-65 accounts on
 Cosmos, packets verified by the real `cw-ics08-wasm-eth` light client against a

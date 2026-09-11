@@ -70,10 +70,20 @@ tools build standalone and are covered by CI.
 
 ## Scope
 
-Two figure sets are **out of scope for reproduction against the current
-chain**: `benchmarks/crypto_micro` and `tools/presigner` measure ML-DSA-44 from
-the superseded fork, are excluded from CI, and do not build in this tree. Their
-committed results are retained as published. See
+Six modules report **ML-DSA-44 from the superseded fork**, not the current
+chain's ML-DSA-65:
+
+- `benchmarks/crypto_micro` and `tools/presigner` do not build in this tree and
+  are excluded from CI.
+- `experiments/validator_scaling_v2` cannot be re-run here: its scripts need the
+  removed fork testnet. Its committed results regenerate the figures, but those
+  figures show ML-DSA-44.
+- `experiments/cold_sync` was written for the same testnet and never run.
+- `tools/block_packing` and `tools/storage_sim` build and run (commands above),
+  but their key and signature sizes are ML-DSA-44's, so reproducing them
+  reproduces ML-DSA-44 figures.
+
+Committed results are retained as published. See
 [HISTORY.md](HISTORY.md#ml-dsa-44-modules-still-in-the-tree).
 
 The adversarial light-client suite in

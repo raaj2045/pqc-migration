@@ -1,0 +1,570 @@
+<mxfile host="app.diagrams.net" type="device" pages="2">
+  <diagram id="proposed-framework" name="Architecture">
+    <mxGraphModel dx="1000" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="ttl" value="Proposed Framework: Migrating Assets to a Post-Quantum Chain" style="text;html=1;align=center;verticalAlign=middle;fontSize=17;fontStyle=1;fontFamily=Tahoma;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="40" y="24" width="747" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="sub" value="Value is escrowed on the source chain and represented by a voucher on the target chain. A relayer carries proofs between them&#10;but is never trusted: each chain runs a light client of the other and verifies its consensus itself." style="text;html=1;align=center;verticalAlign=middle;fontSize=11;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="60" y="52" width="707" height="32" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tcloud" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#0000CC;shadow=1;strokeWidth=2;" value="" vertex="1" parent="1">
+          <mxGeometry x="150" y="100" width="530" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="tlab" value="&lt;font style=&quot;font-size: 14px; color: rgb(0, 76, 153);&quot;&gt;&lt;b&gt;Target (Post-Quantum)&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;font-size: 14px; color: rgb(0, 76, 153);&quot;&gt;&lt;b&gt;Blockchain&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="330" y="112" width="170" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="tacct" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;Post-Quantum Account Creation&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="190" y="176" width="118" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="tlc" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;Light Client of the Source Chain&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#f8cecc;fontColor=#333333;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="336" y="176" width="118" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="tmint" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;Mint Voucher&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#fff2cc;fontColor=#333333;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="482" y="176" width="108" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="tack" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;Write Acknowledgement&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#ffe6cc;fontColor=#333333;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="482" y="246" width="108" height="42" as="geometry" />
+        </mxCell>
+
+        <mxCell id="scloud" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#006600;shadow=1;strokeWidth=2;" value="" vertex="1" parent="1">
+          <mxGeometry x="150" y="600" width="530" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="slab" value="&lt;font style=&quot;font-size: 14px; color: rgb(0, 102, 51);&quot;&gt;&lt;b&gt;Source (Legacy)&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;font-size: 14px; color: rgb(0, 102, 51);&quot;&gt;&lt;b&gt;Blockchain&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="330" y="792" width="170" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="sescrow" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;Escrow Assets&lt;br&gt;&lt;i&gt;never burned&lt;/i&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#dae8fc;fontColor=#333333;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="190" y="660" width="118" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="sevent" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;Emit Event&lt;br&gt;&lt;i&gt;write commitment&lt;/i&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="336" y="660" width="118" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="slc" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;Light Client of the Target Chain&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#f8cecc;fontColor=#333333;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="482" y="660" width="108" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="sclose" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;Clear Commitment&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;fillColor=#ffe6cc;fontColor=#333333;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="482" y="730" width="108" height="42" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rbox" value="&lt;b&gt;Relayer&lt;/b&gt;&lt;br&gt;&lt;i style=&quot;font-size: 10px;&quot;&gt;off-chain, untrusted&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;verticalAlign=top;fontStyle=0;dashed=1;dashPattern=8 4;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="290" y="404" width="380" height="142" as="geometry" />
+        </mxCell>
+        <mxCell id="rwait" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;Wait for source finality&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="rbox">
+          <mxGeometry x="16" y="46" width="110" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="rproof" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;Fetch inclusion proof&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="rbox">
+          <mxGeometry x="135" y="46" width="110" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="rack" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;Carry the acknowledgement back&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="rbox">
+          <mxGeometry x="254" y="46" width="110" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="rnote" value="&lt;font style=&quot;font-size: 10px;&quot; color=&quot;#666666&quot;&gt;Moves bytes only. It cannot assert a fact &#8212; every claim it carries is re-checked by a light client on the receiving chain.&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="rbox">
+          <mxGeometry x="16" y="92" width="348" height="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="start" value="Start" style="rounded=1;whiteSpace=wrap;html=1;arcSize=0;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="70" y="452" width="70" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#004C99;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="start" target="tacct">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="105" y="197" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l1" value="&lt;font style=&quot;color: rgb(0, 76, 153);&quot;&gt;&lt;b&gt;1. Create post-quantum account&lt;/b&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="26" y="290" width="160" height="34" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#0000FF;endArrow=block;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="tacct" target="sescrow">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="160" y="197" /><mxPoint x="160" y="683" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l2" value="&lt;font style=&quot;color: rgb(0, 0, 255);&quot;&gt;&lt;b&gt;2. Escrow assets&lt;/b&gt;&lt;br&gt;&lt;i style=&quot;font-size: 10px;&quot;&gt;names the target account&lt;/i&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="30" y="596" width="150" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f3" value="&lt;font style=&quot;color: rgb(0, 127, 255);&quot;&gt;&lt;b&gt;3&lt;/b&gt;&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#007FFF;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=12;labelBackgroundColor=#d5e8d4;" edge="1" parent="1" source="sescrow" target="sevent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#6F0000;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="sevent" target="rwait">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="395" y="576" /><mxPoint x="361" y="576" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l4" value="&lt;font style=&quot;color: rgb(111, 0, 0);&quot;&gt;&lt;b&gt;4. Observe, wait, fetch proof&lt;/b&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="130" y="560" width="170" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2.5;strokeColor=#006600;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="rproof" target="tlc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="480" y="376" /><mxPoint x="395" y="376" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l5" value="&lt;font style=&quot;color: rgb(0, 102, 51);&quot;&gt;&lt;b&gt;5. Submit header and proof&lt;/b&gt;&lt;br&gt;&lt;i style=&quot;font-size: 10px;&quot;&gt;light client verifies consensus&lt;/i&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="150" y="360" width="180" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f6" value="&lt;font style=&quot;color: rgb(119, 119, 0);&quot;&gt;&lt;b&gt;6&lt;/b&gt;&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#777700;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=12;labelBackgroundColor=#dae8fc;" edge="1" parent="1" source="tlc" target="tmint">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f7" value="&lt;font style=&quot;color: rgb(215, 155, 0);&quot;&gt;&lt;b&gt;7&lt;/b&gt;&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#d79b00;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=12;labelBackgroundColor=#dae8fc;" edge="1" parent="1" source="tmint" target="tack">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2.5;strokeColor=#B85450;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="tack" target="rack">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="700" y="267" /><mxPoint x="700" y="376" /><mxPoint x="599" y="376" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l8" value="&lt;font style=&quot;color: rgb(184, 84, 80);&quot;&gt;&lt;b&gt;8. Read the acknowledgement&lt;/b&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="620" y="330" width="180" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2.5;strokeColor=#B85450;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="rack" target="slc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="599" y="576" /><mxPoint x="536" y="576" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l9" value="&lt;font style=&quot;color: rgb(184, 84, 80);&quot;&gt;&lt;b&gt;9. Submit the return proof&lt;/b&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="620" y="560" width="180" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f10" value="&lt;font style=&quot;color: rgb(184, 84, 80);&quot;&gt;&lt;b&gt;10&lt;/b&gt;&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#B85450;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=12;labelBackgroundColor=#d5e8d4;" edge="1" parent="1" source="slc" target="sclose">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cb1" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;Two light clients, no trusted bridge: each chain verifies the other&#39;s consensus itself&lt;/font&gt;" style="whiteSpace=wrap;html=1;shape=mxgraph.basic.cloud_rect;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="690" y="130" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cb2" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;Locked tokens keep global supply and market price unchanged&lt;/font&gt;" style="whiteSpace=wrap;html=1;shape=mxgraph.basic.cloud_rect;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="712" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cb3" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;Source-chain finality sets the floor on how fast a migration can complete&lt;/font&gt;" style="whiteSpace=wrap;html=1;shape=mxgraph.basic.cloud_rect;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="690" y="420" width="120" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="cb4" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;Unmigrated balances keep working on the source chain&lt;/font&gt;" style="whiteSpace=wrap;html=1;shape=mxgraph.basic.cloud_rect;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="690" y="712" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cb5" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;Governance hooks with transparent auditing&lt;/font&gt;" style="whiteSpace=wrap;html=1;shape=mxgraph.basic.cloud_rect;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="130" width="120" height="64" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lgbox" value="" style="rounded=1;arcSize=6;html=1;fillColor=none;strokeColor=#cccccc;" vertex="1" parent="1">
+          <mxGeometry x="170" y="890" width="490" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="lga" style="html=1;strokeWidth=2.5;strokeColor=#006600;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="912" as="sourcePoint" />
+            <mxPoint x="228" y="912" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lgat" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;forward leg &#8212; carries value&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="236" y="900" width="170" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="lgb" style="html=1;strokeWidth=2.5;strokeColor=#B85450;endArrow=block;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="406" y="912" as="sourcePoint" />
+            <mxPoint x="444" y="912" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lgbt" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;return leg &#8212; carries the acknowledgement only&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="452" y="900" width="200" height="24" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="implementation-detail" name="Implementation">
+    <mxGraphModel dx="1000" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="ttl" value="Implementation: Ethereum to Cosmos Migration over IBC v2 (Eureka)" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontFamily=Tahoma;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="20" y="146" width="787" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cosCloud" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;shadow=1;" value="" vertex="1" parent="1">
+          <mxGeometry x="130" y="180" width="600" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="cosLab" value="&lt;font face=&quot;Tahoma&quot; style=&quot;font-size: 13px; color: rgb(0, 102, 51);&quot;&gt;&lt;b&gt;Cosmos Chain&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;font face=&quot;Tahoma&quot; style=&quot;font-size: 11px; color: rgb(0, 102, 51);&quot;&gt;pqchaind &#8212; ML-DSA-65 accounts&lt;/font&gt;&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="285" y="184" width="290" height="34" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c1" value="&lt;b&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;cw-ics08-wasm-eth&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;light client of Ethereum&lt;br&gt;(client 08-wasm-1)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="200" y="224" width="130" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="c1i" style="verticalLabelPosition=bottom;html=1;verticalAlign=top;align=center;strokeColor=#6D1F00;fillColor=#a0522d;shape=mxgraph.azure.script_file;pointerEvents=1;fontColor=#ffffff;strokeWidth=0.5;" value="" vertex="1" parent="1">
+          <mxGeometry x="250" y="278" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="c2" value="&lt;b&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;ICS-20 transfer module&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;ibc-go channel v2&lt;br&gt;mints the ibc/ voucher&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="365" y="224" width="130" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="c2i" style="verticalLabelPosition=bottom;html=1;verticalAlign=top;align=center;strokeColor=#6D1F00;fillColor=#a0522d;shape=mxgraph.azure.script_file;pointerEvents=1;fontColor=#ffffff;strokeWidth=0.5;" value="" vertex="1" parent="1">
+          <mxGeometry x="415" y="278" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" value="&lt;b&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Acknowledgement&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;written in the same transaction as the mint&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#ffe6cc;strokeColor=#d79b00;size=12;" vertex="1" parent="1">
+          <mxGeometry x="530" y="224" width="130" height="82" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pq1" style="group" value="" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="205" y="320" width="68" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="pq1a" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#E8E7EE;strokeColor=default;strokeWidth=0.5;container=0;" value="" vertex="1" parent="pq1">
+          <mxGeometry width="60" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pq1b" style="sketch=0;fontColor=#232F3E;strokeColor=#0000ED;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.quantum_technologies;fillColor=none;strokeWidth=2;container=0;" value="" vertex="1" parent="pq1">
+          <mxGeometry x="10" y="1" width="40" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="pq1c" style="image;points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;image=img/lib/allied_telesis/storage/Datacenter_Server_Rack.svg;container=0;" value="" vertex="1" parent="pq1">
+          <mxGeometry x="3" y="16" width="9.86" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="pq1d" style="points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;fillColor=#FF6A00;strokeColor=none;shape=mxgraph.alibaba_cloud.ddos_protection;container=0;" value="" vertex="1" parent="pq1">
+          <mxGeometry x="14" y="44" width="17" height="19.4" as="geometry" />
+        </mxCell>
+        <mxCell id="pq1e" style="points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;fillColor=#6a00ff;strokeColor=none;shape=mxgraph.alibaba_cloud.ddos_protection;container=0;" value="" vertex="1" parent="pq1">
+          <mxGeometry x="32.7" y="44" width="17" height="19.4" as="geometry" />
+        </mxCell>
+        <mxCell id="pq1f" style="points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;fillColor=#00CC00;strokeColor=none;shape=mxgraph.alibaba_cloud.ddos_protection;container=0;" value="" vertex="1" parent="pq1">
+          <mxGeometry x="51.3" y="44" width="17" height="19.4" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pq2" style="group" value="" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="330" y="326" width="68" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="pq2a" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#E8E7EE;strokeColor=default;strokeWidth=0.5;container=0;" value="" vertex="1" parent="pq2">
+          <mxGeometry width="60" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pq2b" style="sketch=0;fontColor=#232F3E;strokeColor=#0000ED;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.quantum_technologies;fillColor=none;strokeWidth=2;container=0;" value="" vertex="1" parent="pq2">
+          <mxGeometry x="10" y="1" width="40" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="pq2c" style="image;points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;image=img/lib/allied_telesis/storage/Datacenter_Server_Rack.svg;container=0;" value="" vertex="1" parent="pq2">
+          <mxGeometry x="3" y="16" width="9.86" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="pq2d" style="points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;fillColor=#FF6A00;strokeColor=none;shape=mxgraph.alibaba_cloud.ddos_protection;container=0;" value="" vertex="1" parent="pq2">
+          <mxGeometry x="14" y="44" width="17" height="19.4" as="geometry" />
+        </mxCell>
+        <mxCell id="pq2e" style="points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;fillColor=#6a00ff;strokeColor=none;shape=mxgraph.alibaba_cloud.ddos_protection;container=0;" value="" vertex="1" parent="pq2">
+          <mxGeometry x="32.7" y="44" width="17" height="19.4" as="geometry" />
+        </mxCell>
+        <mxCell id="pq2f" style="points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;fillColor=#00CC00;strokeColor=none;shape=mxgraph.alibaba_cloud.ddos_protection;container=0;" value="" vertex="1" parent="pq2">
+          <mxGeometry x="51.3" y="44" width="17" height="19.4" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pq3" style="group" value="" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="455" y="326" width="68" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="pq3a" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#E8E7EE;strokeColor=default;strokeWidth=0.5;container=0;" value="" vertex="1" parent="pq3">
+          <mxGeometry width="60" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pq3b" style="sketch=0;fontColor=#232F3E;strokeColor=#0000ED;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.quantum_technologies;fillColor=none;strokeWidth=2;container=0;" value="" vertex="1" parent="pq3">
+          <mxGeometry x="10" y="1" width="40" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="pq3c" style="image;points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;image=img/lib/allied_telesis/storage/Datacenter_Server_Rack.svg;container=0;" value="" vertex="1" parent="pq3">
+          <mxGeometry x="3" y="16" width="9.86" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="pq3d" style="points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;fillColor=#FF6A00;strokeColor=none;shape=mxgraph.alibaba_cloud.ddos_protection;container=0;" value="" vertex="1" parent="pq3">
+          <mxGeometry x="14" y="44" width="17" height="19.4" as="geometry" />
+        </mxCell>
+        <mxCell id="pq3e" style="points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;fillColor=#6a00ff;strokeColor=none;shape=mxgraph.alibaba_cloud.ddos_protection;container=0;" value="" vertex="1" parent="pq3">
+          <mxGeometry x="32.7" y="44" width="17" height="19.4" as="geometry" />
+        </mxCell>
+        <mxCell id="pq3f" style="points=[];aspect=fixed;html=1;align=center;shadow=0;dashed=0;fillColor=#00CC00;strokeColor=none;shape=mxgraph.alibaba_cloud.ddos_protection;container=0;" value="" vertex="1" parent="pq3">
+          <mxGeometry x="51.3" y="44" width="17" height="19.4" as="geometry" />
+        </mxCell>
+        <mxCell id="pqLab" value="&lt;font style=&quot;font-size: 9px;&quot; color=&quot;#666666&quot;&gt;validators &#8212; Ed25519 consensus keys, ML-DSA-65 accounts&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="540" y="336" width="150" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ethCloud" style="ellipse;whiteSpace=wrap;html=1;fillColor=light-dark(#fdf8e7, #281d00);strokeColor=#d6b656;strokeWidth=2;shadow=1;" value="" vertex="1" parent="1">
+          <mxGeometry x="130" y="640" width="600" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="ethLab" value="&lt;font face=&quot;Tahoma&quot; style=&quot;font-size: 13px; color: rgb(0, 0, 0);&quot;&gt;&lt;b&gt;Ethereum&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;font face=&quot;Tahoma&quot; style=&quot;font-size: 11px;&quot;&gt;geth plus a beacon node &#8212; secp256k1 accounts&lt;/font&gt;&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="285" y="644" width="290" height="34" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" value="&lt;b&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;ICS20Transfer&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;+ ICS26Router&lt;br&gt;escrow and commitment&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="200" y="684" width="130" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="e1i" style="verticalLabelPosition=bottom;html=1;verticalAlign=top;align=center;strokeColor=#001DBC;fillColor=#0050ef;shape=mxgraph.azure.script_file;pointerEvents=1;fontColor=#ffffff;strokeWidth=0.5;" value="" vertex="1" parent="1">
+          <mxGeometry x="250" y="738" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="&lt;b&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Node endpoints&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;beacon finality_update&lt;br&gt;geth eth_getProof&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="365" y="684" width="130" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="&lt;b&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;SP1ICS07Tendermint&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;light client of Cosmos&lt;br&gt;+ SP1VerifierGroth16&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="530" y="684" width="130" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="e3i" style="verticalLabelPosition=bottom;html=1;verticalAlign=top;align=center;strokeColor=#6D1F00;fillColor=#a0522d;shape=mxgraph.azure.script_file;pointerEvents=1;fontColor=#ffffff;strokeWidth=0.5;" value="" vertex="1" parent="1">
+          <mxGeometry x="580" y="738" width="24" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="en1" style="group" value="" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="205" y="782" width="70" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="en1a" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#f9f7ed;strokeColor=#36393d;gradientDirection=radial;shadow=1;container=0;" value="" vertex="1" parent="en1">
+          <mxGeometry width="68" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="en1b" style="image;aspect=fixed;perimeter=ellipsePerimeter;html=1;align=center;shadow=0;dashed=0;spacingTop=3;image=img/lib/active_directory/windows_server.svg;container=0;" value="" vertex="1" parent="en1">
+          <mxGeometry x="4.75" y="10.16" width="20.91" height="25.5" as="geometry" />
+        </mxCell>
+        <mxCell id="en1c" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#7C7C7C;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.communications.exchange_active_sync;container=0;" value="" vertex="1" parent="en1">
+          <mxGeometry x="41.41" y="18.06" width="24.26" height="18.47" as="geometry" />
+        </mxCell>
+        <mxCell id="en1d" style="html=1;verticalLabelPosition=bottom;align=center;verticalAlign=top;strokeWidth=1;strokeColor=#000000;shape=mxgraph.ios7.icons.cube;fillColor=#008a00;fontColor=#ffffff;container=0;" value="" vertex="1" parent="en1">
+          <mxGeometry x="11.86" y="41.05" width="16.9" height="16.42" as="geometry" />
+        </mxCell>
+        <mxCell id="en1e" style="html=1;verticalLabelPosition=bottom;align=center;verticalAlign=top;strokeWidth=1;strokeColor=#000000;shape=mxgraph.ios7.icons.cube;fillColor=#f0a30a;fontColor=#000000;container=0;" value="" vertex="1" parent="en1">
+          <mxGeometry x="28.77" y="41.05" width="16.9" height="16.42" as="geometry" />
+        </mxCell>
+        <mxCell id="en1f" style="html=1;verticalLabelPosition=bottom;align=center;verticalAlign=top;strokeWidth=1;strokeColor=#C73500;shape=mxgraph.ios7.icons.cube;fillColor=#00FFFF;fontColor=#000000;container=0;" value="" vertex="1" parent="en1">
+          <mxGeometry x="45.67" y="41.05" width="16.9" height="16.42" as="geometry" />
+        </mxCell>
+
+        <mxCell id="en2" style="group" value="" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="330" y="788" width="70" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="en2a" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#f9f7ed;strokeColor=#36393d;gradientDirection=radial;shadow=1;container=0;" value="" vertex="1" parent="en2">
+          <mxGeometry width="68" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="en2b" style="image;aspect=fixed;perimeter=ellipsePerimeter;html=1;align=center;shadow=0;dashed=0;spacingTop=3;image=img/lib/active_directory/windows_server.svg;container=0;" value="" vertex="1" parent="en2">
+          <mxGeometry x="4.75" y="10.16" width="20.91" height="25.5" as="geometry" />
+        </mxCell>
+        <mxCell id="en2c" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#7C7C7C;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.communications.exchange_active_sync;container=0;" value="" vertex="1" parent="en2">
+          <mxGeometry x="41.41" y="18.06" width="24.26" height="18.47" as="geometry" />
+        </mxCell>
+        <mxCell id="en2d" style="html=1;verticalLabelPosition=bottom;align=center;verticalAlign=top;strokeWidth=1;strokeColor=#000000;shape=mxgraph.ios7.icons.cube;fillColor=#008a00;fontColor=#ffffff;container=0;" value="" vertex="1" parent="en2">
+          <mxGeometry x="11.86" y="41.05" width="16.9" height="16.42" as="geometry" />
+        </mxCell>
+        <mxCell id="en2e" style="html=1;verticalLabelPosition=bottom;align=center;verticalAlign=top;strokeWidth=1;strokeColor=#000000;shape=mxgraph.ios7.icons.cube;fillColor=#f0a30a;fontColor=#000000;container=0;" value="" vertex="1" parent="en2">
+          <mxGeometry x="28.77" y="41.05" width="16.9" height="16.42" as="geometry" />
+        </mxCell>
+        <mxCell id="en2f" style="html=1;verticalLabelPosition=bottom;align=center;verticalAlign=top;strokeWidth=1;strokeColor=#C73500;shape=mxgraph.ios7.icons.cube;fillColor=#00FFFF;fontColor=#000000;container=0;" value="" vertex="1" parent="en2">
+          <mxGeometry x="45.67" y="41.05" width="16.9" height="16.42" as="geometry" />
+        </mxCell>
+
+        <mxCell id="en3" style="group" value="" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="455" y="788" width="70" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="en3a" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#f9f7ed;strokeColor=#36393d;gradientDirection=radial;shadow=1;container=0;" value="" vertex="1" parent="en3">
+          <mxGeometry width="68" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="en3b" style="image;aspect=fixed;perimeter=ellipsePerimeter;html=1;align=center;shadow=0;dashed=0;spacingTop=3;image=img/lib/active_directory/windows_server.svg;container=0;" value="" vertex="1" parent="en3">
+          <mxGeometry x="4.75" y="10.16" width="20.91" height="25.5" as="geometry" />
+        </mxCell>
+        <mxCell id="en3c" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=none;fillColor=#7C7C7C;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;align=center;shape=mxgraph.office.communications.exchange_active_sync;container=0;" value="" vertex="1" parent="en3">
+          <mxGeometry x="41.41" y="18.06" width="24.26" height="18.47" as="geometry" />
+        </mxCell>
+        <mxCell id="en3d" style="html=1;verticalLabelPosition=bottom;align=center;verticalAlign=top;strokeWidth=1;strokeColor=#000000;shape=mxgraph.ios7.icons.cube;fillColor=#008a00;fontColor=#ffffff;container=0;" value="" vertex="1" parent="en3">
+          <mxGeometry x="11.86" y="41.05" width="16.9" height="16.42" as="geometry" />
+        </mxCell>
+        <mxCell id="en3e" style="html=1;verticalLabelPosition=bottom;align=center;verticalAlign=top;strokeWidth=1;strokeColor=#000000;shape=mxgraph.ios7.icons.cube;fillColor=#f0a30a;fontColor=#000000;container=0;" value="" vertex="1" parent="en3">
+          <mxGeometry x="28.77" y="41.05" width="16.9" height="16.42" as="geometry" />
+        </mxCell>
+        <mxCell id="en3f" style="html=1;verticalLabelPosition=bottom;align=center;verticalAlign=top;strokeWidth=1;strokeColor=#C73500;shape=mxgraph.ios7.icons.cube;fillColor=#00FFFF;fontColor=#000000;container=0;" value="" vertex="1" parent="en3">
+          <mxGeometry x="45.67" y="41.05" width="16.9" height="16.42" as="geometry" />
+        </mxCell>
+        <mxCell id="enLab" value="&lt;font style=&quot;font-size: 9px;&quot; color=&quot;#666666&quot;&gt;execution and consensus clients&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="545" y="798" width="140" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="netCloud" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;strokeColor=#7D7D7D;shadow=1;" value="" vertex="1" parent="1">
+          <mxGeometry x="175" y="440" width="300" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="netLab" value="&lt;b&gt;&lt;font face=&quot;Tahoma&quot; style=&quot;font-size: 11px;&quot;&gt;Internet&lt;/font&gt;&lt;/b&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="295" y="596" width="60" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="rt1" style="image;html=1;image=img/lib/clip_art/networking/Router_Icon_128x128.png;shadow=1;container=0;" value="" vertex="1" parent="1">
+          <mxGeometry x="228" y="486" width="32.6" height="22.8" as="geometry" />
+        </mxCell>
+        <mxCell id="rt2" style="image;html=1;image=img/lib/clip_art/networking/Router_Icon_128x128.png;shadow=1;container=0;" value="" vertex="1" parent="1">
+          <mxGeometry x="300" y="466" width="32.6" height="22.8" as="geometry" />
+        </mxCell>
+        <mxCell id="rt3" style="image;html=1;image=img/lib/clip_art/networking/Router_Icon_128x128.png;shadow=1;container=0;" value="" vertex="1" parent="1">
+          <mxGeometry x="312" y="530" width="32.6" height="22.8" as="geometry" />
+        </mxCell>
+        <mxCell id="rt4" style="image;html=1;image=img/lib/clip_art/networking/Router_Icon_128x128.png;shadow=1;container=0;" value="" vertex="1" parent="1">
+          <mxGeometry x="386" y="500" width="32.6" height="22.8" as="geometry" />
+        </mxCell>
+        <mxCell id="rtl1" style="rounded=0;html=1;dashed=1;strokeWidth=2;endArrow=none;endFill=0;" edge="1" parent="1" source="rt1" target="rt2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rtl2" style="rounded=0;html=1;dashed=1;strokeWidth=2;endArrow=none;endFill=0;" edge="1" parent="1" source="rt1" target="rt3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rtl3" style="rounded=0;html=1;dashed=1;strokeWidth=2;endArrow=none;endFill=0;" edge="1" parent="1" source="rt2" target="rt4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rtl4" style="rounded=0;html=1;dashed=1;strokeWidth=2;endArrow=none;endFill=0;" edge="1" parent="1" source="rt3" target="rt4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="usr" style="sketch=0;aspect=fixed;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=#0e8088;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;fillColor=#b0e3e6;shape=mxgraph.azure.user;" value="" vertex="1" parent="1">
+          <mxGeometry x="42" y="470" width="70" height="74" as="geometry" />
+        </mxCell>
+        <mxCell id="usrLab" value="&lt;b&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;Asset holder&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot; color=&quot;#666666&quot;&gt;Ethereum account&lt;br&gt;(secp256k1)&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="27" y="546" width="100" height="46" as="geometry" />
+        </mxCell>
+
+        <mxCell id="brg" value="&lt;b&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;Relayer&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;i style=&quot;font-size: 9px;&quot;&gt;off-chain, untrusted, permissionless&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;dashed=1;dashPattern=8 4;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="520" y="424" width="250" height="196" as="geometry" />
+        </mxCell>
+        <mxCell id="brg1" value="&lt;b&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;relay-recv-batch.js&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;--phase=prepare | deliver&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="brg">
+          <mxGeometry x="14" y="42" width="222" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="brg2" value="&lt;b&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;update-eth-client.py&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;finality update + 512-key sync committee&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="brg">
+          <mxGeometry x="14" y="82" width="222" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="brg3" value="&lt;b&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;relay-ack-batch.js&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;RelayByTx over the receive transaction&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="brg">
+          <mxGeometry x="14" y="122" width="222" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="brg4" value="&lt;b&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;proof-api&lt;/font&gt;&lt;/b&gt; &lt;font style=&quot;font-size: 9px;&quot;&gt;(solidity-ibc-eureka) &#8212; SP1 Groth16&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="brg">
+          <mxGeometry x="14" y="162" width="222" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="brgIcon" style="sketch=0;verticalLabelPosition=bottom;html=1;verticalAlign=top;align=center;pointerEvents=1;shape=mxgraph.cisco19.wireless_bridge2;fillColor=#fafafa;strokeColor=#005073;" value="" vertex="1" parent="1">
+          <mxGeometry x="600" y="628" width="94" height="36" as="geometry" />
+        </mxCell>
+
+        <mxCell id="evt" value="&lt;b&gt;&lt;i&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Packet commitment&lt;/font&gt;&lt;/i&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;{ sequence, sourceClient, destClient, timeoutTimestamp, payload }&#10;written into ICS26Router storage&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#ffe6cc;strokeColor=#d79b00;size=14;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="290" y="900" width="250" height="68" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pnlA" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;arcSize=0;" vertex="1" parent="1">
+          <mxGeometry x="20" y="14" width="300" height="124" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlAt" value="&lt;b&gt;cw-ics08-wasm-eth&lt;/b&gt; &lt;font style=&quot;font-size: 9px;&quot;&gt;(CosmWasm, inside 08-wasm)&lt;/font&gt;&#10;&#10;- &lt;i&gt;verify_client_message(consensus_update)&lt;/i&gt;&#10;&#160; BLS-verifies the 512-key sync committee&#10;- &lt;i&gt;update_state(...)&lt;/i&gt; stores the &lt;b&gt;execution&lt;/b&gt; state root&#10;- &lt;i&gt;verify_membership(root, key, value, proof)&lt;/i&gt;&#10;&#160; checks one Merkle-Patricia proof per packet" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=6;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="24" y="18" width="292" height="116" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlAl1" style="endArrow=none;html=1;rounded=0;strokeColor=#b85450;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c1" target="pnlA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlAl2" style="endArrow=none;html=1;rounded=0;strokeColor=#b85450;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c1" target="pnlA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pnlB" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#d6b656;arcSize=0;" vertex="1" parent="1">
+          <mxGeometry x="490" y="14" width="315" height="124" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlBt" value="&lt;b&gt;ICS-20 over ibc-go channel v2&lt;/b&gt; &lt;font style=&quot;font-size: 9px;&quot;&gt;(no custom module)&lt;/font&gt;&#10;&#10;&lt;i&gt;/ibc.core.channel.v2.MsgRecvPacket&lt;/i&gt;&#10;&#160; { packet, proof_commitment, proof_height, signer }&#10;- N of these ride in ONE Cosmos transaction&#10;- mints the ibc/ voucher denomination to each receiver&#10;- writes the acknowledgement in the same transaction" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=6;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="494" y="18" width="307" height="116" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlBl1" style="endArrow=none;html=1;rounded=0;strokeColor=#d6b656;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c2" target="pnlB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlBl2" style="endArrow=none;html=1;rounded=0;strokeColor=#d6b656;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="c2" target="pnlB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pnlC" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;arcSize=0;" vertex="1" parent="1">
+          <mxGeometry x="20" y="1000" width="250" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlCt" value="&lt;b&gt;ICS20Transfer&lt;/b&gt; &lt;font style=&quot;font-size: 9px;&quot;&gt;(Solidity, secp256k1 signed)&lt;/font&gt;&#10;&#10;&lt;i&gt;approve(ICS20Transfer, MaxUint256)&lt;/i&gt;&#10;&lt;i&gt;sendTransfer({&lt;/i&gt;&#10;&#160;&#160;&lt;i&gt;denom, amount, receiver,&lt;/i&gt;&#10;&#160;&#160;&lt;i&gt;sourceClient, destPort, timeoutTimestamp&lt;/i&gt;&#10;&lt;i&gt;})&lt;/i&gt;&#10;- pulls the ERC-20 into escrow, never burns it&#10;- ICS26Router writes the packet commitment" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=6;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="24" y="1004" width="242" height="132" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlCl1" style="endArrow=none;html=1;rounded=0;strokeColor=#6c8ebf;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="e1" target="pnlC">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlCl2" style="endArrow=none;html=1;rounded=0;strokeColor=#6c8ebf;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="e1" target="pnlC">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pnlD" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;arcSize=0;" vertex="1" parent="1">
+          <mxGeometry x="510" y="1000" width="295" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlDt" value="&lt;b&gt;SP1ICS07Tendermint&lt;/b&gt; &lt;font style=&quot;font-size: 9px;&quot;&gt;(Solidity light client)&lt;/font&gt;&#10;&#10;&lt;i&gt;ICS26Router.multicall([ ackPacket, ... ])&lt;/i&gt;&#10;- one fused Groth16 proof covers every packet&#10;- VERIFIER.verifyProof(...) then clears the commitments&#10;&#10;&lt;b&gt;The multicall cannot be split.&lt;/b&gt; The verified key-value pairs are cached only for the life of the transaction, so a second multicall over a subset reverts with KeyValuePairNotInCache." style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=6;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="514" y="1004" width="287" height="132" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlDl1" style="endArrow=none;html=1;rounded=0;strokeColor=#b85450;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="e3" target="pnlD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pnlDl2" style="endArrow=none;html=1;rounded=0;strokeColor=#b85450;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="e3" target="pnlD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#184600;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="usr" target="c1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="77" y="265" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s1l" value="&lt;font style=&quot;color: rgb(24, 70, 0); font-size: 10px;&quot;&gt;&lt;b&gt;1. Create ML-DSA-65 account&lt;/b&gt;&lt;br&gt;&lt;i&gt;returns the bech32 receiver&lt;/i&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="10" y="300" width="140" height="36" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#0000FF;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="usr" target="e1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="77" y="725" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s2l" value="&lt;font style=&quot;color: rgb(0, 0, 255); font-size: 10px;&quot;&gt;&lt;b&gt;2. sendTransfer&lt;/b&gt;&lt;br&gt;&lt;i&gt;escrow the ERC-20&lt;/i&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="10" y="650" width="120" height="36" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s3" value="&lt;font style=&quot;color: rgb(0, 127, 255); font-size: 10px;&quot;&gt;&lt;b&gt;3. write commitment&lt;/b&gt;&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#007FFF;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="e1" target="evt">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="265" y="934" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="s4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#6F0000;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="evt" target="brg1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="645" y="934" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s4l" value="&lt;font style=&quot;color: rgb(111, 0, 0); font-size: 10px;&quot;&gt;&lt;b&gt;4. observe and wait for Ethereum finality&lt;/b&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="590" y="900" width="170" height="36" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s5" value="&lt;font style=&quot;color: rgb(111, 0, 0); font-size: 10px;&quot;&gt;&lt;b&gt;5. beacon and geth reads&lt;/b&gt;&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.5;strokeColor=#6F0000;endArrow=block;endFill=1;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="brg2" target="e2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="500" y="548" /><mxPoint x="430" y="548" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="s6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2.5;strokeColor=#777700;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="brg2" target="c1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="645" y="404" /><mxPoint x="160" y="404" /><mxPoint x="160" y="265" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s6l" value="&lt;font style=&quot;color: rgb(119, 119, 0); font-size: 10px;&quot;&gt;&lt;b&gt;6. MsgUpdateClient&lt;/b&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="180" y="392" width="140" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2.5;strokeColor=#006600;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="brg1" target="c2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="645" y="416" /><mxPoint x="430" y="416" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s7l" value="&lt;font style=&quot;color: rgb(0, 102, 51); font-size: 10px;&quot;&gt;&lt;b&gt;7. N MsgRecvPacket in one transaction&lt;/b&gt;&lt;br&gt;&lt;i&gt;proofs checked, voucher minted, acknowledgement written&lt;/i&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="330" y="426" width="190" height="34" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2.5;strokeColor=#B85450;endArrow=block;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="c3" target="brg3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="785" y="265" /><mxPoint x="785" y="410" /><mxPoint x="645" y="410" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s8l" value="&lt;font style=&quot;color: rgb(184, 84, 80); font-size: 10px;&quot;&gt;&lt;b&gt;8. RelayByTx, then one SP1 Groth16 proof&lt;/b&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="640" y="366" width="180" height="34" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2.5;strokeColor=#C73500;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="brg4" target="e3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="645" y="666" /><mxPoint x="595" y="666" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s9l" value="&lt;font style=&quot;color: rgb(199, 53, 0); font-size: 10px;&quot;&gt;&lt;b&gt;9. multicall of ackPacket&lt;/b&gt;&lt;br&gt;&lt;i&gt;verify, then clear the commitments&lt;/i&gt;&lt;/font&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="672" y="672" width="150" height="34" as="geometry" />
+        </mxCell>
+
+        <mxCell id="keyNote" value="&lt;b&gt;Where the signature under test is used.&lt;/b&gt; Only two transactions carry it: &lt;i&gt;MsgUpdateClient&lt;/i&gt; and the batched &lt;i&gt;MsgRecvPacket&lt;/i&gt;, both signed by the relayer&#39;s Cosmos account with either secp256k1 or ML-DSA-65. Every Ethereum transaction on this path stays secp256k1, and receivers hold no key on chain until they first spend." style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;align=left;spacingLeft=10;spacingRight=10;fillColor=#ffffff;strokeColor=#999999;fontSize=10;fontColor=#333333;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="20" y="890" width="250" height="88" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

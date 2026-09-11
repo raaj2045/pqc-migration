@@ -62,8 +62,11 @@ Reference notes: [Ethereum light client](docs/ethereum-light-client.md) ·
 
 ## Status
 
-Everything in the tree builds and is covered by CI, except the ML-DSA-44
-modules retained for historical reference — see [HISTORY.md](HISTORY.md).
+Everything in the tree builds and is covered by CI, except two ML-DSA-44
+modules from the superseded fork. Six modules in total — including the
+validator-scaling experiment and the block-packing and storage simulators —
+still report ML-DSA-44 figures rather than the current chain's ML-DSA-65; see
+[HISTORY.md](HISTORY.md#ml-dsa-44-modules-still-in-the-tree).
 
 ## Project
 
