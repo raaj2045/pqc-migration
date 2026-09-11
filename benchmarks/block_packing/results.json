@@ -3,7 +3,7 @@
     "scheme": "secp256k1",
     "block_config": "default",
     "block_max_bytes": 4194304,
-    "block_max_bytes_source": "genesis ~/.simapp/config/genesis.json",
+    "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 4182673,
     "tx_size_bytes": 287,
@@ -14,24 +14,24 @@
     "wasted_bytes": 11853
   },
   {
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "block_config": "default",
     "block_max_bytes": 4194304,
-    "block_max_bytes_source": "genesis ~/.simapp/config/genesis.json",
+    "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 4182673,
-    "tx_size_bytes": 3922,
-    "max_tx_per_block": 1066,
-    "avg_tx_size_bytes": 3922,
-    "used_bytes": 4180852,
-    "block_utilization_pct": 99.67927932739258,
-    "wasted_bytes": 13452
+    "tx_size_bytes": 5451,
+    "max_tx_per_block": 767,
+    "avg_tx_size_bytes": 5451,
+    "used_bytes": 4180917,
+    "block_utilization_pct": 99.68082904815674,
+    "wasted_bytes": 13387
   },
   {
     "scheme": "secp256k1",
     "block_config": "2x default",
     "block_max_bytes": 8388608,
-    "block_max_bytes_source": "genesis ~/.simapp/config/genesis.json",
+    "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 8376977,
     "tx_size_bytes": 287,
@@ -42,24 +42,24 @@
     "wasted_bytes": 11652
   },
   {
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "block_config": "2x default",
     "block_max_bytes": 8388608,
-    "block_max_bytes_source": "genesis ~/.simapp/config/genesis.json",
+    "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 8376977,
-    "tx_size_bytes": 3922,
-    "max_tx_per_block": 2135,
-    "avg_tx_size_bytes": 3922,
-    "used_bytes": 8373470,
-    "block_utilization_pct": 99.81954097747803,
-    "wasted_bytes": 15138
+    "tx_size_bytes": 5451,
+    "max_tx_per_block": 1536,
+    "avg_tx_size_bytes": 5451,
+    "used_bytes": 8372736,
+    "block_utilization_pct": 99.810791015625,
+    "wasted_bytes": 15872
   },
   {
     "scheme": "secp256k1",
     "block_config": "4x default",
     "block_max_bytes": 16777216,
-    "block_max_bytes_source": "genesis ~/.simapp/config/genesis.json",
+    "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 16765585,
     "tx_size_bytes": 287,
@@ -70,17 +70,17 @@
     "wasted_bytes": 11824
   },
   {
-    "scheme": "mldsa44",
+    "scheme": "mldsa65",
     "block_config": "4x default",
     "block_max_bytes": 16777216,
-    "block_max_bytes_source": "genesis ~/.simapp/config/genesis.json",
+    "block_max_bytes_source": "flag --max-bytes",
     "validators_assumed": 100,
     "max_data_bytes": 16765585,
-    "tx_size_bytes": 3922,
-    "max_tx_per_block": 4274,
-    "avg_tx_size_bytes": 3922,
-    "used_bytes": 16762628,
-    "block_utilization_pct": 99.91304874420166,
-    "wasted_bytes": 14588
+    "tx_size_bytes": 5451,
+    "max_tx_per_block": 3075,
+    "avg_tx_size_bytes": 5451,
+    "used_bytes": 16761825,
+    "block_utilization_pct": 99.9082624912262,
+    "wasted_bytes": 15391
   }
 ]

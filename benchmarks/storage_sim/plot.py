@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot simulated on-chain account-state growth for secp256k1 vs ML-DSA-44.
+"""Plot simulated on-chain account-state growth for secp256k1 vs ML-DSA-65.
 
 Deterministic figure: state size at every tx count is computed by the
 storage_sim Go tool from per-tx wire sizes and a closed-form
@@ -51,7 +51,7 @@ def plot_state_growth() -> None:
     last_xy = {}
     for scheme, color, label in (
         ("secp256k1", COLOR_SECP, "secp256k1"),
-        ("mldsa44", COLOR_MLDSA, "ML-DSA-44"),
+        ("mldsa65", COLOR_MLDSA, "ML-DSA-65"),
     ):
         data = load(scheme, "10m")
         series = [s for s in data["series"] if s["tx_count"] > 0]
@@ -69,7 +69,7 @@ def plot_state_growth() -> None:
 
     # Single ratio annotation at the rightmost point.
     final_secp = last_xy["secp256k1"][1]
-    final_ml = last_xy["mldsa44"][1]
+    final_ml = last_xy["mldsa65"][1]
     ratio = final_ml / final_secp
     x_anchor = last_xy["secp256k1"][0]
     # Bracket spanning the two lines at the right edge.
@@ -93,7 +93,7 @@ def write_summary() -> None:
     rows = []
     for size_label, size_key in (("100 K", "100k"), ("1 M", "1m"), ("10 M", "10m")):
         secp = load("secp256k1", size_key)
-        ml = load("mldsa44", size_key)
+        ml = load("mldsa65", size_key)
         rows.append({
             "n": size_label,
             "accounts": secp["final_unique_accounts"],
@@ -104,7 +104,7 @@ def write_summary() -> None:
         })
 
     lines = []
-    lines.append("# Storage simulation — secp256k1 vs ML-DSA-44\n")
+    lines.append("# Storage simulation — secp256k1 vs ML-DSA-65\n")
     lines.append(
         "Default tx mix `transfer:60,migration:20,stake:15,gov:5`. "
         "Account-state storage uses a power-law growth model "
@@ -114,16 +114,21 @@ def write_summary() -> None:
     )
 
     lines.append("## Per-tx wire size\n")
-    lines.append("| Component | secp256k1 | ML-DSA-44 |")
+    lines.append("| Component | secp256k1 | ML-DSA-65 |")
     lines.append("|---|---:|---:|")
-    lines.append("| Envelope overhead | 110 B | 110 B |")
-    lines.append("| Average message body | 105 B | 105 B |")
-    lines.append("| Public key | 33 B | 1312 B |")
-    lines.append("| Signature | 64 B | 2420 B |")
-    lines.append("| **Total per tx** | **312 B** | **3947 B** |\n")
+    secp, ml = load("secp256k1", "10m"), load("mldsa65", "10m")
+    # Every tx pays the same envelope and message mix, so the mean body size
+    # is what is left of the mean tx size once the fixed parts are removed.
+    per_tx = {k: d["final_tx_bytes"] / d["num_tx"] for k, d in (("secp", secp), ("ml", ml))}
+    body = per_tx["secp"] - secp["envelope_overhead_bytes"] - secp["pubkey_bytes"] - secp["signature_bytes"]
+    lines.append(f"| Envelope overhead | {secp['envelope_overhead_bytes']} B | {ml['envelope_overhead_bytes']} B |")
+    lines.append(f"| Average message body | {body:.0f} B | {body:.0f} B |")
+    lines.append(f"| Public key | {secp['pubkey_bytes']:,} B | {ml['pubkey_bytes']:,} B |")
+    lines.append(f"| Signature | {secp['signature_bytes']:,} B | {ml['signature_bytes']:,} B |")
+    lines.append(f"| **Total per tx** | **{per_tx['secp']:,.0f} B** | **{per_tx['ml']:,.0f} B** |\n")
 
     lines.append("## Final chain size by N\n")
-    lines.append("| N (tx) | Accounts | secp256k1 state | ML-DSA-44 state | State ratio | secp256k1 tx data | ML-DSA-44 tx data | Tx-data ratio |")
+    lines.append("| N (tx) | Accounts | secp256k1 state | ML-DSA-65 state | State ratio | secp256k1 tx data | ML-DSA-65 tx data | Tx-data ratio |")
     lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
     for r in rows:
         state_ratio = r["ml_state"] / r["secp_state"]
@@ -145,7 +150,7 @@ def write_summary() -> None:
     secp_mb = r10["secp_state"] / (1024 ** 2)
     lines.append("## Headline result\n")
     lines.append(
-        f"**At 10M transactions, ML-DSA-44 state is {ml_mb:.1f} MiB "
+        f"**At 10M transactions, ML-DSA-65 state is {ml_mb:.1f} MiB "
         f"({ml_gb:.3f} GiB) vs secp256k1 {secp_mb:.1f} MiB ({secp_gb:.3f} GiB), "
         f"a ratio of {state_ratio:.2f}x.**\n"
     )
@@ -154,7 +159,7 @@ def write_summary() -> None:
     total_ratio = total_ml / total_secp
     lines.append(
         f"Including historical tx data, the full ledger footprint at 10 M tx is "
-        f"{total_ml / (1024**3):.2f} GiB (ML-DSA-44) vs "
+        f"{total_ml / (1024**3):.2f} GiB (ML-DSA-65) vs "
         f"{total_secp / (1024**3):.2f} GiB (secp256k1), a ratio of {total_ratio:.2f}x.\n"
     )
 

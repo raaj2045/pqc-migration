@@ -30,22 +30,19 @@ copyright the Cosmos SDK contributors).
 
 ## ML-DSA-44 modules still in the tree
 
-Six modules measure or model **ML-DSA-44 from the superseded fork**, not the
-ML-DSA-65 implementation this repository now builds. They are retained for
-historical reference, and every figure they produce shows ML-DSA-44 numbers
-rather than the current chain's.
+Two modules measure **ML-DSA-44 from the superseded fork**, not the ML-DSA-65
+implementation this repository now builds. They are retained for historical
+reference, and every figure they produce shows ML-DSA-44 numbers rather than
+the current chain's.
 
 | Module | State |
 |---|---|
 | `benchmarks/crypto_micro` | `go test -bench` imports `crypto/keys/mldsa` via a `replace` onto the removed `cosmos/` fork. Does not build; excluded from CI |
 | `tools/presigner` | Same import, same `replace`. Does not build; excluded from CI |
-| `experiments/validator_scaling_v2` | Measured on the fork's multi-validator Docker testnet. Results are committed; the scripts point at the removed `cosmos/` directory and the presigner above, so they cannot be re-run here |
-| `experiments/cold_sync` | Written against the same fork testnet and never run. No results |
-| `tools/block_packing` → `benchmarks/block_packing` | Simulator with ML-DSA-44 key and signature sizes written into the code. Builds and is in CI |
-| `tools/storage_sim` → `benchmarks/storage_sim` | Same: ML-DSA-44 sizes written into the code. Builds and is in CI |
 
-The last two build and run today, but they still compute ML-DSA-44 figures;
-building is not the same as describing the current chain.
+The block-packing and storage simulators (`tools/block_packing`,
+`tools/storage_sim`) were also written for ML-DSA-44 and have since been re-run
+with ML-DSA-65 sizes.
 
 **These are not to be ported to ML-DSA-65 as a mechanical fix.** Stock SDK v0.55
 ships `crypto/keys/mldsa65` — a different package *and* a different parameter

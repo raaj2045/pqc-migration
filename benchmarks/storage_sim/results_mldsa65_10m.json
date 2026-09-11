@@ -1,0 +1,1100 @@
+{
+  "scheme": "mldsa65",
+  "num_tx": 10000000,
+  "tx_mix": "transfer:60,migration:20,stake:15,gov:5",
+  "pubkey_bytes": 1952,
+  "signature_bytes": 3309,
+  "envelope_overhead_bytes": 110,
+  "account_overhead_bytes": 100,
+  "final_state_bytes": 1026045144,
+  "final_tx_bytes": 54760283820,
+  "final_unique_accounts": 500022,
+  "series": [
+    {
+      "tx_count": 0,
+      "total_state_bytes": 0,
+      "total_tx_bytes": 0,
+      "unique_accounts": 0
+    },
+    {
+      "tx_count": 1,
+      "total_state_bytes": 2052,
+      "total_tx_bytes": 5451,
+      "unique_accounts": 1
+    },
+    {
+      "tx_count": 2,
+      "total_state_bytes": 4104,
+      "total_tx_bytes": 10902,
+      "unique_accounts": 2
+    },
+    {
+      "tx_count": 3,
+      "total_state_bytes": 6156,
+      "total_tx_bytes": 16473,
+      "unique_accounts": 3
+    },
+    {
+      "tx_count": 4,
+      "total_state_bytes": 6156,
+      "total_tx_bytes": 21924,
+      "unique_accounts": 3
+    },
+    {
+      "tx_count": 5,
+      "total_state_bytes": 8208,
+      "total_tx_bytes": 27375,
+      "unique_accounts": 4
+    },
+    {
+      "tx_count": 6,
+      "total_state_bytes": 10260,
+      "total_tx_bytes": 32826,
+      "unique_accounts": 5
+    },
+    {
+      "tx_count": 7,
+      "total_state_bytes": 10260,
+      "total_tx_bytes": 38292,
+      "unique_accounts": 5
+    },
+    {
+      "tx_count": 8,
+      "total_state_bytes": 12312,
+      "total_tx_bytes": 43743,
+      "unique_accounts": 6
+    },
+    {
+      "tx_count": 9,
+      "total_state_bytes": 14364,
+      "total_tx_bytes": 49194,
+      "unique_accounts": 7
+    },
+    {
+      "tx_count": 10,
+      "total_state_bytes": 14364,
+      "total_tx_bytes": 54765,
+      "unique_accounts": 7
+    },
+    {
+      "tx_count": 11,
+      "total_state_bytes": 16416,
+      "total_tx_bytes": 60336,
+      "unique_accounts": 8
+    },
+    {
+      "tx_count": 12,
+      "total_state_bytes": 18468,
+      "total_tx_bytes": 65787,
+      "unique_accounts": 9
+    },
+    {
+      "tx_count": 13,
+      "total_state_bytes": 18468,
+      "total_tx_bytes": 71238,
+      "unique_accounts": 9
+    },
+    {
+      "tx_count": 14,
+      "total_state_bytes": 20520,
+      "total_tx_bytes": 76689,
+      "unique_accounts": 10
+    },
+    {
+      "tx_count": 16,
+      "total_state_bytes": 22572,
+      "total_tx_bytes": 87711,
+      "unique_accounts": 11
+    },
+    {
+      "tx_count": 17,
+      "total_state_bytes": 24624,
+      "total_tx_bytes": 93282,
+      "unique_accounts": 12
+    },
+    {
+      "tx_count": 18,
+      "total_state_bytes": 24624,
+      "total_tx_bytes": 98853,
+      "unique_accounts": 12
+    },
+    {
+      "tx_count": 20,
+      "total_state_bytes": 26676,
+      "total_tx_bytes": 109745,
+      "unique_accounts": 13
+    },
+    {
+      "tx_count": 22,
+      "total_state_bytes": 28728,
+      "total_tx_bytes": 120647,
+      "unique_accounts": 14
+    },
+    {
+      "tx_count": 24,
+      "total_state_bytes": 30780,
+      "total_tx_bytes": 131549,
+      "unique_accounts": 15
+    },
+    {
+      "tx_count": 26,
+      "total_state_bytes": 34884,
+      "total_tx_bytes": 142571,
+      "unique_accounts": 17
+    },
+    {
+      "tx_count": 28,
+      "total_state_bytes": 36936,
+      "total_tx_bytes": 153488,
+      "unique_accounts": 18
+    },
+    {
+      "tx_count": 30,
+      "total_state_bytes": 38988,
+      "total_tx_bytes": 164390,
+      "unique_accounts": 19
+    },
+    {
+      "tx_count": 33,
+      "total_state_bytes": 41040,
+      "total_tx_bytes": 180878,
+      "unique_accounts": 20
+    },
+    {
+      "tx_count": 35,
+      "total_state_bytes": 43092,
+      "total_tx_bytes": 191755,
+      "unique_accounts": 21
+    },
+    {
+      "tx_count": 38,
+      "total_state_bytes": 47196,
+      "total_tx_bytes": 208113,
+      "unique_accounts": 23
+    },
+    {
+      "tx_count": 42,
+      "total_state_bytes": 49248,
+      "total_tx_bytes": 230277,
+      "unique_accounts": 24
+    },
+    {
+      "tx_count": 45,
+      "total_state_bytes": 53352,
+      "total_tx_bytes": 246750,
+      "unique_accounts": 26
+    },
+    {
+      "tx_count": 49,
+      "total_state_bytes": 57456,
+      "total_tx_bytes": 268569,
+      "unique_accounts": 28
+    },
+    {
+      "tx_count": 53,
+      "total_state_bytes": 61560,
+      "total_tx_bytes": 290508,
+      "unique_accounts": 30
+    },
+    {
+      "tx_count": 57,
+      "total_state_bytes": 63612,
+      "total_tx_bytes": 312432,
+      "unique_accounts": 31
+    },
+    {
+      "tx_count": 62,
+      "total_state_bytes": 69768,
+      "total_tx_bytes": 339822,
+      "unique_accounts": 34
+    },
+    {
+      "tx_count": 67,
+      "total_state_bytes": 73872,
+      "total_tx_bytes": 367197,
+      "unique_accounts": 36
+    },
+    {
+      "tx_count": 73,
+      "total_state_bytes": 77976,
+      "total_tx_bytes": 400053,
+      "unique_accounts": 38
+    },
+    {
+      "tx_count": 79,
+      "total_state_bytes": 84132,
+      "total_tx_bytes": 432894,
+      "unique_accounts": 41
+    },
+    {
+      "tx_count": 86,
+      "total_state_bytes": 90288,
+      "total_tx_bytes": 471296,
+      "unique_accounts": 44
+    },
+    {
+      "tx_count": 93,
+      "total_state_bytes": 96444,
+      "total_tx_bytes": 509578,
+      "unique_accounts": 47
+    },
+    {
+      "tx_count": 101,
+      "total_state_bytes": 102600,
+      "total_tx_bytes": 553281,
+      "unique_accounts": 50
+    },
+    {
+      "tx_count": 110,
+      "total_state_bytes": 108756,
+      "total_tx_bytes": 602585,
+      "unique_accounts": 53
+    },
+    {
+      "tx_count": 119,
+      "total_state_bytes": 116964,
+      "total_tx_bytes": 651899,
+      "unique_accounts": 57
+    },
+    {
+      "tx_count": 129,
+      "total_state_bytes": 125172,
+      "total_tx_bytes": 706534,
+      "unique_accounts": 61
+    },
+    {
+      "tx_count": 140,
+      "total_state_bytes": 133380,
+      "total_tx_bytes": 766645,
+      "unique_accounts": 65
+    },
+    {
+      "tx_count": 152,
+      "total_state_bytes": 141588,
+      "total_tx_bytes": 832582,
+      "unique_accounts": 69
+    },
+    {
+      "tx_count": 164,
+      "total_state_bytes": 151848,
+      "total_tx_bytes": 898144,
+      "unique_accounts": 74
+    },
+    {
+      "tx_count": 178,
+      "total_state_bytes": 162108,
+      "total_tx_bytes": 974983,
+      "unique_accounts": 79
+    },
+    {
+      "tx_count": 193,
+      "total_state_bytes": 172368,
+      "total_tx_bytes": 1056913,
+      "unique_accounts": 84
+    },
+    {
+      "tx_count": 210,
+      "total_state_bytes": 184680,
+      "total_tx_bytes": 1149905,
+      "unique_accounts": 90
+    },
+    {
+      "tx_count": 227,
+      "total_state_bytes": 196992,
+      "total_tx_bytes": 1242912,
+      "unique_accounts": 96
+    },
+    {
+      "tx_count": 247,
+      "total_state_bytes": 211356,
+      "total_tx_bytes": 1351982,
+      "unique_accounts": 103
+    },
+    {
+      "tx_count": 267,
+      "total_state_bytes": 223668,
+      "total_tx_bytes": 1461397,
+      "unique_accounts": 109
+    },
+    {
+      "tx_count": 290,
+      "total_state_bytes": 240084,
+      "total_tx_bytes": 1587005,
+      "unique_accounts": 117
+    },
+    {
+      "tx_count": 314,
+      "total_state_bytes": 254448,
+      "total_tx_bytes": 1718224,
+      "unique_accounts": 124
+    },
+    {
+      "tx_count": 341,
+      "total_state_bytes": 272916,
+      "total_tx_bytes": 1866411,
+      "unique_accounts": 133
+    },
+    {
+      "tx_count": 370,
+      "total_state_bytes": 291384,
+      "total_tx_bytes": 2025120,
+      "unique_accounts": 142
+    },
+    {
+      "tx_count": 401,
+      "total_state_bytes": 309852,
+      "total_tx_bytes": 2194901,
+      "unique_accounts": 151
+    },
+    {
+      "tx_count": 435,
+      "total_state_bytes": 332424,
+      "total_tx_bytes": 2381100,
+      "unique_accounts": 162
+    },
+    {
+      "tx_count": 471,
+      "total_state_bytes": 352944,
+      "total_tx_bytes": 2578046,
+      "unique_accounts": 172
+    },
+    {
+      "tx_count": 511,
+      "total_state_bytes": 377568,
+      "total_tx_bytes": 2797106,
+      "unique_accounts": 184
+    },
+    {
+      "tx_count": 554,
+      "total_state_bytes": 402192,
+      "total_tx_bytes": 3032544,
+      "unique_accounts": 196
+    },
+    {
+      "tx_count": 601,
+      "total_state_bytes": 428868,
+      "total_tx_bytes": 3289641,
+      "unique_accounts": 209
+    },
+    {
+      "tx_count": 652,
+      "total_state_bytes": 459648,
+      "total_tx_bytes": 3568177,
+      "unique_accounts": 224
+    },
+    {
+      "tx_count": 707,
+      "total_state_bytes": 490428,
+      "total_tx_bytes": 3869572,
+      "unique_accounts": 239
+    },
+    {
+      "tx_count": 766,
+      "total_state_bytes": 521208,
+      "total_tx_bytes": 4193031,
+      "unique_accounts": 254
+    },
+    {
+      "tx_count": 831,
+      "total_state_bytes": 558144,
+      "total_tx_bytes": 4548771,
+      "unique_accounts": 272
+    },
+    {
+      "tx_count": 901,
+      "total_state_bytes": 595080,
+      "total_tx_bytes": 4931941,
+      "unique_accounts": 290
+    },
+    {
+      "tx_count": 977,
+      "total_state_bytes": 634068,
+      "total_tx_bytes": 5348267,
+      "unique_accounts": 309
+    },
+    {
+      "tx_count": 1060,
+      "total_state_bytes": 677160,
+      "total_tx_bytes": 5803150,
+      "unique_accounts": 330
+    },
+    {
+      "tx_count": 1149,
+      "total_state_bytes": 722304,
+      "total_tx_bytes": 6290139,
+      "unique_accounts": 352
+    },
+    {
+      "tx_count": 1246,
+      "total_state_bytes": 771552,
+      "total_tx_bytes": 6821421,
+      "unique_accounts": 376
+    },
+    {
+      "tx_count": 1351,
+      "total_state_bytes": 822852,
+      "total_tx_bytes": 7396826,
+      "unique_accounts": 401
+    },
+    {
+      "tx_count": 1465,
+      "total_state_bytes": 878256,
+      "total_tx_bytes": 8020800,
+      "unique_accounts": 428
+    },
+    {
+      "tx_count": 1589,
+      "total_state_bytes": 935712,
+      "total_tx_bytes": 8699829,
+      "unique_accounts": 456
+    },
+    {
+      "tx_count": 1723,
+      "total_state_bytes": 999324,
+      "total_tx_bytes": 9432963,
+      "unique_accounts": 487
+    },
+    {
+      "tx_count": 1868,
+      "total_state_bytes": 1067040,
+      "total_tx_bytes": 10226958,
+      "unique_accounts": 520
+    },
+    {
+      "tx_count": 2026,
+      "total_state_bytes": 1138860,
+      "total_tx_bytes": 11092326,
+      "unique_accounts": 555
+    },
+    {
+      "tx_count": 2196,
+      "total_state_bytes": 1212732,
+      "total_tx_bytes": 12023791,
+      "unique_accounts": 591
+    },
+    {
+      "tx_count": 2382,
+      "total_state_bytes": 1294812,
+      "total_tx_bytes": 13042737,
+      "unique_accounts": 631
+    },
+    {
+      "tx_count": 2583,
+      "total_state_bytes": 1383048,
+      "total_tx_bytes": 14142493,
+      "unique_accounts": 674
+    },
+    {
+      "tx_count": 2801,
+      "total_state_bytes": 1475388,
+      "total_tx_bytes": 15336946,
+      "unique_accounts": 719
+    },
+    {
+      "tx_count": 3037,
+      "total_state_bytes": 1573884,
+      "total_tx_bytes": 16629492,
+      "unique_accounts": 767
+    },
+    {
+      "tx_count": 3293,
+      "total_state_bytes": 1678536,
+      "total_tx_bytes": 18030638,
+      "unique_accounts": 818
+    },
+    {
+      "tx_count": 3571,
+      "total_state_bytes": 1791396,
+      "total_tx_bytes": 19553321,
+      "unique_accounts": 873
+    },
+    {
+      "tx_count": 3872,
+      "total_state_bytes": 1910412,
+      "total_tx_bytes": 21201222,
+      "unique_accounts": 931
+    },
+    {
+      "tx_count": 4199,
+      "total_state_bytes": 2039688,
+      "total_tx_bytes": 22990064,
+      "unique_accounts": 994
+    },
+    {
+      "tx_count": 4553,
+      "total_state_bytes": 2175120,
+      "total_tx_bytes": 24928228,
+      "unique_accounts": 1060
+    },
+    {
+      "tx_count": 4937,
+      "total_state_bytes": 2320812,
+      "total_tx_bytes": 27029072,
+      "unique_accounts": 1131
+    },
+    {
+      "tx_count": 5354,
+      "total_state_bytes": 2476764,
+      "total_tx_bytes": 29312544,
+      "unique_accounts": 1207
+    },
+    {
+      "tx_count": 5805,
+      "total_state_bytes": 2642976,
+      "total_tx_bytes": 31780935,
+      "unique_accounts": 1288
+    },
+    {
+      "tx_count": 6295,
+      "total_state_bytes": 2819448,
+      "total_tx_bytes": 34465490,
+      "unique_accounts": 1374
+    },
+    {
+      "tx_count": 6826,
+      "total_state_bytes": 3008232,
+      "total_tx_bytes": 37372681,
+      "unique_accounts": 1466
+    },
+    {
+      "tx_count": 7402,
+      "total_state_bytes": 3209328,
+      "total_tx_bytes": 40526642,
+      "unique_accounts": 1564
+    },
+    {
+      "tx_count": 8026,
+      "total_state_bytes": 3424788,
+      "total_tx_bytes": 43943381,
+      "unique_accounts": 1669
+    },
+    {
+      "tx_count": 8704,
+      "total_state_bytes": 3654612,
+      "total_tx_bytes": 47655904,
+      "unique_accounts": 1781
+    },
+    {
+      "tx_count": 9438,
+      "total_state_bytes": 3898800,
+      "total_tx_bytes": 51676333,
+      "unique_accounts": 1900
+    },
+    {
+      "tx_count": 10234,
+      "total_state_bytes": 4159404,
+      "total_tx_bytes": 56034129,
+      "unique_accounts": 2027
+    },
+    {
+      "tx_count": 11098,
+      "total_state_bytes": 4438476,
+      "total_tx_bytes": 60765393,
+      "unique_accounts": 2163
+    },
+    {
+      "tx_count": 12034,
+      "total_state_bytes": 4736016,
+      "total_tx_bytes": 65894154,
+      "unique_accounts": 2308
+    },
+    {
+      "tx_count": 13049,
+      "total_state_bytes": 5052024,
+      "total_tx_bytes": 71456004,
+      "unique_accounts": 2462
+    },
+    {
+      "tx_count": 14150,
+      "total_state_bytes": 5390604,
+      "total_tx_bytes": 77483635,
+      "unique_accounts": 2627
+    },
+    {
+      "tx_count": 15344,
+      "total_state_bytes": 5751756,
+      "total_tx_bytes": 84020809,
+      "unique_accounts": 2803
+    },
+    {
+      "tx_count": 16638,
+      "total_state_bytes": 6137532,
+      "total_tx_bytes": 91108718,
+      "unique_accounts": 2991
+    },
+    {
+      "tx_count": 18042,
+      "total_state_bytes": 6547932,
+      "total_tx_bytes": 98795107,
+      "unique_accounts": 3191
+    },
+    {
+      "tx_count": 19564,
+      "total_state_bytes": 6987060,
+      "total_tx_bytes": 107126954,
+      "unique_accounts": 3405
+    },
+    {
+      "tx_count": 21215,
+      "total_state_bytes": 7454916,
+      "total_tx_bytes": 116165375,
+      "unique_accounts": 3633
+    },
+    {
+      "tx_count": 23004,
+      "total_state_bytes": 7953552,
+      "total_tx_bytes": 125959024,
+      "unique_accounts": 3876
+    },
+    {
+      "tx_count": 24945,
+      "total_state_bytes": 8485020,
+      "total_tx_bytes": 136587385,
+      "unique_accounts": 4135
+    },
+    {
+      "tx_count": 27050,
+      "total_state_bytes": 9053424,
+      "total_tx_bytes": 148113325,
+      "unique_accounts": 4412
+    },
+    {
+      "tx_count": 29332,
+      "total_state_bytes": 9660816,
+      "total_tx_bytes": 160611237,
+      "unique_accounts": 4708
+    },
+    {
+      "tx_count": 31806,
+      "total_state_bytes": 10307196,
+      "total_tx_bytes": 174158716,
+      "unique_accounts": 5023
+    },
+    {
+      "tx_count": 34490,
+      "total_state_bytes": 10996668,
+      "total_tx_bytes": 188858355,
+      "unique_accounts": 5359
+    },
+    {
+      "tx_count": 37399,
+      "total_state_bytes": 11733336,
+      "total_tx_bytes": 204791054,
+      "unique_accounts": 5718
+    },
+    {
+      "tx_count": 40555,
+      "total_state_bytes": 12519252,
+      "total_tx_bytes": 222075105,
+      "unique_accounts": 6101
+    },
+    {
+      "tx_count": 43976,
+      "total_state_bytes": 13356468,
+      "total_tx_bytes": 240806706,
+      "unique_accounts": 6509
+    },
+    {
+      "tx_count": 47686,
+      "total_state_bytes": 14251140,
+      "total_tx_bytes": 261125811,
+      "unique_accounts": 6945
+    },
+    {
+      "tx_count": 51709,
+      "total_state_bytes": 15205320,
+      "total_tx_bytes": 283157214,
+      "unique_accounts": 7410
+    },
+    {
+      "tx_count": 56072,
+      "total_state_bytes": 16223112,
+      "total_tx_bytes": 307051872,
+      "unique_accounts": 7906
+    },
+    {
+      "tx_count": 60802,
+      "total_state_bytes": 17308620,
+      "total_tx_bytes": 332953412,
+      "unique_accounts": 8435
+    },
+    {
+      "tx_count": 65932,
+      "total_state_bytes": 18468000,
+      "total_tx_bytes": 361053542,
+      "unique_accounts": 9000
+    },
+    {
+      "tx_count": 71494,
+      "total_state_bytes": 19703304,
+      "total_tx_bytes": 391511009,
+      "unique_accounts": 9602
+    },
+    {
+      "tx_count": 77526,
+      "total_state_bytes": 21022740,
+      "total_tx_bytes": 424535876,
+      "unique_accounts": 10245
+    },
+    {
+      "tx_count": 84067,
+      "total_state_bytes": 22430412,
+      "total_tx_bytes": 460353617,
+      "unique_accounts": 10931
+    },
+    {
+      "tx_count": 91159,
+      "total_state_bytes": 23932476,
+      "total_tx_bytes": 499194199,
+      "unique_accounts": 11663
+    },
+    {
+      "tx_count": 98850,
+      "total_state_bytes": 25535088,
+      "total_tx_bytes": 541305715,
+      "unique_accounts": 12444
+    },
+    {
+      "tx_count": 107189,
+      "total_state_bytes": 27244404,
+      "total_tx_bytes": 586968954,
+      "unique_accounts": 13277
+    },
+    {
+      "tx_count": 116232,
+      "total_state_bytes": 29068632,
+      "total_tx_bytes": 636488307,
+      "unique_accounts": 14166
+    },
+    {
+      "tx_count": 126038,
+      "total_state_bytes": 31013928,
+      "total_tx_bytes": 690177753,
+      "unique_accounts": 15114
+    },
+    {
+      "tx_count": 136672,
+      "total_state_bytes": 33090552,
+      "total_tx_bytes": 748411817,
+      "unique_accounts": 16126
+    },
+    {
+      "tx_count": 148202,
+      "total_state_bytes": 35304660,
+      "total_tx_bytes": 811545567,
+      "unique_accounts": 17205
+    },
+    {
+      "tx_count": 160705,
+      "total_state_bytes": 37668564,
+      "total_tx_bytes": 880024650,
+      "unique_accounts": 18357
+    },
+    {
+      "tx_count": 174263,
+      "total_state_bytes": 40190472,
+      "total_tx_bytes": 954273803,
+      "unique_accounts": 19586
+    },
+    {
+      "tx_count": 188965,
+      "total_state_bytes": 42880644,
+      "total_tx_bytes": 1034782165,
+      "unique_accounts": 20897
+    },
+    {
+      "tx_count": 204907,
+      "total_state_bytes": 45751392,
+      "total_tx_bytes": 1122079552,
+      "unique_accounts": 22296
+    },
+    {
+      "tx_count": 222195,
+      "total_state_bytes": 48815028,
+      "total_tx_bytes": 1216741435,
+      "unique_accounts": 23789
+    },
+    {
+      "tx_count": 240940,
+      "total_state_bytes": 52081812,
+      "total_tx_bytes": 1319384640,
+      "unique_accounts": 25381
+    },
+    {
+      "tx_count": 261268,
+      "total_state_bytes": 55568160,
+      "total_tx_bytes": 1430691233,
+      "unique_accounts": 27080
+    },
+    {
+      "tx_count": 283310,
+      "total_state_bytes": 59288436,
+      "total_tx_bytes": 1551388565,
+      "unique_accounts": 28893
+    },
+    {
+      "tx_count": 307211,
+      "total_state_bytes": 63257004,
+      "total_tx_bytes": 1682285086,
+      "unique_accounts": 30827
+    },
+    {
+      "tx_count": 333129,
+      "total_state_bytes": 67492332,
+      "total_tx_bytes": 1824225209,
+      "unique_accounts": 32891
+    },
+    {
+      "tx_count": 361234,
+      "total_state_bytes": 72010836,
+      "total_tx_bytes": 1978128264,
+      "unique_accounts": 35093
+    },
+    {
+      "tx_count": 391710,
+      "total_state_bytes": 76830984,
+      "total_tx_bytes": 2145023200,
+      "unique_accounts": 37442
+    },
+    {
+      "tx_count": 424757,
+      "total_state_bytes": 81973296,
+      "total_tx_bytes": 2325976857,
+      "unique_accounts": 39948
+    },
+    {
+      "tx_count": 460592,
+      "total_state_bytes": 87460344,
+      "total_tx_bytes": 2522214762,
+      "unique_accounts": 42622
+    },
+    {
+      "tx_count": 499451,
+      "total_state_bytes": 93316752,
+      "total_tx_bytes": 2735012701,
+      "unique_accounts": 45476
+    },
+    {
+      "tx_count": 541587,
+      "total_state_bytes": 99563040,
+      "total_tx_bytes": 2965763907,
+      "unique_accounts": 48520
+    },
+    {
+      "tx_count": 587279,
+      "total_state_bytes": 106227936,
+      "total_tx_bytes": 3215974784,
+      "unique_accounts": 51768
+    },
+    {
+      "tx_count": 636825,
+      "total_state_bytes": 113338116,
+      "total_tx_bytes": 3487286410,
+      "unique_accounts": 55233
+    },
+    {
+      "tx_count": 690551,
+      "total_state_bytes": 120926412,
+      "total_tx_bytes": 3781487596,
+      "unique_accounts": 58931
+    },
+    {
+      "tx_count": 748810,
+      "total_state_bytes": 129021552,
+      "total_tx_bytes": 4100520380,
+      "unique_accounts": 62876
+    },
+    {
+      "tx_count": 811984,
+      "total_state_bytes": 137658420,
+      "total_tx_bytes": 4446453719,
+      "unique_accounts": 67085
+    },
+    {
+      "tx_count": 880488,
+      "total_state_bytes": 146873952,
+      "total_tx_bytes": 4821593263,
+      "unique_accounts": 71576
+    },
+    {
+      "tx_count": 954772,
+      "total_state_bytes": 156705084,
+      "total_tx_bytes": 5228378057,
+      "unique_accounts": 76367
+    },
+    {
+      "tx_count": 1035322,
+      "total_state_bytes": 167194908,
+      "total_tx_bytes": 5669473347,
+      "unique_accounts": 81479
+    },
+    {
+      "tx_count": 1122668,
+      "total_state_bytes": 178388568,
+      "total_tx_bytes": 6147770468,
+      "unique_accounts": 86934
+    },
+    {
+      "tx_count": 1217383,
+      "total_state_bytes": 190329156,
+      "total_tx_bytes": 6666441948,
+      "unique_accounts": 92753
+    },
+    {
+      "tx_count": 1320088,
+      "total_state_bytes": 203070024,
+      "total_tx_bytes": 7228869783,
+      "unique_accounts": 98962
+    },
+    {
+      "tx_count": 1431459,
+      "total_state_bytes": 216664524,
+      "total_tx_bytes": 7838771799,
+      "unique_accounts": 105587
+    },
+    {
+      "tx_count": 1552225,
+      "total_state_bytes": 231168060,
+      "total_tx_bytes": 8500061090,
+      "unique_accounts": 112655
+    },
+    {
+      "tx_count": 1683180,
+      "total_state_bytes": 246644244,
+      "total_tx_bytes": 9217150870,
+      "unique_accounts": 120197
+    },
+    {
+      "tx_count": 1825183,
+      "total_state_bytes": 263154636,
+      "total_tx_bytes": 9994774018,
+      "unique_accounts": 128243
+    },
+    {
+      "tx_count": 1979167,
+      "total_state_bytes": 280771056,
+      "total_tx_bytes": 10837985862,
+      "unique_accounts": 136828
+    },
+    {
+      "tx_count": 2146141,
+      "total_state_bytes": 299565324,
+      "total_tx_bytes": 11752371971,
+      "unique_accounts": 145987
+    },
+    {
+      "tx_count": 2327202,
+      "total_state_bytes": 319619520,
+      "total_tx_bytes": 12743886932,
+      "unique_accounts": 155760
+    },
+    {
+      "tx_count": 2523539,
+      "total_state_bytes": 341015724,
+      "total_tx_bytes": 13819042304,
+      "unique_accounts": 166187
+    },
+    {
+      "tx_count": 2736440,
+      "total_state_bytes": 363844224,
+      "total_tx_bytes": 14984889755,
+      "unique_accounts": 177312
+    },
+    {
+      "tx_count": 2967302,
+      "total_state_bytes": 388199412,
+      "total_tx_bytes": 16249070022,
+      "unique_accounts": 189181
+    },
+    {
+      "tx_count": 3217642,
+      "total_state_bytes": 414185940,
+      "total_tx_bytes": 17619969597,
+      "unique_accounts": 201845
+    },
+    {
+      "tx_count": 3489101,
+      "total_state_bytes": 441912564,
+      "total_tx_bytes": 19106479001,
+      "unique_accounts": 215357
+    },
+    {
+      "tx_count": 3783463,
+      "total_state_bytes": 471496248,
+      "total_tx_bytes": 20718411493,
+      "unique_accounts": 229774
+    },
+    {
+      "tx_count": 4102658,
+      "total_state_bytes": 503058060,
+      "total_tx_bytes": 22466363518,
+      "unique_accounts": 245155
+    },
+    {
+      "tx_count": 4448783,
+      "total_state_bytes": 536733432,
+      "total_tx_bytes": 24361738953,
+      "unique_accounts": 261566
+    },
+    {
+      "tx_count": 4824109,
+      "total_state_bytes": 572663952,
+      "total_tx_bytes": 26417020349,
+      "unique_accounts": 279076
+    },
+    {
+      "tx_count": 5231099,
+      "total_state_bytes": 610999416,
+      "total_tx_bytes": 28645669704,
+      "unique_accounts": 297758
+    },
+    {
+      "tx_count": 5672426,
+      "total_state_bytes": 651899880,
+      "total_tx_bytes": 31062440431,
+      "unique_accounts": 317690
+    },
+    {
+      "tx_count": 6150986,
+      "total_state_bytes": 695539764,
+      "total_tx_bytes": 33683039956,
+      "unique_accounts": 338957
+    },
+    {
+      "tx_count": 6669920,
+      "total_state_bytes": 742101696,
+      "total_tx_bytes": 36524665085,
+      "unique_accounts": 361648
+    },
+    {
+      "tx_count": 7232634,
+      "total_state_bytes": 791778564,
+      "total_tx_bytes": 39606062019,
+      "unique_accounts": 385857
+    },
+    {
+      "tx_count": 7842822,
+      "total_state_bytes": 844781724,
+      "total_tx_bytes": 42947473587,
+      "unique_accounts": 411687
+    },
+    {
+      "tx_count": 8504489,
+      "total_state_bytes": 901332792,
+      "total_tx_bytes": 46570831584,
+      "unique_accounts": 439246
+    },
+    {
+      "tx_count": 9221979,
+      "total_state_bytes": 961669800,
+      "total_tx_bytes": 50499809429,
+      "unique_accounts": 468650
+    },
+    {
+      "tx_count": 10000000,
+      "total_state_bytes": 1026045144,
+      "total_tx_bytes": 54760283820,
+      "unique_accounts": 500022
+    }
+  ]
+}

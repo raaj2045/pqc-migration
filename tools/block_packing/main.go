@@ -1,5 +1,5 @@
 // Command block_packing computes the maximum number of 1-in 1-out transfer
-// transactions that fit in a Cosmos/CometBFT block for secp256k1 vs ML-DSA-44,
+// transactions that fit in a Cosmos/CometBFT block for secp256k1 vs ML-DSA-65,
 // at the default block size and scaled variants. Block-level overhead is
 // modeled from the CometBFT constants so the numbers match what PrepareProposal
 // actually sees as MaxTxBytes.
@@ -38,8 +38,8 @@ const (
 	MsgSend1In1OutBytes  = 80  // MsgSend with 2 bech32 addrs + 1 Coin
 	Secp256k1PubKeyBytes = 33
 	Secp256k1SigBytes    = 64
-	MLDSA44PubKeyBytes   = 1312
-	MLDSA44SigBytes      = 2420
+	MLDSA65PubKeyBytes   = 1952
+	MLDSA65SigBytes      = 3309
 )
 
 func maxCommitBytes(validators int) int64 {
@@ -60,8 +60,8 @@ func txSize(scheme string) (int64, error) {
 	switch scheme {
 	case "secp256k1":
 		return TxEnvelopeOverhead + MsgSend1In1OutBytes + Secp256k1PubKeyBytes + Secp256k1SigBytes, nil
-	case "mldsa44":
-		return TxEnvelopeOverhead + MsgSend1In1OutBytes + MLDSA44PubKeyBytes + MLDSA44SigBytes, nil
+	case "mldsa65":
+		return TxEnvelopeOverhead + MsgSend1In1OutBytes + MLDSA65PubKeyBytes + MLDSA65SigBytes, nil
 	}
 	return 0, fmt.Errorf("unknown scheme %q", scheme)
 }
@@ -191,7 +191,7 @@ func main() {
 	results := make([]Result, 0, len(configs)*2)
 	for _, cfg := range configs {
 		maxData := maxDataBytes(cfg.bytes, 0, *validators)
-		for _, scheme := range []string{"secp256k1", "mldsa44"} {
+		for _, scheme := range []string{"secp256k1", "mldsa65"} {
 			txS, err := txSize(scheme)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "error:", err)

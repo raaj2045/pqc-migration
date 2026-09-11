@@ -190,7 +190,7 @@ application-level identifier check.
 | `benchmarks/` | Signature, block-packing and storage measurements, with plot scripts |
 | `experiments/migration_cost/` | **Current.** Ethereum → Cosmos migration: cost, time and rate, by batch size and signing key type |
 | `experiments/batch_scaling/` | **Superseded.** Cosmos → Ethereum transfers of `stake` against the mock SP1 verifier; the opposite direction, not the paper's migration result |
-| `experiments/` (others) | Validator scaling, the live-bridge throughput run and cold sync — see [experiments/README.md](../experiments/README.md) |
+| `experiments/migration_throughput/` | Acknowledgements per Ethereum finality window, on a round trip of `stake` — see [experiments/README.md](../experiments/README.md) |
 | `tools/` | Simulators and load-generation tooling |
 
 ---

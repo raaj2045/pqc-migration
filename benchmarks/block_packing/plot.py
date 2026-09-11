@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot per-block transaction capacity for secp256k1 vs ML-DSA-44.
+"""Plot per-block transaction capacity for secp256k1 vs ML-DSA-65.
 
 Deterministic figure: counts come from arithmetic on per-tx wire sizes
 and the configured `consensus_params.block.max_bytes`. No measurement
@@ -37,7 +37,7 @@ configs = []
 for r in data:
     if r["block_config"] not in configs:
         configs.append(r["block_config"])
-by_scheme = {s: {} for s in ("secp256k1", "mldsa44")}
+by_scheme = {s: {} for s in ("secp256k1", "mldsa65")}
 for r in data:
     by_scheme[r["scheme"]][r["block_config"]] = r
 
@@ -46,13 +46,13 @@ x = np.arange(len(configs))
 w = 0.36
 
 secp_counts = [by_scheme["secp256k1"][c]["max_tx_per_block"] for c in configs]
-ml_counts = [by_scheme["mldsa44"][c]["max_tx_per_block"] for c in configs]
+ml_counts = [by_scheme["mldsa65"][c]["max_tx_per_block"] for c in configs]
 
 bars_secp = ax.bar(x - w / 2, secp_counts, w,
                    color=COLOR_SECP, label="secp256k1",
                    edgecolor="black", linewidth=0.4)
 bars_ml = ax.bar(x + w / 2, ml_counts, w,
-                 color=COLOR_MLDSA, label="ML-DSA-44",
+                 color=COLOR_MLDSA, label="ML-DSA-65",
                  edgecolor="black", linewidth=0.4)
 
 # Absolute count on each bar (no ratio annotations — caption carries that).

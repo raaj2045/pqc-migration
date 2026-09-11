@@ -1,5 +1,5 @@
 // Command storage_sim simulates on-chain state growth for secp256k1 and
-// ML-DSA-44 signature schemes without running a live chain. It models per-tx
+// ML-DSA-65 signature schemes without running a live chain. It models per-tx
 // wire size and per-account state size, sampling a log-spaced time series.
 package main
 
@@ -21,15 +21,14 @@ import (
 // Cosmos SDK keys (crypto/keys/secp256k1). DER-encoded signatures can be up to
 // ~72B on other stacks, but Cosmos serializes the 64B compact form.
 //
-// ML-DSA-44: parameter set defined in NIST FIPS 204. Sizes match
-// github.com/cloudflare/circl/sign/mldsa/mldsa44 (PublicKeySize=1312,
-// SignatureSize=2420). Retained at the ML-DSA-44 parameter set the published
-// figures were measured against; see the "Known gaps" section of REPRODUCE.md.
+// ML-DSA-65: parameter set defined in NIST FIPS 204, the one the chain's
+// account keys use (Cosmos SDK v0.55 crypto/keys/mldsa65). Public key 1,952 B,
+// signature 3,309 B.
 const (
 	Secp256k1PubKeyBytes = 33
 	Secp256k1SigBytes    = 64
-	MLDSA44PubKeyBytes   = 1312
-	MLDSA44SigBytes      = 2420
+	MLDSA65PubKeyBytes   = 1952
+	MLDSA65SigBytes      = 3309
 )
 
 // TxEnvelopeOverhead is the fixed per-tx wire overhead of a Cosmos SDK TxRaw,
@@ -136,10 +135,10 @@ func schemeSizes(s string) (pub, sig int, err error) {
 	switch s {
 	case "secp256k1":
 		return Secp256k1PubKeyBytes, Secp256k1SigBytes, nil
-	case "mldsa44":
-		return MLDSA44PubKeyBytes, MLDSA44SigBytes, nil
+	case "mldsa65":
+		return MLDSA65PubKeyBytes, MLDSA65SigBytes, nil
 	}
-	return 0, 0, fmt.Errorf("unknown scheme %q (want secp256k1 or mldsa44)", s)
+	return 0, 0, fmt.Errorf("unknown scheme %q (want secp256k1 or mldsa65)", s)
 }
 
 // logSamplePoints returns unique, sorted checkpoint tx counts, log-spaced from
@@ -274,7 +273,7 @@ func (s *Simulator) run(nSamples int) []Sample {
 }
 
 func main() {
-	scheme := flag.String("scheme", "secp256k1", "signature scheme: secp256k1|mldsa44")
+	scheme := flag.String("scheme", "secp256k1", "signature scheme: secp256k1|mldsa65")
 	numTx := flag.Int64("num-tx", 100000, "number of transactions to simulate")
 	txMix := flag.String("tx-mix", "transfer:60,migration:20,stake:15,gov:5", "tx-type mix (type:pct,...)")
 	output := flag.String("output", "results.json", "output JSON path")

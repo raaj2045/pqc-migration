@@ -377,8 +377,7 @@ t=2.571 against z=1.96) — same convention as
 - **Runs assume nothing else is submitting to the chain concurrently.** A
   loaded chain would change both the timing and the gas figures.
 - **The validator set is not varied.** Every cell runs against the same
-  validator count; this is not a validator-scaling test (see
-  `../validator_scaling_v2/` for that axis).
+  validator count; this is not a validator-scaling test.
 - **The forward-leg light client runs `SP1MockVerifier`.** No claim is made
   about proving cost here — see `../migration_throughput/README.md` and
   `../../devnet/README.md#proving` for the measured real-proving cost.
