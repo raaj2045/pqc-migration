@@ -41,9 +41,11 @@ are not symmetric — confusing them invalidates the result:
    off-chain read costing no gas but usable only within a ~5-minute window
    (see [LIMITS.md](LIMITS.md)).
 5. **SP1 proof generation (off-chain).** proof-api produces one SP1 Groth16
-   proof of the acknowledgement, covering the whole batch. ~627 s — the second
-   big wait, on a par with Ethereum finality. It runs on neither chain, so it
-   costs no gas.
+   proof of the acknowledgement, covering the whole batch. ~635 s for a
+   single-packet batch and 867 s for one carrying 20 — the second big wait, on
+   a par with Ethereum finality, and close to fixed rather than per packet
+   (see [Proving cost against packet count](#proving-cost-against-packet-count)).
+   It runs on neither chain, so it costs no gas.
 6. **SP1 verification (Ethereum).** The `SP1ICS07Tendermint` light client — a
    Solidity contract — verifies that proof, and `ICS26Router` clears the packet
    commitments, closing them out. ~101,000 gas per transfer.
@@ -126,7 +128,7 @@ adds to them.
 |---|---|
 | `results/latency_by_step.csv` | one row per migration: time and gas per step |
 | `results/delivery_*.csv` | one row per delivery: gas, bytes, chunking, by batch size |
-| `results/ack_by_batch.csv` | one row per acknowledgement |
+| `results/ack_by_batch.csv` | one row per acknowledgement, with proving memory where it was sampled |
 | `results/throughput_*.csv` | one row per round: relayers, transfers, seconds, rate |
 
 `plot_data.py` reads all of them and writes:
@@ -138,11 +140,11 @@ adds to them.
 | `cost_by_batch.md` | gas per transfer on both legs, by batch size |
 
 The figure covers the whole round trip. Proving is the **real** SP1 Groth16
-measurement, ~627 s, taken from
+measurement, ~635 s averaged over the eight single-packet proofs in
 `../migration_throughput/results/real-verifier/`; the mock verifier's proof
 check is a no-op and is not a cost worth plotting. Proving is on a par with the
 Ethereum finality wait, so the two of them together are almost the entire round
-trip: 1,195 s, against 561 s to the point the vouchers are credited.
+trip: ~1,200 s, against 561 s to the point the vouchers are credited.
 
 Fetching the Merkle-Patricia proof is not shown. It is an off-chain read taking
 hundredths of a second and costing no gas.
@@ -175,6 +177,54 @@ the median of the previous commit's validator timestamps, so it lags by seconds
 — and is never one end of a subtraction. `T_Other_s` holds whatever the measured
 steps do not cover: process start-up, polling granularity, gaps between steps.
 
+## Proving cost against packet count
+
+Almost every acknowledgement in `results/ack_by_batch.csv` was relayed against
+the mock verifier, where no proof is generated and `T_Prove_s` is a few seconds
+of plumbing. Those rows say nothing about proving. The question they leave open
+is whether an SP1 Groth16 proof costs the same whatever the batch holds, or
+grows with the number of packets in it.
+
+One acknowledgement has now been relayed at batch 20 against the real verifier,
+to sit alongside the two single-packet ones in
+[`../migration_throughput/results/real-verifier/`](../migration_throughput/results/real-verifier/README.md):
+
+| Packets | Proving | Gas | Gas/packet | Relay bytes | Peak memory | Date |
+|---:|---:|---:|---:|---:|---|---|
+| 1 | 581.2 s | 445,761 | 445,761 | 3,716 | not recorded | on or before 2026-08-31 |
+| 1 | 693.5 s | 446,005 | 446,005 | 3,748 | not recorded | 2026-09-03 |
+| 20 | 866.7 s | 2,288,392 | 114,420 | 43,268 | 25.8 GiB resident + 11.6 GiB swap | 2026-09-20 |
+
+**Proving is close to a fixed cost per relay transaction, not a per-packet
+one.** Twenty times the packets cost 1.25-1.49x the time. Per packet, proving
+falls from ~581-694 s to 43 s. Had it scaled with packet count the batch would
+have taken around three and a half hours; it took fourteen and a half minutes.
+
+It is not perfectly flat either. The batch-20 proof took 173 s longer than the
+slower of the two single-packet proofs, and treating the difference as a
+marginal cost gives roughly 12 s per extra packet on a fixed base of ~640 s.
+That increment is about twice the spread between the two single-packet runs
+themselves (112 s), so it is suggestive rather than established: **one run at
+one batch size cannot separate a real per-packet term from run-to-run
+variance**, and the three runs are from three different devnet deployments on
+three different days. Establishing the marginal cost properly needs repeats at
+several batch sizes, at ~15 minutes per proof.
+
+Gas behaves the way the mock-verifier rows already showed, with the proof check
+added on top as a fixed charge. The batch-20 ack cost 2,288,392 gas; the mock
+rows either side of it (108,593/packet at 10, 101,782/packet at 25) interpolate
+to about 2,081,000 for the same batch, leaving ~207,000 gas for the proof
+check. That is close to the ~223,000 separating the single-packet real and mock
+acks, so verification is charged once per transaction, not once per packet.
+
+**Memory is the real constraint on batching this leg.** The batch-20 proof
+peaked at 25.8 GiB resident plus 11.6 GiB of swap, taking the machine to 27.22
+of its 27.41 GiB — about 200 MB to spare. Sampled every 2 s by
+`devnet/lib/memsample.js` and recorded in the result file. Whether that peak
+grows with packet count is unmeasured — there is no single-packet reading to
+compare it against, because nothing sampled memory before this run — but there
+is very little headroom left to find out on this host.
+
 ## Limits
 
 | Limit | Set by | Ceiling |
@@ -206,7 +256,7 @@ None of these depend on the signature algorithm. Full measurements in
 | `setup-user-pool.js` | Ethereum accounts: ETH, `TestERC20`, allowance |
 | `submit-migrations.js` | Concurrent `sendTransfer` calls under pre-assigned nonces |
 | `relay-recv-batch.js` | Finality wait, client update, proof fetch, delivery |
-| `relay-ack-batch.js` | One acknowledgement batch back to Ethereum |
+| `relay-ack-batch.js` | One acknowledgement batch back to Ethereum, sampling memory while it proves |
 | `build-recv-msgs.js` | Builds `MsgRecvPacket` without broadcasting |
 | `find_recv_ceiling.py` | Finds the delivery ceiling per signing key type |
 | `bech32.js` | Minimal bech32, one distinct Cosmos receiver per user |

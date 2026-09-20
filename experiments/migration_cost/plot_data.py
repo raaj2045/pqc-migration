@@ -311,6 +311,7 @@ def cost_by_batch(delivery, ack, out, ceiling=56):
         "n is the number of runs behind it.",
         "",
     ]
+    saw_real = []
     for k in keys_present(delivery):
         kd = delivery[delivery["Signer_Key_Type"] == k]
         ka = ack[ack["Signer_Key_Type"] == k] if ack is not None else None
@@ -322,9 +323,24 @@ def cost_by_batch(delivery, ack, out, ceiling=56):
             dn = int((kd["Batch_Size"] == n).sum())
             cell_a = "—"
             if ka is not None and (ka["Batch_Size"] == n).any():
-                am, ac = mean_ci(ka[ka["Batch_Size"] == n]["Ack_Gas_Per_Packet"])
-                an = int((ka["Batch_Size"] == n).sum())
-                cell_a = f"{am:,.0f} ± {ac:,.0f} (n={an})"
+                sel = ka[ka["Batch_Size"] == n]
+                am, ac = mean_ci(sel["Ack_Gas_Per_Packet"])
+                an = int(len(sel))
+                # An ack relayed against the REAL verifier pays for the Groth16
+                # check; one relayed against the mock does not. Averaging the
+                # two kinds into one cell, or printing them unlabelled in one
+                # column, reads as cost per transfer rising with batch size
+                # when it is really a different measurement. So the cell says
+                # which it is.
+                modes = set(sel["Verifier_Mode"].dropna()) if "Verifier_Mode" in sel else set()
+                tag = ""
+                if modes == {"real"}:
+                    tag = ", real verifier"
+                    saw_real.append(n)
+                elif "real" in modes:
+                    tag = ", real and mock mixed"
+                    saw_real.append(n)
+                cell_a = f"{am:,.0f} ± {ac:,.0f} (n={an}{tag})"
             elif n > ceiling:
                 cell_a = f"over the {ceiling}-ack limit"
             lines.append(f"| {n} | {dm:,.0f} ± {dc:,.0f} (n={dn}) | {cell_a} |")
@@ -343,6 +359,19 @@ def cost_by_batch(delivery, ack, out, ceiling=56):
         f"multicall carrying it cannot be split, so delivering more than ~{ceiling}",
         "transfers at once leaves them impossible to acknowledge.",
         "",
+    ]
+    if saw_real:
+        sizes = ", ".join(str(n) for n in sorted(set(saw_real)))
+        lines += [
+            f"The acknowledgement figures marked *real verifier* ({sizes} transfers",
+            "at once) include the on-chain Groth16 proof check, about 207,000 gas",
+            "charged once per transaction. Every other acknowledgement figure was",
+            "measured against the mock verifier, whose proof check does nothing, so",
+            "it carries no such charge. The two are not comparable down a column:",
+            "a marked row is higher because it paid for verification, not because",
+            "cost per transfer rose with batch size. See the proving-cost section",
+            "of README.md.",
+            "",
     ]
     text = "\n".join(lines)
     (HERE / out).write_text(text)

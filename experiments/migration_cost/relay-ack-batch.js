@@ -29,6 +29,7 @@ const path = require("path");
 const { loadEnv, evm, ethers, config, sendRawTx } = require("../../devnet/lib/lib");
 const { captureRevert } = require("../../devnet/lib/revert");
 const proofapi = require("../../devnet/lib/proofapi");
+const memsample = require("../../devnet/lib/memsample");
 const P = require("../../devnet/lib/packet");
 
 const arg = (name, dflt) => {
@@ -119,17 +120,35 @@ const arg = (name, dflt) => {
   console.log(`  verifier: ${verifierMode} (${verifier})`);
 
   const client = proofapi.connect(env);
+  // Watch memory for exactly as long as the proof takes. Peak usage lands in
+  // the middle of the recursion phase and is gone by the time the call
+  // returns, so it can only be caught by sampling while proving runs. Against
+  // the mock verifier this costs a couple of readings and reports near
+  // nothing, which is the honest answer: no proof was generated.
+  const mem = memsample.start(env);
   const t0 = Date.now();
-  const relay = await proofapi.relayByTx(client, {
-    srcChain: env.CHAIN_ID,
-    dstChain: chainId,
-    sourceTxIds: [Buffer.from(recvTx, "hex")],
-    srcClientId: env.COSMOS_CLIENT_ID,
-    dstClientId: env.ETH_CLIENT_ID,
-  });
+  let relay, memory;
+  try {
+    relay = await proofapi.relayByTx(client, {
+      srcChain: env.CHAIN_ID,
+      dstChain: chainId,
+      sourceTxIds: [Buffer.from(recvTx, "hex")],
+      srcClientId: env.COSMOS_CLIENT_ID,
+      dstClientId: env.ETH_CLIENT_ID,
+    });
+  } finally {
+    // Stop sampling even if proving failed: a proof that died of memory
+    // pressure is exactly the case where the reading is worth keeping.
+    memory = mem.stop();
+  }
   const proveSeconds = (Date.now() - t0) / 1000;
   const data = "0x" + Buffer.from(relay.tx).toString("hex");
   console.log(`  proof-api: ${relay.tx.length} bytes in ${proveSeconds.toFixed(1)}s`);
+  console.log(`  memory: peak ${memory.peakProofApiRssGiB} GiB resident + ` +
+    `${memory.peakProofApiSwapGiB} GiB swap in proof-api` +
+    `${memory.proofApiPid === null ? " (pid unknown — machine figures only)" : ""}, ` +
+    `machine peak ${memory.peakSystemUsedGiB} of ${memory.memTotalGiB} GiB ` +
+    `(${memory.samples} samples)`);
   if (relay.address.toLowerCase() !== env.ICS26_ROUTER.toLowerCase()) {
     throw new Error(`proof-api targets ${relay.address}, expected ICS26Router ${env.ICS26_ROUTER}`);
   }
@@ -221,7 +240,7 @@ const arg = (name, dflt) => {
 
   const summary = {
     label, recvTx, verifierMode, verifier,
-    relayBytes: relay.tx.length, proveSeconds,
+    relayBytes: relay.tx.length, proveSeconds, memory,
     topLevel: selectors[topSel] || topSel,
     innerCallCount: inner.length, counts, ackCount,
     txMaxSize, signedBytes: wholeSize, chunks: 1,

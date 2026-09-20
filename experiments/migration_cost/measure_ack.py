@@ -62,6 +62,12 @@ COLUMNS = [
     "Ack_Chunks",
     "T_Prove_s",
     "T_Submit_s",
+    # Sampled while the proof is being generated, so they are blank for every
+    # run recorded before relay-ack-batch.js started watching memory. Against
+    # the mock verifier they are near zero because no proof is generated.
+    "Peak_Prove_RSS_GiB",
+    "Peak_Prove_Swap_GiB",
+    "Peak_System_GiB",
     "Recv_Tx",
     "Ack_Tx",
 ]
@@ -172,6 +178,7 @@ def main():
             if "gasUsed" not in ack:
                 continue
             n, gas = ack["ackCount"], ack["gasUsed"]
+            mem = ack.get("memory") or {}
             row = {
                 "Batch_Size": n, "Run_Label": ack["label"],
                 "Verifier_Mode": ack["verifierMode"], "Ack_Count": n,
@@ -181,6 +188,9 @@ def main():
                 "Ack_Chunks": ack.get("chunks", 1),
                 "T_Prove_s": ack["proveSeconds"],
                 "T_Submit_s": ack.get("submitSeconds"),
+                "Peak_Prove_RSS_GiB": mem.get("peakProofApiRssGiB"),
+                "Peak_Prove_Swap_GiB": mem.get("peakProofApiSwapGiB"),
+                "Peak_System_GiB": mem.get("peakSystemUsedGiB"),
                 "Recv_Tx": ack["recvTx"], "Ack_Tx": ack.get("txHash"),
             }
             w.writerow(row)
@@ -199,13 +209,16 @@ def main():
         print(f"NOTE: verifier mode {modes} — with the mock verifier the proof "
               f"check is a no-op, so these are mechanism costs, not proving costs.")
     sizes = sorted({r["Batch_Size"] for r in rows})
-    print(f"\n{'batch':>6} {'n':>3} {'txs':>4} {'ack gas/packet':>15} {'bytes/packet':>13} {'prove s':>8}")
+    print(f"\n{'batch':>6} {'runs':>5} {'txs':>4} {'ack gas/packet':>15} "
+          f"{'bytes/packet':>13} {'prove s':>8} {'prove GiB':>10}")
     for s in sizes:
         v = [r for r in rows if r["Batch_Size"] == s]
-        print(f"{s:>6} {len(v):>3} {v[0]['Ack_Chunks']:>4} "
+        mem = [r["Peak_Prove_RSS_GiB"] for r in v if r["Peak_Prove_RSS_GiB"] is not None]
+        print(f"{s:>6} {len(v):>5} {v[0]['Ack_Chunks']:>4} "
               f"{sum(r['Ack_Gas_Per_Packet'] for r in v) / len(v):>15,.0f} "
               f"{sum(r['Relay_Bytes_Per_Packet'] for r in v) / len(v):>13,.0f} "
-              f"{sum(r['T_Prove_s'] for r in v) / len(v):>8.1f}")
+              f"{sum(r['T_Prove_s'] for r in v) / len(v):>8.1f} "
+              f"{(f'{sum(mem) / len(mem):.1f}' if mem else '-'):>10}")
 
 
 if __name__ == "__main__":

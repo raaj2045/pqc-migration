@@ -31,8 +31,21 @@ spread across different heights each require their own.
 
 ## Return leg — Ethereum → Cosmos, BLS sync committee
 
-`redeem-ack.json` covers the EVM-side ack. The Cosmos-side costs are reported by
-`sendtx.py` per transaction:
+`redeem-ack.json` and `native-ack.json` cover the EVM-side ack. The packet leg
+is BLS-verified on Cosmos, but the acknowledgement travelling back to Ethereum
+is an SP1 Groth16 proof like the forward leg above — so these two are the
+single-packet baseline for proving cost on the acknowledgement:
+
+| File | Cycle | Packets | Gas | Calldata | Proving |
+|---|---|---:|---:|---:|---:|
+| `redeem-ack.json` | redemption (`stake` voucher burned on Ethereum) | 1 | 445,761 | 3,716 B | 581.2 s |
+| `native-ack.json` | native asset (`TestERC20` escrowed on Ethereum) | 1 | 446,005 | 3,748 B | 693.5 s |
+
+Neither recorded memory; nothing did until `devnet/lib/memsample.js` existed.
+For the same acknowledgement carrying 20 packets, with memory sampled, see
+[`../../../migration_cost/README.md`](../../../migration_cost/README.md#proving-cost-against-packet-count).
+
+The Cosmos-side costs are reported by `sendtx.py` per transaction:
 
 | Case | `MsgUpdateClient` | `MsgAcknowledgement` |
 |---|---|---|

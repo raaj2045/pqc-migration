@@ -9,6 +9,7 @@ n is the number of runs behind it.
 | Transfers at once | Deliver on Cosmos | Acknowledge on Ethereum |
 |---:|---:|---:|
 | 10 | 153,551 ± 231 (n=3) | 108,919 ± 1,667 (n=3) |
+| 20 | 129,851 ± 0 (n=1) | 114,420 ± 0 (n=1, real verifier) |
 | 25 | 150,652 ± 161 (n=3) | 101,543 ± 10 (n=3) |
 | 50 | 151,623 ± 3,573 (n=6) | 99,840 ± 15 (n=2) |
 | 100 | 146,361 ± 40 (n=3) | over the 56-ack limit |
@@ -37,3 +38,12 @@ costs nothing in gas; it only caps how many transfers one batch may hold.
 An acknowledgement batch is whatever one delivery produced, and the
 multicall carrying it cannot be split, so delivering more than ~56
 transfers at once leaves them impossible to acknowledge.
+
+The acknowledgement figures marked *real verifier* (20 transfers
+at once) include the on-chain Groth16 proof check, about 207,000 gas
+charged once per transaction. Every other acknowledgement figure was
+measured against the mock verifier, whose proof check does nothing, so
+it carries no such charge. The two are not comparable down a column:
+a marked row is higher because it paid for verification, not because
+cost per transfer rose with batch size. See the proving-cost section
+of README.md.
