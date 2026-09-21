@@ -54,6 +54,12 @@ COLUMNS = [
     "Batch_Size",
     "Run_Label",
     "Verifier_Mode",
+    # "acknowledged", or why the attempt produced no acknowledgement. A run
+    # that ran out of memory or was refused for size still measured proving
+    # time and memory, and those are the only readings that exist ABOVE the
+    # largest batch that works — dropping them would leave the ceiling
+    # undocumented in the very file that should show it.
+    "Outcome",
     "Ack_Count",
     "Ack_Gas_Total",
     "Ack_Gas_Per_Packet",
@@ -95,20 +101,30 @@ def main():
                     help="EVM account pool used when --concurrency > 1")
     ap.add_argument("--dry-run", action="store_true",
                     help="ask proof-api what it would build, but broadcast nothing")
+    ap.add_argument("--rebuild-only", action="store_true",
+                    help="rewrite the CSV from the result files already on disk "
+                         "and relay nothing. The CSV is derived data, so it has "
+                         "to be reproducible without a running devnet — after a "
+                         "column is added, or a run is recorded by hand from "
+                         "evidence outside the harness.")
     args = ap.parse_args()
 
     cfg = config.require(config.load(), "DEVNET_DIR", "PROOF_API_ADDR")
     work = Path(cfg["DEVNET_DIR"]) / "migration-cost"
 
-    if args.labels:
+    if args.rebuild_only:
+        labels = []
+        print("rebuild only: relaying nothing, rewriting the CSV from disk\n")
+    elif args.labels:
         labels = [x for x in args.labels.split(",") if x]
     else:
         labels = sorted(p.stem[len("recv-"):] for p in work.glob("recv-*.json")
                         if not (work / f"ack-{p.stem[len('recv-'):]}.json").exists())
-    if not labels:
+    if not labels and not args.rebuild_only:
         raise SystemExit("nothing to acknowledge: every delivery already has an ack-*.json")
 
-    print(f"return leg: {len(labels)} delivery/deliveries to acknowledge\n")
+    if labels:
+        print(f"return leg: {len(labels)} delivery/deliveries to acknowledge\n")
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     out_path = Path(args.out) if Path(args.out).is_absolute() else RESULTS / args.out
@@ -127,7 +143,7 @@ def main():
         else:
             todo.append((label, recv))
 
-    if args.concurrency > 1:
+    if todo and args.concurrency > 1:
         run(["node", str(HERE / "setup-user-pool.js"), str(args.concurrency),
              f"--pool-file={args.sender_pool}"], "sender-pool")
 
@@ -175,18 +191,31 @@ def main():
             if ack_path.name.startswith("ack-dryrun-"):
                 continue
             ack = json.loads(ack_path.read_text())
-            if "gasUsed" not in ack:
-                continue
-            n, gas = ack["ackCount"], ack["gasUsed"]
             mem = ack.get("memory") or {}
+            outcome = ack.get("outcome", "acknowledged")
+            # No gas and no recorded outcome means an incomplete file rather
+            # than a measured failure — superseded runs from older harness
+            # versions look like this. Only a file that says WHY it has no gas
+            # earns a row; the rest are skipped as they always were.
+            if "gasUsed" not in ack and "outcome" not in ack:
+                continue
+            # A failed attempt has no gas and no acknowledged packet count, but
+            # it does have a batch size (what it was asked to prove) and the
+            # readings it reached before it died.
+            n = ack.get("ackCount") or ack.get("expectedAckCount")
+            if not n:
+                continue
+            gas = ack.get("gasUsed")
+            relay_bytes = ack.get("relayBytes")
             row = {
                 "Batch_Size": n, "Run_Label": ack["label"],
-                "Verifier_Mode": ack["verifierMode"], "Ack_Count": n,
-                "Ack_Gas_Total": gas, "Ack_Gas_Per_Packet": gas / n,
-                "Relay_Bytes": ack["relayBytes"],
-                "Relay_Bytes_Per_Packet": ack["relayBytes"] / n,
+                "Verifier_Mode": ack["verifierMode"], "Outcome": outcome,
+                "Ack_Count": n if gas else 0,
+                "Ack_Gas_Total": gas, "Ack_Gas_Per_Packet": gas / n if gas else None,
+                "Relay_Bytes": relay_bytes,
+                "Relay_Bytes_Per_Packet": relay_bytes / n if relay_bytes else None,
                 "Ack_Chunks": ack.get("chunks", 1),
-                "T_Prove_s": ack["proveSeconds"],
+                "T_Prove_s": ack.get("proveSeconds"),
                 "T_Submit_s": ack.get("submitSeconds"),
                 "Peak_Prove_RSS_GiB": mem.get("peakProofApiRssGiB"),
                 "Peak_Prove_Swap_GiB": mem.get("peakProofApiSwapGiB"),
@@ -208,17 +237,27 @@ def main():
     if modes != {"real"}:
         print(f"NOTE: verifier mode {modes} — with the mock verifier the proof "
               f"check is a no-op, so these are mechanism costs, not proving costs.")
-    sizes = sorted({r["Batch_Size"] for r in rows})
-    print(f"\n{'batch':>6} {'runs':>5} {'txs':>4} {'ack gas/packet':>15} "
-          f"{'bytes/packet':>13} {'prove s':>8} {'prove GiB':>10}")
-    for s in sizes:
-        v = [r for r in rows if r["Batch_Size"] == s]
-        mem = [r["Peak_Prove_RSS_GiB"] for r in v if r["Peak_Prove_RSS_GiB"] is not None]
-        print(f"{s:>6} {len(v):>5} {v[0]['Ack_Chunks']:>4} "
-              f"{sum(r['Ack_Gas_Per_Packet'] for r in v) / len(v):>15,.0f} "
-              f"{sum(r['Relay_Bytes_Per_Packet'] for r in v) / len(v):>13,.0f} "
-              f"{sum(r['T_Prove_s'] for r in v) / len(v):>8.1f} "
-              f"{(f'{sum(mem) / len(mem):.1f}' if mem else '-'):>10}")
+    def avg(vals, fmt, dash="-"):
+        vals = [v for v in vals if v is not None]
+        return format(sum(vals) / len(vals), fmt) if vals else dash
+
+    # Grouped by verifier as well as batch size. A mock run generates no proof,
+    # so averaging its 3 s alongside a real run's 20 minutes produces a number
+    # that describes neither.
+    print(f"\n{'batch':>6} {'verifier':>9} {'runs':>5} {'ack gas/packet':>15} "
+          f"{'bytes/packet':>13} {'prove s':>8} {'prove GiB':>10} "
+          f"{'swap GiB':>9}  outcome")
+    for s, mode in sorted({(r["Batch_Size"], r["Verifier_Mode"]) for r in rows}):
+        v = [r for r in rows
+             if r["Batch_Size"] == s and r["Verifier_Mode"] == mode]
+        outcomes = sorted({r["Outcome"] for r in v})
+        print(f"{s:>6} {mode:>9} {len(v):>5} "
+              f"{avg([r['Ack_Gas_Per_Packet'] for r in v], ',.0f'):>15} "
+              f"{avg([r['Relay_Bytes_Per_Packet'] for r in v], ',.0f'):>13} "
+              f"{avg([r['T_Prove_s'] for r in v], '.1f'):>8} "
+              f"{avg([r['Peak_Prove_RSS_GiB'] for r in v], '.1f'):>10} "
+              f"{avg([r['Peak_Prove_Swap_GiB'] for r in v], '.1f'):>9}  "
+              f"{', '.join(outcomes)}")
 
 
 if __name__ == "__main__":

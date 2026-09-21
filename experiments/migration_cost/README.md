@@ -41,9 +41,10 @@ are not symmetric — confusing them invalidates the result:
    off-chain read costing no gas but usable only within a ~5-minute window
    (see [LIMITS.md](LIMITS.md)).
 5. **SP1 proof generation (off-chain).** proof-api produces one SP1 Groth16
-   proof of the acknowledgement, covering the whole batch. ~635 s for a
-   single-packet batch and 867 s for one carrying 20 — the second big wait, on
-   a par with Ethereum finality, and close to fixed rather than per packet
+   proof of the acknowledgement, covering the whole batch. ~635 s for a single
+   packet, ~877 s at 10-20 packets and ~1,222 s at 30-40 — the second big wait,
+   on a par with Ethereum finality. It steps up with batch size rather than
+   growing per packet, and it is where this leg runs out of memory
    (see [Proving cost against packet count](#proving-cost-against-packet-count)).
    It runs on neither chain, so it costs no gas.
 6. **SP1 verification (Ethereum).** The `SP1ICS07Tendermint` light client — a
@@ -185,45 +186,104 @@ of plumbing. Those rows say nothing about proving. The question they leave open
 is whether an SP1 Groth16 proof costs the same whatever the batch holds, or
 grows with the number of packets in it.
 
-One acknowledgement has now been relayed at batch 20 against the real verifier,
-to sit alongside the two single-packet ones in
-[`../migration_throughput/results/real-verifier/`](../migration_throughput/results/real-verifier/README.md):
+A sweep answers it. Every run below is on **one devnet deployment in one
+session**, with proof-api restarted before each proof — it does not release
+swapped pages, so a reused prover would hand each run less headroom than the
+last and the sweep would measure the restart policy instead of the batch size.
 
-| Packets | Proving | Gas | Gas/packet | Relay bytes | Peak memory | Date |
-|---:|---:|---:|---:|---:|---|---|
-| 1 | 581.2 s | 445,761 | 445,761 | 3,716 | not recorded | on or before 2026-08-31 |
-| 1 | 693.5 s | 446,005 | 446,005 | 3,748 | not recorded | 2026-09-03 |
-| 20 | 866.7 s | 2,288,392 | 114,420 | 43,268 | 25.8 GiB resident + 11.6 GiB swap | 2026-09-20 |
+| Packets | Proving | Gas | Gas/packet | Relay bytes | Peak resident | Peak swap | Completed |
+|---:|---:|---:|---:|---:|---:|---:|---|
+| 10 | 887.3 s | 1,326,946 | 132,695 | 22,468 | 25.54 GiB | 9.36 GiB | yes |
+| 20 | 866.7 s | 2,288,392 | 114,420 | 43,268 | 25.80 GiB | 11.63 GiB | yes |
+| 30 | 1,217.4 s | 3,278,784 | 109,293 | 64,068 | 25.58 GiB | 17.36 GiB | yes |
+| 40 | 1,226.5 s | 4,262,125 | 106,553 | 84,868 | 25.78 GiB | 21.93 GiB | yes |
+| 50 | — | — | — | — | 26.46 GiB | 30.91 GiB | **no — out of memory** |
+| 60 | not attempted | | | | | | |
 
-**Proving is close to a fixed cost per relay transaction, not a per-packet
-one.** Twenty times the packets cost 1.25-1.49x the time. Per packet, proving
-falls from ~581-694 s to 43 s. Had it scaled with packet count the batch would
-have taken around three and a half hours; it took fourteen and a half minutes.
+### Proving time is a step, not a slope
 
-It is not perfectly flat either. The batch-20 proof took 173 s longer than the
-slower of the two single-packet proofs, and treating the difference as a
-marginal cost gives roughly 12 s per extra packet on a fixed base of ~640 s.
-That increment is about twice the spread between the two single-packet runs
-themselves (112 s), so it is suggestive rather than established: **one run at
-one batch size cannot separate a real per-packet term from run-to-run
-variance**, and the three runs are from three different devnet deployments on
-three different days. Establishing the marginal cost properly needs repeats at
-several batch sizes, at ~15 minutes per proof.
+It is flat within a range and then jumps:
 
-Gas behaves the way the mock-verifier rows already showed, with the proof check
-added on top as a fixed charge. The batch-20 ack cost 2,288,392 gas; the mock
-rows either side of it (108,593/packet at 10, 101,782/packet at 25) interpolate
-to about 2,081,000 for the same batch, leaving ~207,000 gas for the proof
-check. That is close to the ~223,000 separating the single-packet real and mock
-acks, so verification is charged once per transaction, not once per packet.
+| | Mean | Spread inside the group |
+|---|---:|---:|
+| 10 and 20 packets | 877.0 s | 20.6 s |
+| 30 and 40 packets | 1,222.0 s | 9.1 s |
 
-**Memory is the real constraint on batching this leg.** The batch-20 proof
-peaked at 25.8 GiB resident plus 11.6 GiB of swap, taking the machine to 27.22
-of its 27.41 GiB — about 200 MB to spare. Sampled every 2 s by
-`devnet/lib/memsample.js` and recorded in the result file. Whether that peak
-grows with packet count is unmeasured — there is no single-packet reading to
-compare it against, because nothing sampled memory before this run — but there
-is very little headroom left to find out on this host.
+Doubling 10 to 20 changed proving by **-20.6 s** — it got slightly *faster* —
+and doubling 30 to 40 changed it by 9.1 s. Between the two groups the cost
+jumps 345 s. So there is no meaningful per-packet term inside a group, and
+dividing the step by packet count to quote "seconds per packet" invents a
+linear cost that the data does not show. An earlier two-point comparison here
+did exactly that and reported ~12 s per packet; with four points that reading
+does not survive.
+
+The shape is what a recursive prover gives: the work is proved in a fixed
+number of shards, packets are cheap until they need one more shard, and the
+cost of that shard lands all at once. The step falls between 20 and 30 packets.
+Where the next one falls is unmeasured — 50 never finished.
+
+### Peak memory does scale, but look at swap, not resident
+
+Resident memory is flat at 25.5-25.8 GiB across every completed run. That is
+not proving being frugal, it is the host ceiling: 27.41 GiB total, and the
+prover is simply not allowed more. What actually grows is swap, close to
+linearly at **0.43 GiB per packet**:
+
+    9.36 -> 11.63 -> 17.36 -> 21.93 GiB, at 10, 20, 30 and 40 packets
+
+Extrapolating gives ~25.9 GiB at 50 packets. The kernel killed proof-api with
+30.91 GiB of swap in use — 97 % of the 32 GiB available — so the real curve
+bends upward above 40 rather than continuing straight.
+
+Reporting only resident memory would have made this leg look flat in memory
+too. It is not; the growth was just hidden below the ceiling.
+
+### What binds first: memory, and not by a little
+
+| Candidate limit | Where it bites | Reached? |
+|---|---|---|
+| Host memory and swap | 50 packets | **yes — this is the wall** |
+| geth `txMaxSize` 128 KB (~56 acks) | ~56 packets | no, never reached |
+| CometBFT delivery limits | ~124 and ~675 packets | no |
+
+**Memory binds first.** The 56-packet calldata cap in [LIMITS.md](LIMITS.md) is
+real arithmetic — at the measured ~2,122 bytes per ack a 56-ack multicall is
+about 119 KB against a 118 KB usable budget — but this host cannot prove a
+batch that large, so the cap never gets the chance to reject one. At 40
+packets — the largest that worked — the signed transaction was 84,979 B of
+117,964 B usable, 72 % of the calldata cap, while resident memory was at 99 %
+of the machine's 27.41 GiB and swap at 69 % of its 32 GiB. Calldata had room
+to spare; memory did not. The two ceilings are close enough, though, that a
+host with more swap would run into the calldata cap soon after clearing the
+memory one.
+
+**The largest batch that completed is 40 packets.** 50 was not retried and 60
+was not attempted, both by design: a size that exhausts memory tells you where
+the ceiling is, and running further up the curve only repeats the answer at
+greater cost.
+
+### Reading the 50-packet failure
+
+The figures for 50 come from the kernel's own report of the process it killed
+(`journalctl -b -1`), not from `memsample.js`: the sampler writes its reading
+through the relay client, and the host went down before that could happen. They
+are one snapshot at the moment of the kill rather than a sampled peak, so the
+true peak is at least that and possibly higher. `ack-proofFailed-sweep-d50-r1-validator.json`
+says so in the file. The proof had been running about 21 minutes when it died,
+which is recorded separately from `T_Prove_s` because it is not a proving time
+— that proof never produced anything.
+
+The host went down shortly after the kill, which took the Ethereum devnet with
+it (its geth datadir is not volume-backed, see
+[`../../devnet/README.md`](../../devnet/README.md)). So 60 could not have been
+run on this deployment afterwards even had the stopping rule allowed it, and a
+60-packet figure would not belong in this table regardless: the whole point of
+the sweep was to hold the deployment constant.
+
+Gas per transfer keeps falling across the completed runs, 132,695 down to
+106,553, for the reason the mock rows already showed: the proof check is
+charged once per transaction, so its share per transfer shrinks as the batch
+grows.
 
 ## Limits
 

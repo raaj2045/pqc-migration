@@ -1,0 +1,23 @@
+{
+  "label": "sweep-d50-r1-validator",
+  "recvTx": "44080A476731",
+  "verifierMode": "real",
+  "verifier": "0xb4B46bdAA835F8E4b4d8e208B6559cD267851051",
+  "outcome": "proofFailed",
+  "expectedAckCount": 50,
+  "error": "proof-api killed by the kernel out-of-memory killer during proving",
+  "proveSeconds": null,
+  "memory": {
+    "source": "kernel OOM report, NOT memsample.js",
+    "note": "memsample.js writes its reading through the relay client, and that client went down with the host before it could. These figures are the kernel's own accounting of the process it killed, read from journalctl -b -1. They are a single snapshot at the moment of the kill, not a sampled peak, so the true peak is at least this and possibly higher.",
+    "killedAt": "2026-09-20T17:32:37Z",
+    "proofApiPid": 17030,
+    "peakProofApiRssGiB": 26.46,
+    "peakProofApiSwapGiB": 30.91,
+    "virtualGiB": 60.36,
+    "swapTotalGiB": 32,
+    "memTotalGiB": 27.41
+  },
+  "secondsBeforeKillApprox": 1290,
+  "secondsBeforeKillNote": "Not a proving time \u2014 the proof never finished. Bounded by the previous run's result file (17:09:49) plus ~60 s of proof-api restart, against the kernel kill at 17:32:37. Recorded separately from T_Prove_s so it can never be read as one."
+}

@@ -125,6 +125,28 @@ const arg = (name, dflt) => {
   // returns, so it can only be caught by sampling while proving runs. Against
   // the mock verifier this costs a couple of readings and reports near
   // nothing, which is the honest answer: no proof was generated.
+  const outDir = path.join(env.DEVNET_DIR, "migration-cost");
+  const memLine = (m) =>
+    `  memory: peak ${m.peakProofApiRssGiB} GiB resident + ` +
+    `${m.peakProofApiSwapGiB} GiB swap in proof-api` +
+    `${m.proofApiPid === null ? " (pid unknown — machine figures only)" : ""}, ` +
+    `machine peak ${m.peakSystemUsedGiB} of ${m.memTotalGiB} GiB ` +
+    `(${m.samples} samples)`;
+
+  // A run that dies still measured something. Proving is ~15 min of CPU and
+  // the peak memory it reached on the way to failing is the whole point when
+  // the question is where this leg runs out of room, so the reading is
+  // written to its own file rather than lost with the exception. The name is
+  // deliberately NOT ack-<label>.json: that name is what marks a delivery
+  // acknowledged, and a failed attempt must not claim it.
+  const writeFailure = (kind, extra) => {
+    const f = path.join(outDir, `ack-${kind}-${label}.json`);
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(f, JSON.stringify(
+      { label, recvTx, verifierMode, verifier, outcome: kind, ...extra }, null, 2));
+    console.log(`  wrote ${f}`);
+  };
+
   const mem = memsample.start(env);
   const t0 = Date.now();
   let relay, memory;
@@ -136,19 +158,26 @@ const arg = (name, dflt) => {
       srcClientId: env.COSMOS_CLIENT_ID,
       dstClientId: env.ETH_CLIENT_ID,
     });
-  } finally {
-    // Stop sampling even if proving failed: a proof that died of memory
-    // pressure is exactly the case where the reading is worth keeping.
+  } catch (e) {
+    // Proving itself failed — out of memory, prover crash, deadline. Keep the
+    // seconds spent and the peak reached before it went.
     memory = mem.stop();
+    const secs = (Date.now() - t0) / 1000;
+    console.log(`  proof-api FAILED after ${secs.toFixed(1)}s: ${e.message || e}`);
+    console.log(memLine(memory));
+    writeFailure("proofFailed", {
+      proveSeconds: secs, memory, expectedAckCount: expect || null,
+      error: String(e.message || e),
+    });
+    throw e;
+  } finally {
+    // Sampling must stop on every path, including the success one below.
+    if (!memory) memory = mem.stop();
   }
   const proveSeconds = (Date.now() - t0) / 1000;
   const data = "0x" + Buffer.from(relay.tx).toString("hex");
   console.log(`  proof-api: ${relay.tx.length} bytes in ${proveSeconds.toFixed(1)}s`);
-  console.log(`  memory: peak ${memory.peakProofApiRssGiB} GiB resident + ` +
-    `${memory.peakProofApiSwapGiB} GiB swap in proof-api` +
-    `${memory.proofApiPid === null ? " (pid unknown — machine figures only)" : ""}, ` +
-    `machine peak ${memory.peakSystemUsedGiB} of ${memory.memTotalGiB} GiB ` +
-    `(${memory.samples} samples)`);
+  console.log(memLine(memory));
   if (relay.address.toLowerCase() !== env.ICS26_ROUTER.toLowerCase()) {
     throw new Error(`proof-api targets ${relay.address}, expected ICS26Router ${env.ICS26_ROUTER}`);
   }
@@ -226,6 +255,14 @@ const arg = (name, dflt) => {
   if (wholeSize > budget) {
     const perAck = ackCount ? wholeSize / ackCount : wholeSize;
     const fits = Math.max(1, Math.floor(budget / perAck));
+    // The proof is already paid for by the time the size is known, so keep
+    // the proving time and the memory peak: an over-cap batch is the only way
+    // to measure either ABOVE the cap.
+    writeFailure("tooLarge", {
+      ackCount, relayBytes: relay.tx.length, signedBytes: wholeSize,
+      txMaxSize, budget, bytesPerAck: Math.round(perAck), acksThatFit: fits,
+      proveSeconds, memory,
+    });
     throw new Error(
       `ack for ${ackCount} packet(s) does not fit: signed transaction is ` +
       `${wholeSize.toLocaleString()} B against geth's txMaxSize ` +
@@ -296,7 +333,6 @@ const arg = (name, dflt) => {
       `over ${parts.length} transaction(s)`);
   }
 
-  const outDir = path.join(env.DEVNET_DIR, "migration-cost");
   fs.mkdirSync(outDir, { recursive: true });
   // A dry run must not leave a file that makes this delivery look
   // acknowledged — the default label selection keys off exactly that.

@@ -109,6 +109,13 @@ def main():
                     help="EVM account pool file, kept apart from measure_data.py's")
     ap.add_argument("--out", default="delivery_metrics.csv",
                     help="written under results/ unless given an absolute path")
+    ap.add_argument("--label-prefix", default="",
+                    help="prepended to every run label. Labels name the files "
+                         "under $DEVNET_DIR/migration-cost, and a label reused "
+                         "from an earlier devnet overwrites that run's delivery "
+                         "record while leaving its ack in place — which reads "
+                         "as 'already acknowledged' and silently skips the new "
+                         "one. Namespace a sweep to keep it clear of them.")
     ap.add_argument("--generation", default=None,
                     help="reuse an existing generation label instead of submitting "
                          "a new one (must still be inside the packet timeout)")
@@ -167,7 +174,7 @@ def main():
         w.writeheader()
         for size in sizes:
             for rep in range(1, args.repeats + 1):
-                label = f"d{size}-r{rep}-{args.signer}"
+                label = f"{args.label_prefix}d{size}-r{rep}-{args.signer}"
                 print(f"\n=== deliver {size} packet(s), repeat {rep} "
                       f"(offset {offset}) ===")
                 run(["node", str(HERE / "relay-recv-batch.js"), str(send_path),

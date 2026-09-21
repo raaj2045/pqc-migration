@@ -324,23 +324,25 @@ def cost_by_batch(delivery, ack, out, ceiling=56):
             cell_a = "—"
             if ka is not None and (ka["Batch_Size"] == n).any():
                 sel = ka[ka["Batch_Size"] == n]
-                am, ac = mean_ci(sel["Ack_Gas_Per_Packet"])
-                an = int(len(sel))
                 # An ack relayed against the REAL verifier pays for the Groth16
-                # check; one relayed against the mock does not. Averaging the
-                # two kinds into one cell, or printing them unlabelled in one
-                # column, reads as cost per transfer rising with batch size
-                # when it is really a different measurement. So the cell says
-                # which it is.
-                modes = set(sel["Verifier_Mode"].dropna()) if "Verifier_Mode" in sel else set()
-                tag = ""
-                if modes == {"real"}:
-                    tag = ", real verifier"
+                # check; one relayed against the mock does not. They are two
+                # different measurements, so they are never averaged together
+                # — a mixed mean is a number that describes neither, and it
+                # reads as cost per transfer rising with batch size.
+                if "Verifier_Mode" in sel:
+                    mock_rows = sel[sel["Verifier_Mode"] != "real"]
+                    real_rows = sel[sel["Verifier_Mode"] == "real"]
+                else:
+                    mock_rows, real_rows = sel, sel.iloc[0:0]
+                parts = []
+                if len(mock_rows):
+                    mm, mc = mean_ci(mock_rows["Ack_Gas_Per_Packet"])
+                    parts.append(f"{mm:,.0f} ± {mc:,.0f} (n={len(mock_rows)})")
+                if len(real_rows):
+                    rm, rc = mean_ci(real_rows["Ack_Gas_Per_Packet"])
+                    parts.append(f"real verifier {rm:,.0f} (n={len(real_rows)})")
                     saw_real.append(n)
-                elif "real" in modes:
-                    tag = ", real and mock mixed"
-                    saw_real.append(n)
-                cell_a = f"{am:,.0f} ± {ac:,.0f} (n={an}{tag})"
+                cell_a = " · ".join(parts) if parts else "—"
             elif n > ceiling:
                 cell_a = f"over the {ceiling}-ack limit"
             lines.append(f"| {n} | {dm:,.0f} ± {dc:,.0f} (n={dn}) | {cell_a} |")
@@ -388,6 +390,12 @@ def main():
 
     delivery = read_many("delivery_*.csv")
     ack = read_many("ack_*.csv")
+    if ack is not None and "Outcome" in ack:
+        # Attempts that never produced an acknowledgement carry no gas. They
+        # are kept in the CSV because their proving time and memory are the
+        # only readings above the largest batch that works, but they have no
+        # place in a table of gas per transfer.
+        ack = ack[ack["Outcome"].fillna("acknowledged") == "acknowledged"]
     if ack is not None:
         # The acknowledgement results record the signing key by name, not by
         # algorithm.
