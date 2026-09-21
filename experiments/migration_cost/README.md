@@ -41,7 +41,7 @@ are not symmetric — confusing them invalidates the result:
    off-chain read costing no gas but usable only within a ~5-minute window
    (see [LIMITS.md](LIMITS.md)).
 5. **SP1 proof generation (off-chain).** proof-api produces one SP1 Groth16
-   proof of the acknowledgement, covering the whole batch. ~635 s for a single
+   proof of the acknowledgement, covering the whole batch. ~637 s for a single
    packet, ~877 s at 10-20 packets and ~1,222 s at 30-40 — the second big wait,
    on a par with Ethereum finality. It steps up with batch size rather than
    growing per packet, and it is where this leg runs out of memory
@@ -140,12 +140,33 @@ adds to them.
 | `fig_throughput_by_workers.pdf` | transfers credited per second, as more relayers work at once |
 | `cost_by_batch.md` | gas per transfer on both legs, by batch size |
 
-The figure covers the whole round trip. Proving is the **real** SP1 Groth16
-measurement, ~635 s averaged over the eight single-packet proofs in
-`../migration_throughput/results/real-verifier/`; the mock verifier's proof
-check is a no-op and is not a cost worth plotting. Proving is on a par with the
-Ethereum finality wait, so the two of them together are almost the entire round
-trip: ~1,200 s, against 561 s to the point the vouchers are credited.
+The figure covers the whole round trip, drawn at one transfer per migration
+because that is the only batch size `latency_by_step.csv` holds. Its two SP1
+bars come from real-prover runs **on this path only**, and `plot_data.py`
+prints which runs fed each bar every time it draws them:
+
+| Bar | Runs behind it | Value |
+|---|---|---|
+| SP1 proof generation (off-chain) | `redeem-ack` 581.2 s, `native-ack` 693.5 s | 637.4 s |
+| SP1 verification (Ethereum) | `d20-r1-validator` 4.2 s and the batch sweep at 10, 30, 40 (8.3, 8.3, 8.4 s) | 7.3 s |
+
+Both were wrong before. Proving averaged all eight proofs in
+`../migration_throughput/results/real-verifier/` — but six of those are
+deliveries of a Cosmos → Ethereum transfer, the opposite direction and a
+different operation, so the bar reported 627.1 s and then 635.4 s for a leg
+that actually costs 637.4 s at one packet. Verification came from mock runs,
+where the proof check does nothing.
+
+The verification bar is pooled across batch sizes 10-40 because no real
+acknowledgement was ever relayed at batch 1: the two single-packet runs
+recorded proving time but not submission time. Landing the transaction is
+block-inclusion latency and does not depend on how many acknowledgements it
+carries, so pooling is defensible — but it is a different batch size from the
+rest of the figure, and the run list above says so rather than hiding it.
+
+Proving is on a par with the Ethereum finality wait, so the two of them
+together are almost the entire round trip: ~1,200 s, against 561 s to the
+point the vouchers are credited.
 
 Fetching the Merkle-Patricia proof is not shown. It is an off-chain read taking
 hundredths of a second and costing no gas.

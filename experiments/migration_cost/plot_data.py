@@ -117,17 +117,49 @@ def read_many(pattern):
     return pd.concat(frames, ignore_index=True) if frames else None
 
 
-def real_proving_seconds():
+# REAL_PROVE_DIR holds proofs for TWO different operations, and only one of
+# them is on this experiment's path:
+#
+#   redeem-ack.json, native-ack.json   the acknowledgement of an
+#                                      Ethereum -> Cosmos migration travelling
+#                                      back to Ethereum. THIS experiment's leg.
+#   leg1-*.json, recv-result.json      delivery of a Cosmos -> Ethereum
+#                                      transfer. The opposite direction, a
+#                                      different operation, measured for
+#                                      migration_throughput.
+#
+# Globbing the directory averaged all eight into one number (627.1 s when the
+# figure was first drawn, 635.4 s once native-ack.json was committed). Six of
+# those eight do not belong to this path, so the bar is now built from the
+# acknowledgement runs alone and says which ones it used.
+MIGRATION_ACK_PROOFS = ("redeem-ack.json", "native-ack.json")
+
+
+def real_proving_runs(batch=1, ack=None):
+    """(label, seconds) for every real Groth16 proof of THIS leg at `batch`.
+
+    The single-packet acknowledgements live in their own result files; the
+    larger batches come from the sweep rows in the acknowledgement CSV. A run
+    is only used at the batch size it actually measured — proving steps up
+    with batch size, so borrowing another size's number would misreport it.
+    """
     out = []
-    if not REAL_PROVE_DIR.exists():
-        return out
-    for f in sorted(REAL_PROVE_DIR.glob("*.json")):
-        try:
-            d = json.loads(f.read_text())
-        except Exception:
-            continue
-        if "proveSeconds" in d:
-            out.append(float(d["proveSeconds"]))
+    if batch == 1 and REAL_PROVE_DIR.exists():
+        for name in MIGRATION_ACK_PROOFS:
+            f = REAL_PROVE_DIR / name
+            if not f.exists():
+                continue
+            try:
+                d = json.loads(f.read_text())
+            except Exception:
+                continue
+            if "proveSeconds" in d:
+                out.append((f.stem, float(d["proveSeconds"])))
+    if ack is not None and "Verifier_Mode" in ack:
+        sel = ack[(ack["Batch_Size"] == batch) & (ack["Verifier_Mode"] == "real")]
+        for _, r in sel.iterrows():
+            if r.get("T_Prove_s") == r.get("T_Prove_s"):      # not NaN
+                out.append((str(r["Run_Label"]), float(r["T_Prove_s"])))
     return out
 
 
@@ -146,15 +178,44 @@ def fig_time_by_step(df, out, batch=1, ack=None):
         print(f"skipping {out}: no rows at batch size {batch}")
         return
     keys = keys_present(sub)
-    real_prove = real_proving_seconds()
+    prove_runs = real_proving_runs(batch, ack)
+    real_prove = [s for _, s in prove_runs]
+    provenance = [
+        ("SP1 proof generation (off-chain)",
+         [f"{n} {s:.1f} s" for n, s in prove_runs] or ["none"]),
+    ]
 
-    ack_by_key = {}
-    if ack is not None:
-        a = ack[ack["Batch_Size"] == batch]
-        for k in keys:
-            m = a[a["Signer_Key_Type"] == k]
-            if len(m):
-                ack_by_key[k] = {"T_Ack_Submit_s": m["T_Submit_s"].to_numpy()}
+    # The SP1 verification bar is the time to land the acknowledgement on
+    # Ethereum, so it must come from runs whose proof was actually checked.
+    # Against the mock verifier that check is a no-op.
+    ack_by_key, ack_note = {}, []
+    if ack is not None and "Verifier_Mode" in ack:
+        real_ack = ack[(ack["Verifier_Mode"] == "real")
+                       & ack["T_Submit_s"].notna()]
+        at_batch = real_ack[real_ack["Batch_Size"] == batch]
+        if len(at_batch):
+            chosen = at_batch
+        else:
+            # No real acknowledgement was relayed at this batch size. The two
+            # single-packet runs recorded proving but not submission, so at
+            # batch 1 there is nothing to fall back on but the sweep. Landing
+            # a transaction is block-inclusion latency and does not depend on
+            # how many acks it carries, so the pooled figure is usable — but
+            # it is a different batch size and the caption has to say so.
+            chosen = real_ack
+            if len(chosen):
+                ack_note.append(
+                    f"no real acknowledgement at batch {batch}; pooled from "
+                    f"batch {sorted(set(chosen['Batch_Size']))}")
+        if len(chosen):
+            ack_by_key["__all__"] = {"T_Ack_Submit_s": chosen["T_Submit_s"].to_numpy()}
+            provenance.append(("SP1 verification (Ethereum)",
+                               [f"{r.Run_Label} {r.T_Submit_s:.1f} s"
+                                for r in chosen.itertuples()] + ack_note))
+
+    print(f"\n{out}: real-prover bars at batch size {batch}")
+    for bar, runs in provenance:
+        print(f"  {bar}: {', '.join(runs)}")
 
     fig, ax = plt.subplots(figsize=(12.5, 6))
     x = np.arange(len(STEPS))
